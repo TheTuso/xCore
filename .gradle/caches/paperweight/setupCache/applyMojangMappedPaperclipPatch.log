@@ -1,0 +1,2 @@
+Command: /Library/Java/JavaVirtualMachines/jdk-17.0.1.jdk/Contents/Home/bin/java -Dpaperclip.patchonly=true -classpath /Users/piotrpasztor/Documents/GitHub/xCore/.gradle/caches/paperweight/setupCache/extractDevBundle.dir/data/paperclip-mojang+yarn.jar io.papermc.paperclip.Main
+Applying patches

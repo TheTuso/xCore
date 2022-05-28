@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="PublishConfigData" remoteFilesAllowedToDisappearOnAutoupload="false" confirmBeforeUploading="false">
+    <option name="confirmBeforeUploading" value="false" />
+    <serverData>
+      <paths name="hub">
+        <serverdata>
+          <mappings>
+            <mapping deploy="/hub/plugins" local="$PROJECT_DIR$/build/libs" web="/" />
+          </mappings>
+        </serverdata>
+      </paths>
+      <paths name="test-blue">
+        <serverdata>
+          <mappings>
+            <mapping deploy="/test-blue/plugins" local="$PROJECT_DIR$/build/libs" web="/" />
+          </mappings>
+        </serverdata>
+      </paths>
+      <paths name="test-green">
+        <serverdata>
+          <mappings>
+            <mapping deploy="/test-green/plugins" local="$PROJECT_DIR$/build/libs" web="/" />
+          </mappings>
+        </serverdata>
+      </paths>
+      <paths name="test-red">
+        <serverdata>
+          <mappings>
+            <mapping deploy="/test-red/plugins" local="$PROJECT_DIR$/build/libs" web="/" />
+          </mappings>
+        </serverdata>
+      </paths>
+    </serverData>
+  </component>
+</project>
