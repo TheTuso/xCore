@@ -1,0 +1,10 @@
+main: pl.tuso.core.XCore
+name: xCore
+version: 1.0
+api-version: 1.18
+author: tuso
+load: STARTUP
+
+commands:
+  whereami:
+    permission: xcore.whereami

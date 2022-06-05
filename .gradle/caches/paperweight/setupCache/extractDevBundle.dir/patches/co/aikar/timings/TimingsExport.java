@@ -24,14 +24,15 @@
 package co.aikar.timings;
 
 import com.google.common.collect.Sets;
+import io.papermc.paper.adventure.PaperAdventure;
+import net.kyori.adventure.text.format.NamedTextColor;
+import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
 import net.minecraft.server.MinecraftServer;
 import org.apache.commons.lang.StringUtils;
 import org.bukkit.Bukkit;
-import org.bukkit.ChatColor;
 import org.bukkit.Material;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.MemorySection;
-import org.bukkit.craftbukkit.v1_18_R2.util.CraftChatMessage;
 import org.bukkit.entity.EntityType;
 import org.json.simple.JSONObject;
 import org.json.simple.JSONValue;
@@ -61,6 +62,7 @@ import static co.aikar.util.JSONUtil.pair;
 import static co.aikar.util.JSONUtil.toArray;
 import static co.aikar.util.JSONUtil.toArrayMapper;
 import static co.aikar.util.JSONUtil.toObjectMapper;
+import static net.kyori.adventure.text.Component.text;
 
 @SuppressWarnings({"rawtypes", "SuppressionAnnotation"})
 public class TimingsExport extends Thread {
@@ -91,17 +93,17 @@ public class TimingsExport extends Thread {
         long now = System.currentTimeMillis();
         final long lastReportDiff = now - lastReport;
         if (lastReportDiff < 60000) {
-            listeners.sendMessage(ChatColor.RED + "Please wait at least 1 minute in between Timings reports. (" + (int)((60000 - lastReportDiff) / 1000) + " seconds)");
+            listeners.sendMessage(text("Please wait at least 1 minute in between Timings reports. (" + (int)((60000 - lastReportDiff) / 1000) + " seconds)", NamedTextColor.RED));
             listeners.done();
             return;
         }
         final long lastStartDiff = now - TimingsManager.timingStart;
         if (lastStartDiff < 180000) {
-            listeners.sendMessage(ChatColor.RED + "Please wait at least 3 minutes before generating a Timings report. Unlike Timings v1, v2 benefits from longer timings and is not as useful with short timings. (" + (int)((180000 - lastStartDiff) / 1000) + " seconds)");
+            listeners.sendMessage(text("Please wait at least 3 minutes before generating a Timings report. Unlike Timings v1, v2 benefits from longer timings and is not as useful with short timings. (" + (int)((180000 - lastStartDiff) / 1000) + " seconds)", NamedTextColor.RED));
             listeners.done();
             return;
         }
-        listeners.sendMessage(ChatColor.GREEN + "Preparing Timings Report...");
+        listeners.sendMessage(text("Preparing Timings Report...", NamedTextColor.GREEN));
         lastReport = now;
         Map parent = createObject(
             // Get some basic system details about the server
@@ -112,7 +114,7 @@ public class TimingsExport extends Thread {
             pair("online-mode", Bukkit.getServer().getOnlineMode()),
             pair("sampletime", (System.currentTimeMillis() - TimingsManager.timingStart) / 1000),
             pair("datapacks", toArrayMapper(MinecraftServer.getServer().getPackRepository().getSelectedPacks(), pack -> {
-                return ChatColor.stripColor(CraftChatMessage.fromComponent(pack.getChatLink(true)));
+                return PlainTextComponentSerializer.plainText().serialize(PaperAdventure.asAdventure(pack.getChatLink(true)));
             }))
         );
         if (!TimingsManager.privacy) {
@@ -335,9 +337,8 @@ public class TimingsExport extends Thread {
             response = getResponse(con);
 
             if (con.getResponseCode() != 302) {
-                listeners.sendMessage(
-                    ChatColor.RED + "Upload Error: " + con.getResponseCode() + ": " + con.getResponseMessage());
-                listeners.sendMessage(ChatColor.RED + "Check your logs for more information");
+                listeners.sendMessage(text( "Upload Error: " + con.getResponseCode() + ": " + con.getResponseMessage(), NamedTextColor.RED));
+                listeners.sendMessage(text("Check your logs for more information", NamedTextColor.RED));
                 if (response != null) {
                     Bukkit.getLogger().log(Level.SEVERE, response);
                 }
@@ -345,13 +346,13 @@ public class TimingsExport extends Thread {
             }
 
             timingsURL = con.getHeaderField("Location");
-            listeners.sendMessage(ChatColor.GREEN + "View Timings Report: " + timingsURL);
+            listeners.sendMessage(text("View Timings Report: " + timingsURL, NamedTextColor.GREEN));
 
             if (response != null && !response.isEmpty()) {
                 Bukkit.getLogger().log(Level.INFO, "Timing Response: " + response);
             }
         } catch (IOException ex) {
-            listeners.sendMessage(ChatColor.RED + "Error uploading timings, check your logs for more information");
+            listeners.sendMessage(text("Error uploading timings, check your logs for more information", NamedTextColor.RED));
             if (response != null) {
                 Bukkit.getLogger().log(Level.SEVERE, response);
             }
@@ -375,7 +376,7 @@ public class TimingsExport extends Thread {
             return bos.toString();
 
         } catch (IOException ex) {
-            listeners.sendMessage(ChatColor.RED + "Error uploading timings, check your logs for more information");
+            listeners.sendMessage(text("Error uploading timings, check your logs for more information", NamedTextColor.RED));
             Bukkit.getLogger().log(Level.WARNING, con.getResponseMessage(), ex);
             return null;
         } finally {

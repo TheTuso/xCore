@@ -524,6 +524,12 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
     }
 
     // Paper start
+    private static final net.kyori.adventure.text.Component DEFAULT_KICK_COMPONENT = net.kyori.adventure.text.Component.translatable("multiplayer.disconnect.kicked");
+    @Override
+    public void kick() {
+        this.kick(DEFAULT_KICK_COMPONENT);
+    }
+
     @Override
     public void kick(final net.kyori.adventure.text.Component message) {
         kick(message, org.bukkit.event.player.PlayerKickEvent.Cause.PLUGIN);

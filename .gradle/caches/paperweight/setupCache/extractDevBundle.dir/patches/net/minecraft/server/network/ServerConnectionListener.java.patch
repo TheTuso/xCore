@@ -16,7 +16,7 @@
  import net.minecraft.network.chat.TextComponent;
  import net.minecraft.network.protocol.PacketFlow;
  import net.minecraft.network.protocol.game.ClientboundDisconnectPacket;
-@@ -49,110 +49,204 @@
+@@ -49,110 +49,206 @@
  import org.slf4j.Logger;
  
  public class ServerConnectionListener {
@@ -124,13 +124,15 @@
 +                            @Override
 +                            public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
 +                                if (msg instanceof io.netty.handler.codec.haproxy.HAProxyMessage message) {
-+                                    String realaddress = message.sourceAddress();
-+                                    int realport = message.sourcePort();
++                                    if (message.command() == io.netty.handler.codec.haproxy.HAProxyCommand.PROXY) {
++                                        String realaddress = message.sourceAddress();
++                                        int realport = message.sourcePort();
 +
-+                                    SocketAddress socketaddr = new java.net.InetSocketAddress(realaddress, realport);
++                                        SocketAddress socketaddr = new java.net.InetSocketAddress(realaddress, realport);
 +
-+                                    Connection connection = (Connection) channel.pipeline().get("packet_handler");
-+                                    connection.address = socketaddr;
++                                        Connection connection = (Connection) channel.pipeline().get("packet_handler");
++                                        connection.address = socketaddr;
++                                    }
 +                                } else {
 +                                    super.channelRead(ctx, msg);
 +                                }
@@ -270,7 +272,7 @@
                      }
                  }
              }
-@@ -168,7 +262,8 @@
+@@ -168,7 +264,8 @@
          return this.connections;
      }
  
@@ -280,7 +282,7 @@
          private static final Timer TIMER = new HashedWheelTimer();
          private final int delay;
          private final int jitter;
-@@ -179,22 +274,25 @@
+@@ -179,22 +276,25 @@
              this.jitter = extraDelay;
          }
  

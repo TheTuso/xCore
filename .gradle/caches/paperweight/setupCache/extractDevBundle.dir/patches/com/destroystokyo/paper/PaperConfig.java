@@ -693,4 +693,9 @@ public class PaperConfig {
     private static void useProxyProtocol() {
         useProxyProtocol = getBoolean("settings.proxy-protocol", false);
     }
+
+    public static boolean resolveSelectorsInBooks;
+    private static void resolveSelectorsInBooks() {
+        resolveSelectorsInBooks = getBoolean("settings.resolve-selectors-in-books", false);
+    }
 }

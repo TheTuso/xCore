@@ -8,7 +8,7 @@
      String TAG_ANGER_TIME = "AngerTime";
      String TAG_ANGRY_AT = "AngryAt";
  
-@@ -36,18 +37,20 @@
+@@ -36,37 +37,29 @@
          this.setRemainingPersistentAngerTime(nbt.getInt("AngerTime"));
          if (world instanceof ServerLevel) {
              if (!nbt.hasUUID("AngryAt")) {
@@ -18,24 +18,21 @@
 -                UUID uUID = nbt.getUUID("AngryAt");
 -                this.setPersistentAngerTarget(uUID);
 -                Entity entity = ((ServerLevel)world).getEntity(uUID);
-+                UUID uuid = nbt.getUUID("AngryAt");
-+
-+                this.setPersistentAngerTarget(uuid);
-+                Entity entity = ((ServerLevel) world).getEntity(uuid);
-+
-                 if (entity != null) {
-                     if (entity instanceof Mob) {
+-                if (entity != null) {
+-                    if (entity instanceof Mob) {
 -                        this.setLastHurtByMob((Mob)entity);
-+                        this.setLastHurtByMob((Mob) entity);
-                     }
- 
-                     if (entity.getType() == EntityType.PLAYER) {
+-                    }
+-
+-                    if (entity.getType() == EntityType.PLAYER) {
 -                        this.setLastHurtByPlayer((Player)entity);
-+                        this.setLastHurtByPlayer((Player) entity);
-                     }
+-                    }
++                UUID uuid = nbt.getUUID("AngryAt");
  
-                 }
-@@ -56,17 +59,18 @@
+-                }
++                this.setPersistentAngerTarget(uuid);
++                // Paper - Moved diff to separate method
+             }
+         }
      }
  
      default void updatePersistentAnger(ServerLevel world, boolean angerPersistent) {
@@ -60,7 +57,7 @@
                  this.setRemainingPersistentAngerTime(this.getRemainingPersistentAngerTime() - 1);
                  if (this.getRemainingPersistentAngerTime() == 0) {
                      this.stopBeingAngry();
-@@ -77,11 +81,7 @@
+@@ -77,11 +70,7 @@
      }
  
      default boolean isAngryAt(LivingEntity entity) {
@@ -73,7 +70,7 @@
      }
  
      default boolean isAngryAtAllPlayers(Level world) {
-@@ -106,9 +106,9 @@
+@@ -106,9 +95,9 @@
      }
  
      default void stopBeingAngry() {
@@ -86,7 +83,7 @@
          this.setRemainingPersistentAngerTime(0);
      }
  
-@@ -121,6 +121,8 @@
+@@ -121,8 +110,32 @@
  
      void setTarget(@Nullable LivingEntity target);
  
@@ -95,3 +92,27 @@
      boolean canAttack(LivingEntity target);
  
      @Nullable
+     LivingEntity getTarget();
++
++    // Paper start - Update last hurt when ticking
++    default void tickInitialPersistentAnger(Level level) {
++        UUID target = getPersistentAngerTarget();
++        if (target == null) {
++            return;
++        }
++
++        Entity entity = ((ServerLevel) level).getEntity(target);
++
++        if (entity != null) {
++            if (entity instanceof Mob) {
++                this.setLastHurtByMob((Mob) entity);
++            }
++
++            if (entity.getType() == EntityType.PLAYER) {
++                this.setLastHurtByPlayer((Player) entity);
++            }
++
++        }
++    }
++    // Paper end
+ }

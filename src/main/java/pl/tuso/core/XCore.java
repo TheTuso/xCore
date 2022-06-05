@@ -21,7 +21,7 @@ public class XCore extends JavaPlugin { // TODO config
     @Override
     public void onEnable() {
         INSTANCE = this;
-        this.redisClient = RedisClient.create(RedisURI.create("localhost", 6379));
+        this.redisClient = RedisClient.create(RedisURI.create("172.18.0.1", 6379));
         this.messagingService = new MessagingService(this);
         this.executorService = Executors.newCachedThreadPool();
 

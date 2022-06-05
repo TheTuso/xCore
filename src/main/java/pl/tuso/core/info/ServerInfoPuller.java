@@ -7,12 +7,23 @@ import pl.tuso.core.XCore;
 import pl.tuso.core.lettuce.messaging.Message;
 import pl.tuso.core.lettuce.messaging.MessagingListener;
 
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 
 public class ServerInfoPuller implements MessagingListener {
     private final static CompletableFuture<ServerInfo> completableFuture = new CompletableFuture();
-    private final static String originalAddress = Bukkit.getIp().isEmpty() ? "127.0.0.1" : Bukkit.getIp();
+    private final static String defaultHostname;
+    static {
+        try {
+            defaultHostname = InetAddress.getLocalHost().getHostAddress();
+            System.out.println(defaultHostname);
+        } catch (UnknownHostException e) {
+            throw new RuntimeException(e);
+        }
+    }
+    private final static String originalAddress = Bukkit.getIp().isEmpty() ? defaultHostname : Bukkit.getIp();
     private final static int originalPort = Bukkit.getPort();
     private static XCore xCore;
 

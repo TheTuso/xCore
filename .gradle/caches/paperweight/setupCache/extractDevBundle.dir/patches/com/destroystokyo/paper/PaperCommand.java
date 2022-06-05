@@ -36,7 +36,6 @@ import net.minecraft.world.level.NaturalSpawner;
 import org.apache.commons.lang3.tuple.MutablePair;
 import org.apache.commons.lang3.tuple.Pair;
 import org.bukkit.Bukkit;
-import org.bukkit.ChatColor;
 import org.bukkit.Location;
 import org.bukkit.World;
 import org.bukkit.command.Command;
@@ -67,6 +66,14 @@ import java.util.Map;
 import java.util.Set;
 import java.util.function.ToIntFunction;
 import java.util.stream.Collectors;
+
+import static net.kyori.adventure.text.Component.text;
+import static net.kyori.adventure.text.format.NamedTextColor.BLUE;
+import static net.kyori.adventure.text.format.NamedTextColor.DARK_AQUA;
+import static net.kyori.adventure.text.format.NamedTextColor.GRAY;
+import static net.kyori.adventure.text.format.NamedTextColor.GREEN;
+import static net.kyori.adventure.text.format.NamedTextColor.RED;
+import static net.kyori.adventure.text.format.NamedTextColor.YELLOW;
 
 public class PaperCommand extends Command {
     private static final String BASE_PERM = "bukkit.command.paper.";
@@ -172,7 +179,7 @@ public class PaperCommand extends Command {
         if (!testPermission(sender)) return true;
 
         if (args.length == 0) {
-            sender.sendMessage(ChatColor.RED + "Usage: " + usageMessage);
+            sender.sendMessage(text("Usage: " + this.usageMessage, RED));
             return false;
         }
         if (SUBCOMMANDS.contains(args[0].toLowerCase(Locale.ENGLISH))) {
@@ -219,7 +226,7 @@ public class PaperCommand extends Command {
                 }
                 // else - fall through to default
             default:
-                sender.sendMessage(ChatColor.RED + "Usage: " + usageMessage);
+                sender.sendMessage(text("Usage: " + this.usageMessage, RED));
                 return false;
         }
 
@@ -228,20 +235,20 @@ public class PaperCommand extends Command {
 
     private void doSyncLoadInfo(CommandSender sender, String[] args) {
         if (!SyncLoadFinder.ENABLED) {
-            sender.sendMessage(ChatColor.RED + "This command requires the server startup flag '-Dpaper.debug-sync-loads=true' to be set.");
+            sender.sendMessage(text("This command requires the server startup flag '-Dpaper.debug-sync-loads=true' to be set.", RED));
             return;
         }
 
         if (args.length > 1 && args[1].equals("clear")) {
             SyncLoadFinder.clear();
-            sender.sendMessage(ChatColor.GRAY + "Sync load data cleared.");
+            sender.sendMessage(text("Sync load data cleared.", GRAY));
             return;
         }
 
         File file = new File(new File(new File("."), "debug"),
             "sync-load-info" + DateTimeFormatter.ofPattern("yyyy-MM-dd_HH.mm.ss").format(LocalDateTime.now()) + ".txt");
         file.getParentFile().mkdirs();
-        sender.sendMessage(ChatColor.GREEN + "Writing sync load info to " + file.toString());
+        sender.sendMessage(text("Writing sync load info to " + file, GREEN));
 
 
         try {
@@ -260,9 +267,9 @@ public class PaperCommand extends Command {
             ) {
                 out.print(fileData);
             }
-            sender.sendMessage(ChatColor.GREEN + "Successfully written sync load information!");
+            sender.sendMessage(text("Successfully written sync load information!", GREEN));
         } catch (Throwable thr) {
-            sender.sendMessage(ChatColor.RED + "Failed to write sync load information");
+            sender.sendMessage(text("Failed to write sync load information!", RED));
             thr.printStackTrace();
         }
     }
@@ -454,7 +461,7 @@ public class PaperCommand extends Command {
             for (int i = 1; i < args.length; ++i) {
                 org.bukkit.World world = Bukkit.getWorld(args[i]);
                 if (world == null) {
-                    sender.sendMessage(ChatColor.RED + "World '" + args[i] + "' is invalid");
+                    sender.sendMessage(text("World '" + args[i] + "' is invalid", RED));
                     return;
                 }
                 worlds.add(world);
@@ -507,22 +514,30 @@ public class PaperCommand extends Command {
             accumulatedTicking += ticking;
             accumulatedEntityTicking += entityTicking;
 
-            sender.sendMessage(ChatColor.BLUE + "Chunks in " + ChatColor.GREEN + bukkitWorld.getName() + ChatColor.DARK_AQUA + ":");
-            sender.sendMessage(ChatColor.BLUE + "Total: " + ChatColor.DARK_AQUA + total + ChatColor.BLUE + " Inactive: " + ChatColor.DARK_AQUA
-                               + inactive + ChatColor.BLUE + " Border: " + ChatColor.DARK_AQUA + border + ChatColor.BLUE + " Ticking: "
-                               + ChatColor.DARK_AQUA + ticking + ChatColor.BLUE + " Entity: " + ChatColor.DARK_AQUA + entityTicking);
+            sender.sendMessage(text().append(text("Chunks in ", BLUE), text(bukkitWorld.getName(), GREEN), text(":")));
+            sender.sendMessage(text().color(DARK_AQUA).append(
+                text("Total: ", BLUE), text(total),
+                text(" Inactive: ", BLUE), text(inactive),
+                text(" Border: ", BLUE), text(border),
+                text(" Ticking: ", BLUE), text(ticking),
+                text(" Entity: ", BLUE), text(entityTicking)
+            ));
         }
         if (worlds.size() > 1) {
-            sender.sendMessage(ChatColor.BLUE + "Chunks in " + ChatColor.GREEN + "all listed worlds" + ChatColor.DARK_AQUA + ":");
-            sender.sendMessage(ChatColor.BLUE + "Total: " + ChatColor.DARK_AQUA + accumulatedTotal + ChatColor.BLUE + " Inactive: " + ChatColor.DARK_AQUA
-                               + accumulatedInactive + ChatColor.BLUE + " Border: " + ChatColor.DARK_AQUA + accumulatedBorder + ChatColor.BLUE + " Ticking: "
-                               + ChatColor.DARK_AQUA + accumulatedTicking + ChatColor.BLUE + " Entity: " + ChatColor.DARK_AQUA + accumulatedEntityTicking);
+            sender.sendMessage(text().append(text("Chunks in ", BLUE), text("all listed worlds", GREEN), text(":", DARK_AQUA)));
+            sender.sendMessage(text().color(DARK_AQUA).append(
+                text("Total: ", BLUE), text(accumulatedTotal),
+                text(" Inactive: ", BLUE), text(accumulatedInactive),
+                text(" Border: ", BLUE), text(accumulatedBorder),
+                text(" Ticking: ", BLUE), text(accumulatedTicking),
+                text(" Entity: ", BLUE), text(accumulatedEntityTicking)
+            ));
         }
     }
 
     private void doDebug(CommandSender sender, String[] args) {
         if (args.length < 2) {
-            sender.sendMessage(ChatColor.RED + "Use /paper debug [chunks] help for more information on a specific command");
+            sender.sendMessage(text("Use /paper debug [chunks] help for more information on a specific command", RED));
             return;
         }
 
@@ -530,25 +545,25 @@ public class PaperCommand extends Command {
         switch (debugType) {
             case "chunks":
                 if (args.length >= 3 && args[2].toLowerCase(Locale.ENGLISH).equals("help")) {
-                    sender.sendMessage(ChatColor.RED + "Use /paper debug chunks to dump loaded chunk information to a file");
+                    sender.sendMessage(text("Use /paper debug chunks [world] to dump loaded chunk information to a file", RED));
                     break;
                 }
                 File file = new File(new File(new File("."), "debug"),
                     "chunks-" + DateTimeFormatter.ofPattern("yyyy-MM-dd_HH.mm.ss").format(LocalDateTime.now()) + ".txt");
-                sender.sendMessage(ChatColor.GREEN + "Writing chunk information dump to " + file.toString());
+                sender.sendMessage(text("Writing chunk information dump to " + file, GREEN));
                 try {
                     MCUtil.dumpChunks(file);
-                    sender.sendMessage(ChatColor.GREEN + "Successfully written chunk information!");
+                    sender.sendMessage(text("Successfully written chunk information!", GREEN));
                 } catch (Throwable thr) {
                     MinecraftServer.LOGGER.warn("Failed to dump chunk information to file " + file.toString(), thr);
-                    sender.sendMessage(ChatColor.RED + "Failed to dump chunk information, see console");
+                    sender.sendMessage(text("Failed to dump chunk information, see console", RED));
                 }
 
                 break;
             case "help":
                 // fall through to default
             default:
-                sender.sendMessage(ChatColor.RED + "Use /paper debug [chunks] help for more information on a specific command");
+                sender.sendMessage(text("Use /paper debug [chunks] help for more information on a specific command", RED));
                 return;
         }
     }
@@ -558,7 +573,7 @@ public class PaperCommand extends Command {
      */
     private void listEntities(CommandSender sender, String[] args) {
         if (args.length < 2 || args[1].toLowerCase(Locale.ENGLISH).equals("help")) {
-            sender.sendMessage(ChatColor.RED + "Use /paper entity [list] help for more information on a specific command.");
+            sender.sendMessage(text("Use /paper entity [list] help for more information on a specific command", RED));
             return;
         }
 
@@ -567,7 +582,7 @@ public class PaperCommand extends Command {
                 String filter = "*";
                 if (args.length > 2) {
                     if (args[2].toLowerCase(Locale.ENGLISH).equals("help")) {
-                        sender.sendMessage(ChatColor.RED + "Use /paper entity list [filter] [worldName] to get entity info that matches the optional filter.");
+                        sender.sendMessage(text("Use /paper entity list [filter] [worldName] to get entity info that matches the optional filter.", RED));
                         return;
                     }
                     filter = args[2];
@@ -578,8 +593,8 @@ public class PaperCommand extends Command {
                         .collect(Collectors.toSet());
 
                 if (names.isEmpty()) {
-                    sender.sendMessage(ChatColor.RED + "Invalid filter, does not match any entities. Use /paper entity list for a proper list");
-                    sender.sendMessage(ChatColor.RED + "Usage: /paper entity list [filter] [worldName]");
+                    sender.sendMessage(text("Invalid filter, does not match any entities. Use /paper entity list for a proper list", RED));
+                    sender.sendMessage(text("Usage: /paper entity list [filter] [worldName]", RED));
                     return;
                 }
 
@@ -589,17 +604,17 @@ public class PaperCommand extends Command {
                 } else if (sender instanceof Player) {
                     worldName = ((Player) sender).getWorld().getName();
                 } else {
-                    sender.sendMessage(ChatColor.RED + "Please specify the name of a world");
-                    sender.sendMessage(ChatColor.RED + "To do so without a filter, specify '*' as the filter");
-                    sender.sendMessage(ChatColor.RED + "Usage: /paper entity list [filter] [worldName]");
+                    sender.sendMessage(text("Please specify the name of a world", RED));
+                    sender.sendMessage(text("To do so without a filter, specify '*' as the filter", RED));
+                    sender.sendMessage(text("Usage: /paper entity list [filter] [worldName]", RED));
                     return;
                 }
 
                 Map<ResourceLocation, MutablePair<Integer, Map<ChunkPos, Integer>>> list = Maps.newHashMap();
                 World bukkitWorld = Bukkit.getWorld(worldName);
                 if (bukkitWorld == null) {
-                    sender.sendMessage(ChatColor.RED + "Could not load world for " + worldName + ". Please select a valid world.");
-                    sender.sendMessage(ChatColor.RED + "Usage: /paper entity list [filter] [worldName]");
+                    sender.sendMessage(text("Could not load world for " + worldName + ". Please select a valid world.", RED));
+                    sender.sendMessage(text("Usage: /paper entity list [filter] [worldName]", RED));
                     return;
                 }
                 ServerLevel world = ((CraftWorld) Bukkit.getWorld(worldName)).getHandle();
@@ -624,7 +639,7 @@ public class PaperCommand extends Command {
                     Pair<Integer, Map<ChunkPos, Integer>> info = list.get(name);
                     int nonTicking = nonEntityTicking.getOrDefault(name, Integer.valueOf(0)).intValue();
                     if (info == null) {
-                        sender.sendMessage(ChatColor.RED + "No entities found.");
+                        sender.sendMessage(text("No entities found.", RED));
                         return;
                     }
                     sender.sendMessage("Entity: " + name + " Total Ticking: " + (info.getLeft() - nonTicking) + ", Total Non-Ticking: " + nonTicking);
@@ -639,7 +654,7 @@ public class PaperCommand extends Command {
                             .collect(Collectors.toList());
 
                     if (info == null || info.size() == 0) {
-                        sender.sendMessage(ChatColor.RED + "No entities found.");
+                        sender.sendMessage(text("No entities found.", RED));
                         return;
                     }
 
@@ -660,19 +675,19 @@ public class PaperCommand extends Command {
         java.nio.file.Path dir = java.nio.file.Paths.get("./dumps");
         String name = "heap-dump-" + DateTimeFormatter.ofPattern("yyyy-MM-dd_HH.mm.ss").format(LocalDateTime.now());
 
-        Command.broadcastCommandMessage(sender, ChatColor.YELLOW + "Writing JVM heap data...");
+        Command.broadcastCommandMessage(sender, text("Writing JVM heap data...", YELLOW));
 
         java.nio.file.Path file = CraftServer.dumpHeap(dir, name);
         if (file != null) {
-            Command.broadcastCommandMessage(sender, ChatColor.GREEN + "Heap dump saved to " + file);
+            Command.broadcastCommandMessage(sender, text("Heap dump saved to " + file, GREEN));
         } else {
-            Command.broadcastCommandMessage(sender, ChatColor.RED + "Failed to write heap dump, see sever log for details");
+            Command.broadcastCommandMessage(sender, text("Failed to write heap dump, see server log for details", RED));
         }
     }
 
     private void doReload(CommandSender sender) {
-        Command.broadcastCommandMessage(sender, ChatColor.RED + "Please note that this command is not supported and may cause issues.");
-        Command.broadcastCommandMessage(sender, ChatColor.RED + "If you encounter any issues please use the /stop command to restart your server.");
+        Command.broadcastCommandMessage(sender, text("Please note that this command is not supported and may cause issues.", RED));
+        Command.broadcastCommandMessage(sender, text("If you encounter any issues please use the /stop command to restart your server.", RED));
 
         MinecraftServer console = MinecraftServer.getServer();
         com.destroystokyo.paper.PaperConfig.init((File) console.options.valueOf("paper-settings"));
@@ -681,7 +696,7 @@ public class PaperCommand extends Command {
         }
         console.server.reloadCount++;
 
-        Command.broadcastCommandMessage(sender, ChatColor.GREEN + "Paper config reload complete.");
+        Command.broadcastCommandMessage(sender, text("Paper config reload complete.", GREEN));
     }
     private void doDumpItem(CommandSender sender) {
         if (!(sender instanceof Player)) {
@@ -723,20 +738,20 @@ public class PaperCommand extends Command {
         lightengine.relight(chunks,
                 (ChunkPos chunkPos) -> {
                     ++relitChunks[0];
-                    sender.getBukkitEntity().sendMessage(
-                            ChatColor.BLUE + "Relit chunk " + ChatColor.DARK_AQUA + chunkPos + ChatColor.BLUE +
-                                    ", progress: " + ChatColor.DARK_AQUA + (int)(Math.round(100.0 * (double)(relitChunks[0])/(double)pending[0])) + "%"
-                    );
+                    sender.getBukkitEntity().sendMessage(text().color(DARK_AQUA).append(
+                        text("Relit chunk ", BLUE), text(chunkPos.toString()),
+                        text(", progress: ", BLUE), text((int)(Math.round(100.0 * (double)(relitChunks[0])/(double)pending[0])) + "%")
+                    ));
                 },
                 (int totalRelit) -> {
                     final long end = System.nanoTime();
                     final long diff = Math.round(1.0e-6*(end - start));
-                    sender.getBukkitEntity().sendMessage(
-                            ChatColor.BLUE + "Relit " + ChatColor.DARK_AQUA + totalRelit + ChatColor.BLUE + " chunks. Took " +
-                                    ChatColor.DARK_AQUA + diff + "ms"
-                    );
+                    sender.getBukkitEntity().sendMessage(text().color(DARK_AQUA).append(
+                        text("Relit ", BLUE), text(totalRelit),
+                        text(" chunks. Took ", BLUE), text(diff + "ms")
+                    ));
                 });
-        sender.getBukkitEntity().sendMessage(ChatColor.BLUE + "Relighting " + ChatColor.DARK_AQUA + pending[0] + ChatColor.BLUE + " chunks");
+        sender.getBukkitEntity().sendMessage(text().color(BLUE).append(text("Relighting "), text(pending[0], DARK_AQUA), text(" chunks")));
     }
     // Paper end - rewrite light engine
 

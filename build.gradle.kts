@@ -6,7 +6,7 @@ plugins {
 }
 
 group = "pl.tuso.core"
-version = "1.0"
+version = "1.1"
 
 java {
     toolchain.languageVersion.set(JavaLanguageVersion.of(17))
@@ -61,7 +61,7 @@ publishing {
         register<MavenPublication>("gpr") {
             groupId = "pl.tuso.core"
             artifactId = "xcore"
-            version = "1.0"
+            version = "1.1"
             from(components["java"])
         }
     }

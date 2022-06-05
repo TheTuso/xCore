@@ -176,7 +176,7 @@
              CrashReportCategory.populateBlockDetails(crashReportSection, this.level, this.worldPosition, this.level.getBlockState(this.worldPosition));
          }
      }
-@@ -196,4 +240,20 @@
+@@ -196,4 +240,28 @@
      public void setBlockState(BlockState state) {
          this.blockState = state;
      }
@@ -196,4 +196,12 @@
 +        return null;
 +    }
 +    // CraftBukkit end
++    // Paper start
++    public CompoundTag sanitizeSentNbt(CompoundTag tag) {
++        tag.remove("PublicBukkitValues");
++
++        return tag;
++    }
++    // Paper end
++
  }
