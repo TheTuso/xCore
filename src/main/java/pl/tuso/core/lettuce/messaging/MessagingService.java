@@ -39,10 +39,8 @@ public class MessagingService {
     private void init() {
         try {
             this.xCore.getLogger().info("Checking Redis connection: PING → " + this.publishConnection.async().ping().get());
-        } catch (ExecutionException e) {
-            throw new RuntimeException(e);
-        } catch (InterruptedException e) {
-            throw new RuntimeException(e);
+        } catch (Exception exception) {
+            throw new RuntimeException(exception);
         }
         this.subscribeConnection.addListener(this.subscriber);
         this.subscribeConnection.async().subscribe(CHANNEL);

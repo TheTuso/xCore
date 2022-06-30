@@ -215,7 +215,7 @@
      private boolean enforceWhitelist;
      private float averageTickTime;
      public final Executor executor;
-@@ -254,192 +284,488 @@
+@@ -254,192 +284,489 @@
      protected WorldData worldData;
      private volatile boolean isSaving;
  
@@ -243,6 +243,7 @@
 +
 +    public volatile Thread shutdownThread; // Paper
 +    public volatile boolean abnormalExit = false; // Paper
++    public boolean isIteratingOverLevels = false; // Paper
 +
      public static <S extends MinecraftServer> S spin(Function<Thread, S> serverFactory) {
 -        AtomicReference<S> atomicReference = new AtomicReference<>();
@@ -563,10 +564,11 @@
 +                }
 +
 +                worlddata = new PrimaryLevelData(worldsettings, generatorsettings, Lifecycle.stable());
-+            }
+             }
 +            worlddata.checkName(name); // CraftBukkit - Migration did not rewrite the level.dat; This forces 1.8 to take the last loaded world as respawn (in this case the end)
 +            // Paper - move down
-+
+ 
+-            serverLevelData.setInitialized(true);
 +            ServerLevelData iworlddataserver = worlddata;
 +            WorldGenSettings generatorsettings = worlddata.worldGenSettings();
 +            boolean flag = generatorsettings.isDebug();
@@ -579,12 +581,11 @@
 +                worlddimension = generatorsettings.dimensions().get(dimensionKey);
 +            } else {
 +                worlddimension = iregistry.get(dimensionKey);
-             }
++            }
 +            // Paper end
 +            Holder<DimensionType> holder;
 +            ChunkGenerator chunkgenerator;
- 
--            serverLevelData.setInitialized(true);
++
 +            if (worlddimension == null) {
 +                holder = this.registryAccess().registryOrThrow(Registry.DIMENSION_TYPE_REGISTRY).getOrCreateHolder(DimensionType.OVERWORLD_LOCATION);
 +                chunkgenerator = WorldGenSettings.makeDefaultOverworld(this.registryHolder, (new Random()).nextLong());
@@ -812,7 +813,7 @@
              }
  
          }
-@@ -448,61 +774,87 @@
+@@ -448,61 +775,87 @@
      private void setupDebugLevel(WorldData properties) {
          properties.setDifficulty(Difficulty.PEACEFUL);
          properties.setDifficultyLocked(true);
@@ -936,7 +937,7 @@
              }
          }
  
-@@ -523,44 +875,55 @@
+@@ -523,44 +876,55 @@
      public abstract boolean shouldRconBroadcast();
  
      public boolean saveAllChunks(boolean suppressLogs, boolean flush, boolean force) {
@@ -1008,7 +1009,7 @@
      }
  
      @Override
-@@ -568,50 +931,107 @@
+@@ -568,50 +932,107 @@
          this.stopServer();
      }
  
@@ -1134,7 +1135,7 @@
                  }
              }
          }
-@@ -621,10 +1041,30 @@
+@@ -621,10 +1042,30 @@
  
          try {
              this.storageSource.close();
@@ -1168,7 +1169,7 @@
      }
  
      public String getLocalIp() {
-@@ -639,40 +1079,146 @@
+@@ -639,40 +1080,146 @@
          return this.running;
      }
  
@@ -1325,7 +1326,7 @@
                      this.nextTickTime += 50L;
                      this.startMetricsRecordingTick();
                      this.profiler.push("tick");
-@@ -687,32 +1233,56 @@
+@@ -687,32 +1234,56 @@
                      JvmProfiler.INSTANCE.onServerTick(this.averageTickTime);
                  }
              } else {
@@ -1395,7 +1396,7 @@
              }
  
          }
-@@ -720,94 +1290,137 @@
+@@ -720,94 +1291,137 @@
      }
  
      private static CrashReport constructOrExtractCrashReport(Throwable throwable) {
@@ -1569,7 +1570,7 @@
              }
  
          });
-@@ -821,95 +1434,206 @@
+@@ -821,95 +1435,208 @@
          return new File(".");
      }
  
@@ -1733,6 +1734,7 @@
 +        // Paper end
 +        MinecraftTimings.timeUpdateTimer.stopTiming(); // Spigot // Paper
 +
++        this.isIteratingOverLevels = true; // Paper
 +        while (iterator.hasNext()) {
 +            ServerLevel worldserver = (ServerLevel) iterator.next();
 +            worldserver.hasPhysicsEvent =  org.bukkit.event.block.BlockPhysicsEvent.getHandlerList().getRegisteredListeners().length > 0; // Paper
@@ -1788,6 +1790,7 @@
              this.profiler.pop();
 +            worldserver.explosionDensityCache.clear(); // Paper - Optimize explosions
          }
++        this.isIteratingOverLevels = false; // Paper
  
          this.profiler.popPush("connection");
 +        MinecraftTimings.connectionTimer.startTiming(); // Spigot
@@ -1813,7 +1816,7 @@
  
          this.profiler.pop();
      }
-@@ -935,12 +1659,12 @@
+@@ -935,12 +1662,12 @@
      }
  
      public final ServerLevel overworld() {
@@ -1828,7 +1831,7 @@
      }
  
      public Set<ResourceKey<Level>> levelKeys() {
-@@ -969,7 +1693,7 @@
+@@ -969,7 +1696,7 @@
  
      @DontObfuscate
      public String getServerModName() {
@@ -1837,7 +1840,7 @@
      }
  
      public SystemReport fillSystemReport(SystemReport details) {
-@@ -978,25 +1702,30 @@
+@@ -978,25 +1705,30 @@
          });
          if (this.playerList != null) {
              details.setDetail("Player Count", () -> {
@@ -1877,7 +1880,7 @@
          });
          details.setDetail("World Generation", () -> {
              return this.worldData.worldGenSettingsLifecycle().toString();
-@@ -1018,7 +1747,7 @@
+@@ -1018,7 +1750,7 @@
  
      @Override
      public void sendMessage(Component message, UUID sender) {
@@ -1886,7 +1889,7 @@
      }
  
      public KeyPair getKeyPair() {
-@@ -1046,20 +1775,23 @@
+@@ -1046,20 +1778,23 @@
      }
  
      protected void initializeKeyPair() {
@@ -1918,7 +1921,7 @@
          }
      }
  
-@@ -1068,8 +1800,12 @@
+@@ -1068,8 +1803,12 @@
      }
  
      private void updateMobSpawningFlags() {
@@ -1933,7 +1936,7 @@
          }
  
      }
-@@ -1080,8 +1816,9 @@
+@@ -1080,8 +1819,9 @@
      }
  
      private void sendDifficultyUpdate(ServerPlayer player) {
@@ -1945,7 +1948,7 @@
      }
  
      public boolean isSpawningMonsters() {
-@@ -1185,7 +1922,7 @@
+@@ -1185,7 +1925,7 @@
  
      @Nullable
      public ServerConnectionListener getConnection() {
@@ -1954,7 +1957,7 @@
      }
  
      public boolean isReady() {
-@@ -1299,36 +2036,60 @@
+@@ -1299,36 +2039,60 @@
          return this.functionManager;
      }
  
@@ -2030,7 +2033,7 @@
      }
  
      public static DataPackConfig configurePackRepository(PackRepository resourcePackManager, DataPackConfig dataPackSettings, boolean safeMode) {
-@@ -1338,50 +2099,63 @@
+@@ -1338,50 +2102,63 @@
              return new DataPackConfig(ImmutableList.of("vanilla"), ImmutableList.of());
          } else {
              Set<String> set = Sets.newLinkedHashSet();
@@ -2113,7 +2116,7 @@
                  }
              }
  
-@@ -1397,8 +2171,9 @@
+@@ -1397,8 +2174,9 @@
      }
  
      public CommandSourceStack createCommandSourceStack() {
@@ -2125,7 +2128,7 @@
      }
  
      @Override
-@@ -1464,16 +2239,9 @@
+@@ -1464,16 +2242,9 @@
  
      public int getProfilePermissions(GameProfile profile) {
          if (this.getPlayerList().isOp(profile)) {
@@ -2145,7 +2148,7 @@
          } else {
              return 0;
          }
-@@ -1489,18 +2257,21 @@
+@@ -1489,18 +2260,21 @@
  
      public abstract boolean isSingleplayerOwner(GameProfile profile);
  
@@ -2175,7 +2178,7 @@
              }
  
              this.dumpGameRules(path.resolve("gamerules.txt"));
-@@ -1509,184 +2280,217 @@
+@@ -1509,184 +2283,217 @@
              this.dumpThreads(path.resolve("threads.txt"));
              this.dumpServerProperties(path.resolve("server.properties.txt"));
              this.dumpNativeModules(path.resolve("modules.txt"));
@@ -2477,7 +2480,7 @@
      private void startMetricsRecordingTick() {
          if (this.willStartRecordingMetrics) {
              this.metricsRecorder = ActiveMetricsRecorder.createStarted(new ServerMetricsSamplersProvider(Util.timeSource, this.isDedicatedServer()), Util.timeSource, Util.ioPool(), new MetricsPersister("server"), this.onMetricsRecordingStopped, (path) -> {
-@@ -1713,9 +2517,9 @@
+@@ -1713,9 +2520,9 @@
      }
  
      public void startRecordingMetrics(Consumer<ProfileResults> resultConsumer, Consumer<Path> dumpConsumer) {
@@ -2489,7 +2492,7 @@
          };
          this.onMetricsRecordingFinished = dumpConsumer;
          this.willStartRecordingMetrics = true;
-@@ -1758,7 +2562,7 @@
+@@ -1758,7 +2565,7 @@
      }
  
      public ServerPlayerGameMode createGameModeForPlayer(ServerPlayer player) {
@@ -2498,7 +2501,7 @@
      }
  
      @Nullable
-@@ -1791,20 +2595,42 @@
+@@ -1791,20 +2598,42 @@
          if (this.debugCommandProfiler == null) {
              return EmptyProfileResults.EMPTY;
          } else {
@@ -2546,7 +2549,7 @@
          final long startNanos;
          final int startTick;
  
-@@ -1852,4 +2678,99 @@
+@@ -1852,4 +2681,99 @@
              };
          }
      }

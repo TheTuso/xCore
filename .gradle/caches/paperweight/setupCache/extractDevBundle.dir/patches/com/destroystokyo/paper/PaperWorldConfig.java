@@ -67,6 +67,11 @@ public class PaperWorldConfig {
             set("spawn-limits.water-ambient", null);
         }
 
+        if (this.config.isSet("world-settings.default.treasure-maps-return-already-discovered") || this.config.isSet("world-settings." + worldName + ".treasure-maps-return-already-discovered")) {
+            set("treasure-maps-return-already-discovered", null);
+            needsSave = true;
+        }
+
         if (needsSave) {
             saveConfig();
         }
@@ -243,8 +248,13 @@ public class PaperWorldConfig {
     }
 
     private boolean getBoolean(String path, boolean def) {
-        config.addDefault("world-settings.default." + path, def);
-        return config.getBoolean("world-settings." + worldName + "." + path, config.getBoolean("world-settings.default." + path));
+        return this.getBoolean(path, def, true);
+    }
+    private boolean getBoolean(String path, boolean def, boolean setDefault) {
+        if (setDefault) {
+            config.addDefault("world-settings.default." + path, def);
+        }
+        return config.getBoolean("world-settings." + worldName + "." + path, config.getBoolean("world-settings.default." + path, def));
     }
 
     private double getDouble(String path, double def) {
@@ -582,13 +592,24 @@ public class PaperWorldConfig {
     }
 
     public boolean enableTreasureMaps = true;
-    public boolean treasureMapsAlreadyDiscovered = false;
+    public boolean treasureMapsAlreadyDiscoveredVillager = false;
+    public Boolean treasureMapsAlreadyDiscoveredLootTable = null;
+    private Boolean getBooleanOrNull(String path, Boolean defaultValue) {
+        this.config.addDefault("world-settings.default." + path, defaultValue == null ? "default" : defaultValue);
+        final Object value = this.config.get("world-settings." + worldName + "." + path, this.config.get("world-settings.default." + path));
+        if (value instanceof Boolean bool) {
+            return bool;
+        }
+        return null;
+    }
     private void treasureMapsAlreadyDiscovered() {
         enableTreasureMaps = getBoolean("enable-treasure-maps", true);
-        treasureMapsAlreadyDiscovered = getBoolean("treasure-maps-return-already-discovered", false);
-        if (treasureMapsAlreadyDiscovered) {
-            log("Treasure Maps will return already discovered locations");
+        if (getBoolean("treasure-maps-return-already-discovered", false, false)) {
+            treasureMapsAlreadyDiscoveredLootTable = true;
+            treasureMapsAlreadyDiscoveredVillager = true;
         }
+        treasureMapsAlreadyDiscoveredVillager = getBoolean("treasure-maps-find-already-discovered.villager-trade", treasureMapsAlreadyDiscoveredVillager);
+        treasureMapsAlreadyDiscoveredLootTable = getBooleanOrNull("treasure-maps-find-already-discovered.loot-tables", treasureMapsAlreadyDiscoveredLootTable);
     }
 
     public int maxCollisionsPerEntity = 8;

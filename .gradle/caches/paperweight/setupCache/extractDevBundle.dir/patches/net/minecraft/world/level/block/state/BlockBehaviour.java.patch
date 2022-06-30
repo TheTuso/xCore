@@ -13,16 +13,14 @@
  import net.minecraft.world.level.BlockGetter;
  import net.minecraft.world.level.EmptyBlockGetter;
  import net.minecraft.world.level.Level;
-@@ -67,7 +69,8 @@
+@@ -67,6 +69,7 @@
  import net.minecraft.world.phys.shapes.VoxelShape;
  
  public abstract class BlockBehaviour {
--    protected static final Direction[] UPDATE_SHAPE_ORDER = new Direction[]{Direction.WEST, Direction.EAST, Direction.NORTH, Direction.SOUTH, Direction.DOWN, Direction.UP};
 +
-+    public static final Direction[] UPDATE_SHAPE_ORDER = new Direction[]{Direction.WEST, Direction.EAST, Direction.NORTH, Direction.SOUTH, Direction.DOWN, Direction.UP}; // Paper - public
+     protected static final Direction[] UPDATE_SHAPE_ORDER = new Direction[]{Direction.WEST, Direction.EAST, Direction.NORTH, Direction.SOUTH, Direction.DOWN, Direction.UP};
      protected final Material material;
      public final boolean hasCollision;
-     protected final float explosionResistance;
 @@ -97,8 +100,7 @@
  
      /** @deprecated */

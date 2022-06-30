@@ -1,5 +1,7 @@
 package alternate.current.wire;
 
+import org.bukkit.event.block.BlockRedstoneEvent;
+
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.block.Block;
@@ -7,8 +9,6 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.chunk.ChunkAccess;
 import net.minecraft.world.level.chunk.ChunkStatus;
 import net.minecraft.world.level.chunk.LevelChunkSection;
-
-import org.bukkit.event.block.BlockRedstoneEvent;
 
 public class LevelHelper {
 
@@ -20,9 +20,10 @@ public class LevelHelper {
     }
 
     /**
-     * An optimized version of Level.setBlock. Since this method is only used to
-     * update redstone wire block states, lighting checks, height map updates, and
-     * block entity updates are omitted.
+     * An optimized version of {@link net.minecraft.world.level.Level#setBlock
+     * Level.setBlock}. Since this method is only used to update redstone wire block
+     * states, lighting checks, height map updates, and block entity updates are
+     * omitted.
      */
     static boolean setWireState(ServerLevel level, BlockPos pos, BlockState state, boolean updateNeighborShapes) {
         int y = pos.getY();

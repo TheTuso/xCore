@@ -6,28 +6,15 @@
       <paths name="hub">
         <serverdata>
           <mappings>
-            <mapping deploy="/hub/plugins" local="$PROJECT_DIR$/build/libs" web="/" />
+            <mapping deploy="/plugins" local="$PROJECT_DIR$/build/libs" web="/" />
           </mappings>
         </serverdata>
       </paths>
-      <paths name="test-blue">
+      <paths name="velocity">
         <serverdata>
           <mappings>
-            <mapping deploy="/test-blue/plugins" local="$PROJECT_DIR$/build/libs" web="/" />
-          </mappings>
-        </serverdata>
-      </paths>
-      <paths name="test-green">
-        <serverdata>
-          <mappings>
-            <mapping deploy="/test-green/plugins" local="$PROJECT_DIR$/build/libs" web="/" />
-          </mappings>
-        </serverdata>
-      </paths>
-      <paths name="test-red">
-        <serverdata>
-          <mappings>
-            <mapping deploy="/test-red/plugins" local="$PROJECT_DIR$/build/libs" web="/" />
+            <mapping local="$PROJECT_DIR$/src/main" web="/" />
+            <mapping local="$PROJECT_DIR$" web="/" />
           </mappings>
         </serverdata>
       </paths>

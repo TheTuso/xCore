@@ -1,17 +1,16 @@
 package com.destroystokyo.paper.console;
 
-import io.papermc.paper.console.HexFormattingConverter;
 import net.kyori.adventure.audience.MessageType;
 import net.kyori.adventure.identity.Identity;
 import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.logger.slf4j.ComponentLogger;
 import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.bukkit.craftbukkit.v1_18_R2.command.CraftConsoleCommandSender;
 
 public class TerminalConsoleCommandSender extends CraftConsoleCommandSender {
 
-    private static final Logger LOGGER = LogManager.getRootLogger();
+    private static final ComponentLogger LOGGER = ComponentLogger.logger(LogManager.getRootLogger().getName());
 
     @Override
     public void sendRawMessage(String message) {
@@ -21,7 +20,7 @@ public class TerminalConsoleCommandSender extends CraftConsoleCommandSender {
 
     @Override
     public void sendMessage(Identity identity, Component message, MessageType type) {
-        LOGGER.info(HexFormattingConverter.SERIALIZER.serialize(message));
+        LOGGER.info(message);
     }
 
 }

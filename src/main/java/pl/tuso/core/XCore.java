@@ -1,8 +1,11 @@
 package pl.tuso.core;
 
+import com.mongodb.client.MongoClient;
+import com.mongodb.client.MongoClients;
 import io.lettuce.core.RedisClient;
-import io.lettuce.core.RedisURI;
 import org.bukkit.plugin.java.JavaPlugin;
+import org.jetbrains.annotations.NotNull;
+import pl.tuso.core.config.Configuration;
 import pl.tuso.core.info.ServerInfo;
 import pl.tuso.core.info.ServerInfoPuller;
 import pl.tuso.core.lettuce.messaging.MessagingService;
@@ -12,7 +15,9 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 public class XCore extends JavaPlugin { // TODO config
+    private Configuration configuration;
     private RedisClient redisClient;
+    private MongoClient mongoClient;
     private MessagingService messagingService;
     private ExecutorService executorService;
     private ServerInfo serverInfo;
@@ -21,7 +26,9 @@ public class XCore extends JavaPlugin { // TODO config
     @Override
     public void onEnable() {
         INSTANCE = this;
-        this.redisClient = RedisClient.create(RedisURI.create("172.18.0.1", 6379));
+        this.configuration = new Configuration(this);
+        this.redisClient = this.createRedisConnection();
+        this.mongoClient = this.createMongoConnection();
         this.messagingService = new MessagingService(this);
         this.executorService = Executors.newCachedThreadPool();
 
@@ -44,8 +51,27 @@ public class XCore extends JavaPlugin { // TODO config
         this.getLogger().info("Bayo! Time to rest!");
     }
 
+    private @NotNull RedisClient createRedisConnection() {
+        RedisClient redisClient = RedisClient.create(this.configuration.getRedisUri());
+        return redisClient;
+    }
+
+    private @NotNull MongoClient createMongoConnection() {
+        MongoClient mongoClient = MongoClients.create(this.configuration.getMongoUri());
+        try {
+            this.getLogger().info("Checking mongo connection → " + mongoClient.getClusterDescription().getShortDescription());
+        } catch (Exception ignore) {
+            // Ignore
+        }
+        return mongoClient;
+    }
+
     public RedisClient getRedisClient() {
         return this.redisClient;
+    }
+
+    public MongoClient getMongoClient() {
+        return this.mongoClient;
     }
 
     public MessagingService getMessagingService() {

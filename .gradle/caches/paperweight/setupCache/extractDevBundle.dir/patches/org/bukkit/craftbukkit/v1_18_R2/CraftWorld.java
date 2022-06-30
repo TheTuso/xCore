@@ -198,23 +198,6 @@ public class CraftWorld extends CraftRegionAccessor implements World {
     }
 
     @Override
-    public io.papermc.paper.world.MoonPhase getMoonPhase() {
-        return io.papermc.paper.world.MoonPhase.getPhase(getFullTime() / 24000L);
-    }
-
-    @Override
-    public boolean lineOfSightExists(Location from, Location to) {
-        Validate.notNull(from, "from parameter in lineOfSightExists cannot be null");
-        Validate.notNull(to, "to parameter in lineOfSightExists cannot be null");
-        if (from.getWorld() != to.getWorld()) return false;
-        Vec3 vec3d = new Vec3(from.getX(), from.getY(), from.getZ());
-        Vec3 vec3d1 = new Vec3(to.getX(), to.getY(), to.getZ());
-        if (vec3d1.distanceToSqr(vec3d) > 128D * 128D) return false; //Return early if the distance is greater than 128 blocks
-
-        return this.getHandle().clip(new ClipContext(vec3d, vec3d1, ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, null)).getType() == HitResult.Type.MISS;
-    }
-
-    @Override
     public BiomeProvider vanillaBiomeProvider() {
         final net.minecraft.world.level.chunk.ChunkGenerator chunkGenerator;
         if (this.getHandle().chunkSource.getGenerator() instanceof org.bukkit.craftbukkit.v1_18_R2.generator.CustomChunkGenerator bukkit) {

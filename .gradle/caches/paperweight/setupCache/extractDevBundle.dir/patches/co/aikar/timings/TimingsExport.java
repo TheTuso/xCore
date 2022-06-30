@@ -25,6 +25,7 @@ package co.aikar.timings;
 
 import com.google.common.collect.Sets;
 import io.papermc.paper.adventure.PaperAdventure;
+import net.kyori.adventure.text.event.ClickEvent;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
 import net.minecraft.server.MinecraftServer;
@@ -346,7 +347,7 @@ public class TimingsExport extends Thread {
             }
 
             timingsURL = con.getHeaderField("Location");
-            listeners.sendMessage(text("View Timings Report: " + timingsURL, NamedTextColor.GREEN));
+            listeners.sendMessage(text("View Timings Report: ", NamedTextColor.GREEN).append(text(timingsURL).clickEvent(ClickEvent.clickEvent(ClickEvent.Action.OPEN_URL, timingsURL))));
 
             if (response != null && !response.isEmpty()) {
                 Bukkit.getLogger().log(Level.INFO, "Timing Response: " + response);

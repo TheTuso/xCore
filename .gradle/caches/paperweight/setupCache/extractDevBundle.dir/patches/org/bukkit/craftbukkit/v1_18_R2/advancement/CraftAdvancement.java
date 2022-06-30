@@ -4,6 +4,7 @@ import java.util.Collection;
 import java.util.Collections;
 import net.minecraft.advancements.Advancement;
 import org.bukkit.NamespacedKey;
+import org.bukkit.advancement.AdvancementDisplay;
 import org.bukkit.craftbukkit.v1_18_R2.util.CraftNamespacedKey;
 
 public class CraftAdvancement implements org.bukkit.advancement.Advancement {
@@ -27,6 +28,7 @@ public class CraftAdvancement implements org.bukkit.advancement.Advancement {
     public Collection<String> getCriteria() {
         return Collections.unmodifiableCollection(this.handle.getCriteria().keySet());
     }
+
     // Paper start
     @Override
     public io.papermc.paper.advancement.AdvancementDisplay getDisplay() {

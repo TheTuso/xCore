@@ -1,0 +1,6 @@
+redis:
+  host: 172.18.0.1
+  port: 6379
+
+mongo:
+  uri: mongodb://localhost
