@@ -4,9 +4,9 @@
  package net.minecraft.world.level.block;
  
 +import java.util.Iterator;
- import java.util.Random;
  import net.minecraft.core.BlockPos;
  import net.minecraft.core.Direction;
+ import net.minecraft.server.level.ServerLevel;
 @@ -16,6 +17,7 @@
  import net.minecraft.world.level.block.state.properties.BlockStateProperties;
  import net.minecraft.world.level.block.state.properties.BooleanProperty;
@@ -89,7 +89,7 @@
 @@ -93,57 +93,59 @@
  
      @Override
-     public void tick(BlockState state, ServerLevel world, BlockPos pos, Random random) {
+     public void tick(BlockState state, ServerLevel world, BlockPos pos, RandomSource random) {
 -        int i = getDistance(world, pos);
 -        BlockState blockState = state.setValue(DISTANCE, Integer.valueOf(i)).setValue(BOTTOM, Boolean.valueOf(this.isBottom(world, pos, i)));
 -        if (blockState.getValue(DISTANCE) == 7) {
@@ -98,7 +98,7 @@
 +        int i = ScaffoldingBlock.getDistance(world, pos);
 +        BlockState iblockdata1 = (BlockState) ((BlockState) state.setValue(ScaffoldingBlock.DISTANCE, i)).setValue(ScaffoldingBlock.BOTTOM, this.isBottom(world, pos, i));
 +
-+        if ((Integer) iblockdata1.getValue(ScaffoldingBlock.DISTANCE) == 7 && !org.bukkit.craftbukkit.v1_18_R2.event.CraftEventFactory.callBlockFadeEvent(world, pos, Blocks.AIR.defaultBlockState()).isCancelled()) { // CraftBukkit - BlockFadeEvent
++        if ((Integer) iblockdata1.getValue(ScaffoldingBlock.DISTANCE) == 7 && !org.bukkit.craftbukkit.v1_19_R1.event.CraftEventFactory.callBlockFadeEvent(world, pos, Blocks.AIR.defaultBlockState()).isCancelled()) { // CraftBukkit - BlockFadeEvent
 +            if ((Integer) state.getValue(ScaffoldingBlock.DISTANCE) == 7) {
 +                FallingBlockEntity.fall(world, pos, iblockdata1);
              } else {

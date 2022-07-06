@@ -17,7 +17,7 @@
  import net.minecraft.world.level.gameevent.GameEvent;
  
 +// CraftBukkit start
-+import org.bukkit.craftbukkit.v1_18_R2.event.CraftEventFactory;
++import org.bukkit.craftbukkit.v1_19_R1.event.CraftEventFactory;
 +import org.bukkit.event.entity.CreatureSpawnEvent;
 +import org.bukkit.event.entity.ExplosionPrimeEvent;
 +// CraftBukkit end
@@ -217,7 +217,7 @@
  
 -            for(MobEffectInstance mobEffectInstance : collection) {
 -                areaEffectCloud.addEffect(new MobEffectInstance(mobEffectInstance));
-+        if (!collection.isEmpty() && !level.paperConfig.disableCreeperLingeringEffect) { // Paper
++        if (!collection.isEmpty() && !level.paperConfig().entities.behavior.disableCreeperLingeringEffect) { // Paper
 +            AreaEffectCloud entityareaeffectcloud = new AreaEffectCloud(this.level, this.getX(), this.getY(), this.getZ());
 +
 +            entityareaeffectcloud.setOwner(this); // CraftBukkit

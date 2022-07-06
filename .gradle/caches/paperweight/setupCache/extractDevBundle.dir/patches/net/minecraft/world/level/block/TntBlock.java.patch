@@ -29,7 +29,7 @@
  
 @@ -47,7 +53,12 @@
      @Override
-     public void neighborChanged(BlockState state, Level world, BlockPos pos, Block block, BlockPos fromPos, boolean notify) {
+     public void neighborChanged(BlockState state, Level world, BlockPos pos, Block sourceBlock, BlockPos sourcePos, boolean notify) {
          if (world.hasNeighborSignal(pos)) {
 -            explode(world, pos);
 +            // Paper start - TNTPrimeEvent
@@ -84,11 +84,12 @@
 -            PrimedTnt primedTnt = new PrimedTnt(world, (double)pos.getX() + 0.5D, (double)pos.getY(), (double)pos.getZ() + 0.5D, igniter);
 -            world.addFreshEntity(primedTnt);
 -            world.playSound((Player)null, primedTnt.getX(), primedTnt.getY(), primedTnt.getZ(), SoundEvents.TNT_PRIMED, SoundSource.BLOCKS, 1.0F, 1.0F);
+-            world.gameEvent(igniter, GameEvent.PRIME_FUSE, pos);
 +            PrimedTnt entitytntprimed = new PrimedTnt(world, (double) pos.getX() + 0.5D, (double) pos.getY(), (double) pos.getZ() + 0.5D, igniter);
 +
 +            world.addFreshEntity(entitytntprimed);
 +            world.playSound((Player) null, entitytntprimed.getX(), entitytntprimed.getY(), entitytntprimed.getZ(), SoundEvents.TNT_PRIMED, SoundSource.BLOCKS, 1.0F, 1.0F);
-             world.gameEvent(igniter, GameEvent.PRIME_FUSE, pos);
++            world.gameEvent((Entity) igniter, GameEvent.PRIME_FUSE, pos);
          }
      }
  
@@ -139,7 +140,7 @@
 +
 +            if (projectile.isOnFire() && projectile.mayInteract(world, blockposition)) {
 +                // CraftBukkit start
-+                if (org.bukkit.craftbukkit.v1_18_R2.event.CraftEventFactory.callEntityChangeBlockEvent(projectile, blockposition, Blocks.AIR.defaultBlockState()).isCancelled()) {
++                if (org.bukkit.craftbukkit.v1_19_R1.event.CraftEventFactory.callEntityChangeBlockEvent(projectile, blockposition, Blocks.AIR.defaultBlockState()).isCancelled()) {
 +                    return;
 +                }
 +                // CraftBukkit end

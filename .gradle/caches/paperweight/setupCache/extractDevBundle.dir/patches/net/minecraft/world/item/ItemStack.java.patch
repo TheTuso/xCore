@@ -1,20 +1,18 @@
 --- a/net/minecraft/world/item/ItemStack.java
 +++ b/net/minecraft/world/item/ItemStack.java
-@@ -12,9 +12,12 @@
+@@ -10,9 +10,10 @@
  import java.text.DecimalFormat;
  import java.text.DecimalFormatSymbols;
  import java.util.Collection;
 +import java.util.Iterator;
  import java.util.List;
-+import java.util.Collections;
-+import java.util.Comparator;
  import java.util.Locale;
 -import java.util.Map;
 +import java.util.Map.Entry;
  import java.util.Optional;
- import java.util.Random;
  import java.util.function.Consumer;
-@@ -26,10 +29,12 @@
+ import java.util.function.Predicate;
+@@ -24,10 +25,12 @@
  import net.minecraft.advancements.CriteriaTriggers;
  import net.minecraft.commands.arguments.blocks.BlockStateParser;
  import net.minecraft.core.BlockPos;
@@ -25,23 +23,24 @@
  import net.minecraft.nbt.ListTag;
 +import net.minecraft.nbt.NbtOps;
  import net.minecraft.nbt.Tag;
+ import net.minecraft.network.chat.CommonComponents;
  import net.minecraft.network.chat.Component;
- import net.minecraft.network.chat.ComponentUtils;
-@@ -38,11 +43,10 @@
+@@ -35,12 +38,11 @@
+ import net.minecraft.network.chat.HoverEvent;
+ import net.minecraft.network.chat.MutableComponent;
  import net.minecraft.network.chat.Style;
- import net.minecraft.network.chat.TextComponent;
- import net.minecraft.network.chat.TranslatableComponent;
 +import net.minecraft.network.protocol.game.ClientboundBlockUpdatePacket;
  import net.minecraft.resources.ResourceLocation;
 -import net.minecraft.server.level.ServerPlayer;
 -import net.minecraft.sounds.SoundEvent;
 -import net.minecraft.stats.Stats;
  import net.minecraft.tags.TagKey;
+ import net.minecraft.util.RandomSource;
 +import net.minecraft.util.datafix.fixes.References;
  import net.minecraft.world.InteractionHand;
  import net.minecraft.world.InteractionResult;
  import net.minecraft.world.InteractionResultHolder;
-@@ -56,7 +60,6 @@
+@@ -54,7 +56,6 @@
  import net.minecraft.world.entity.ai.attributes.Attributes;
  import net.minecraft.world.entity.decoration.ItemFrame;
  import net.minecraft.world.entity.item.ItemEntity;
@@ -49,7 +48,7 @@
  import net.minecraft.world.inventory.ClickAction;
  import net.minecraft.world.inventory.Slot;
  import net.minecraft.world.inventory.tooltip.TooltipComponent;
-@@ -67,25 +70,58 @@
+@@ -65,25 +66,58 @@
  import net.minecraft.world.item.enchantment.Enchantments;
  import net.minecraft.world.level.ItemLike;
  import net.minecraft.world.level.Level;
@@ -82,10 +81,10 @@
 +import org.bukkit.Location;
 +import org.bukkit.TreeType;
 +import org.bukkit.block.BlockState;
-+import org.bukkit.craftbukkit.v1_18_R2.block.CraftBlock;
-+import org.bukkit.craftbukkit.v1_18_R2.block.CraftBlockState;
-+import org.bukkit.craftbukkit.v1_18_R2.inventory.CraftItemStack;
-+import org.bukkit.craftbukkit.v1_18_R2.util.CraftMagicNumbers;
++import org.bukkit.craftbukkit.v1_19_R1.block.CraftBlock;
++import org.bukkit.craftbukkit.v1_19_R1.block.CraftBlockState;
++import org.bukkit.craftbukkit.v1_19_R1.inventory.CraftItemStack;
++import org.bukkit.craftbukkit.v1_19_R1.util.CraftMagicNumbers;
 +import org.bukkit.entity.Player;
 +import org.bukkit.event.block.BlockFertilizeEvent;
 +import org.bukkit.event.player.PlayerItemDamageEvent;
@@ -119,7 +118,7 @@
      });
      public static final String TAG_ENCH = "Enchantments";
      public static final String TAG_DISPLAY = "display";
-@@ -119,12 +155,67 @@
+@@ -117,12 +151,67 @@
          return this.getItem().getTooltipImage(this);
      }
  
@@ -135,7 +134,7 @@
 +        }
 +        try {
 +            //noinspection unchecked
-+            list.sort((Comparator<? super net.minecraft.nbt.Tag>) enchantSorter); // Paper
++            list.sort((java.util.Comparator<? super net.minecraft.nbt.Tag>) enchantSorter); // Paper
 +        } catch (Exception ignored) {}
 +    }
 +
@@ -160,7 +159,7 @@
 +                        try {
 +                            list.set(index, convert(json));
 +                        } catch (com.google.gson.JsonParseException e) {
-+                            list.set(index, net.minecraft.nbt.StringTag.valueOf(org.bukkit.craftbukkit.v1_18_R2.util.CraftChatMessage.toJSON(new TextComponent(""))));
++                            list.set(index, net.minecraft.nbt.StringTag.valueOf(org.bukkit.craftbukkit.v1_19_R1.util.CraftChatMessage.toJSON(net.minecraft.network.chat.Component.literal(""))));
 +                        }
 +                    }
 +                }
@@ -170,11 +169,11 @@
 +
 +    private net.minecraft.nbt.StringTag convert(String json) {
 +        Component component = Component.Serializer.fromJson(json);
-+        if (component instanceof TextComponent && component.getContents().contains("\u00A7") && component.getSiblings().isEmpty()) {
++        if (component.getContents() instanceof net.minecraft.network.chat.contents.LiteralContents literalContents && literalContents.text().contains("\u00A7") && component.getSiblings().isEmpty()) {
 +            // Only convert if the root component is a single comp with legacy in it, don't convert already normal components
-+            component = org.bukkit.craftbukkit.v1_18_R2.util.CraftChatMessage.fromString(component.getContents())[0];
++            component = org.bukkit.craftbukkit.v1_19_R1.util.CraftChatMessage.fromString(literalContents.text())[0];
 +        }
-+        return net.minecraft.nbt.StringTag.valueOf(org.bukkit.craftbukkit.v1_18_R2.util.CraftChatMessage.toJSON(component));
++        return net.minecraft.nbt.StringTag.valueOf(org.bukkit.craftbukkit.v1_19_R1.util.CraftChatMessage.toJSON(component));
 +    }
 +    // Paper end
 +
@@ -188,7 +187,16 @@
      }
  
      private ItemStack(ItemLike item, int count, Optional<CompoundTag> nbt) {
-@@ -142,16 +233,32 @@
+@@ -131,7 +220,7 @@
+     }
+ 
+     public ItemStack(Holder<Item> itemEntry, int count) {
+-        this(itemEntry.value(), count);
++        this((ItemLike) itemEntry.value(), count);
+     }
+ 
+     public ItemStack(ItemLike item, int count) {
+@@ -144,16 +233,32 @@
          this.updateEmptyCacheFlag();
      }
  
@@ -226,7 +234,7 @@
              this.getItem().verifyTagAfterLoad(this.tag);
          }
  
-@@ -159,34 +266,34 @@
+@@ -161,34 +266,34 @@
              this.setDamageValue(this.getDamageValue());
          }
  
@@ -276,7 +284,7 @@
      }
  
      public Item getItem() {
-@@ -205,28 +312,176 @@
+@@ -219,28 +324,176 @@
          return this.getItem().builtInRegistryHolder().tags();
      }
  
@@ -355,9 +363,9 @@
 +                List<BlockState> blocks = new java.util.ArrayList<>(world.capturedBlockStates.values());
 +                world.capturedBlockStates.clear();
 +                if (blocks.size() > 1) {
-+                    placeEvent = org.bukkit.craftbukkit.v1_18_R2.event.CraftEventFactory.callBlockMultiPlaceEvent(world, entityhuman, enumhand, blocks, blockposition.getX(), blockposition.getY(), blockposition.getZ());
++                    placeEvent = org.bukkit.craftbukkit.v1_19_R1.event.CraftEventFactory.callBlockMultiPlaceEvent(world, entityhuman, enumhand, blocks, blockposition.getX(), blockposition.getY(), blockposition.getZ());
 +                } else if (blocks.size() == 1 && item != Items.POWDER_SNOW_BUCKET) { // Paper - don't call event twice for snow buckets
-+                    placeEvent = org.bukkit.craftbukkit.v1_18_R2.event.CraftEventFactory.callBlockPlaceEvent(world, entityhuman, enumhand, blocks.get(0), blockposition.getX(), blockposition.getY(), blockposition.getZ());
++                    placeEvent = org.bukkit.craftbukkit.v1_19_R1.event.CraftEventFactory.callBlockPlaceEvent(world, entityhuman, enumhand, blocks.get(0), blockposition.getX(), blockposition.getY(), blockposition.getZ());
 +                }
 +
 +                if (placeEvent != null && (placeEvent.isCancelled() || !placeEvent.canBuild())) {
@@ -405,7 +413,7 @@
 +                    // Special case juke boxes as they update their tile entity. Copied from ItemRecord.
 +                    // PAIL: checkme on updates.
 +                    if (this.item instanceof RecordItem) {
-+                        ((JukeboxBlock) Blocks.JUKEBOX).setRecord(world, blockposition, world.getBlockState(blockposition), this);
++                        ((JukeboxBlock) Blocks.JUKEBOX).setRecord(entityhuman, world, blockposition, world.getBlockState(blockposition), this);
 +                        world.levelEvent((net.minecraft.world.entity.player.Player) null, 1010, blockposition, Item.getId(this.item));
 +                        this.shrink(1);
 +                        entityhuman.awardStat(Stats.PLAY_RECORD);
@@ -464,7 +472,7 @@
          return this.getItem().use(world, user, hand);
      }
  
-@@ -235,9 +490,10 @@
+@@ -249,9 +502,10 @@
      }
  
      public CompoundTag save(CompoundTag nbt) {
@@ -478,7 +486,7 @@
          if (this.tag != null) {
              nbt.put("tag", this.tag.copy());
          }
-@@ -255,8 +511,9 @@
+@@ -269,8 +523,9 @@
  
      public boolean isDamageableItem() {
          if (!this.emptyCacheFlag && this.getItem().getMaxDamage() > 0) {
@@ -490,12 +498,12 @@
          } else {
              return false;
          }
-@@ -278,45 +535,77 @@
+@@ -292,45 +547,77 @@
          return this.getItem().getMaxDamage();
      }
  
--    public boolean hurt(int amount, Random random, @Nullable ServerPlayer player) {
-+    public boolean hurt(int amount, Random random, @Nullable LivingEntity player) { // Paper - allow any living entity instead of only ServerPlayers
+-    public boolean hurt(int amount, RandomSource random, @Nullable ServerPlayer player) {
++    public boolean hurt(int amount, RandomSource random, @Nullable LivingEntity player) { // Paper - allow any living entity instead of only ServerPlayers
          if (!this.isDamageableItem()) {
              return false;
          } else {
@@ -572,7 +580,7 @@
                      Item item = this.getItem();
 +                    // CraftBukkit start - Check for item breaking
 +                    if (this.count == 1 && entity instanceof net.minecraft.world.entity.player.Player) {
-+                        org.bukkit.craftbukkit.v1_18_R2.event.CraftEventFactory.callPlayerItemBreakEvent((net.minecraft.world.entity.player.Player) entity, this);
++                        org.bukkit.craftbukkit.v1_19_R1.event.CraftEventFactory.callPlayerItemBreakEvent((net.minecraft.world.entity.player.Player) entity, this);
 +                    }
 +                    // CraftBukkit end
 +
@@ -584,7 +592,7 @@
                      }
  
                      this.setDamageValue(0);
-@@ -338,100 +627,74 @@
+@@ -352,100 +639,74 @@
          return this.item.getBarColor(this);
      }
  
@@ -707,7 +715,7 @@
      }
  
      public boolean sameItem(ItemStack stack) {
-@@ -439,22 +702,17 @@
+@@ -453,22 +714,17 @@
      }
  
      public boolean sameItemStackIgnoreDurability(ItemStack stack) {
@@ -732,7 +740,7 @@
      public String toString() {
          return this.count + " " + this.getItem();
      }
-@@ -470,7 +728,7 @@
+@@ -484,7 +740,7 @@
  
      }
  
@@ -741,7 +749,7 @@
          player.awardStat(Stats.ITEM_CRAFTED.get(this.getItem()), amount);
          this.getItem().onCraftedBy(this, world, player);
      }
-@@ -500,6 +758,17 @@
+@@ -514,6 +770,17 @@
          return this.tag;
      }
  
@@ -759,7 +767,7 @@
      public CompoundTag getOrCreateTag() {
          if (this.tag == null) {
              this.setTag(new CompoundTag());
-@@ -512,9 +781,10 @@
+@@ -526,9 +793,10 @@
          if (this.tag != null && this.tag.contains(key, 10)) {
              return this.tag.getCompound(key);
          } else {
@@ -773,7 +781,7 @@
          }
      }
  
-@@ -537,8 +807,28 @@
+@@ -551,8 +819,28 @@
          return this.tag != null ? this.tag.getList("Enchantments", 10) : new ListTag();
      }
  
@@ -787,10 +795,10 @@
 +    public static ItemStack fromBukkitCopy(org.bukkit.inventory.ItemStack itemstack) {
 +        return CraftItemStack.asNMSCopy(itemstack);
 +    }
-+    private org.bukkit.craftbukkit.v1_18_R2.inventory.CraftItemStack bukkitStack;
++    private org.bukkit.craftbukkit.v1_19_R1.inventory.CraftItemStack bukkitStack;
 +    public org.bukkit.inventory.ItemStack getBukkitStack() {
 +        if (bukkitStack == null || bukkitStack.handle != this) {
-+            bukkitStack = org.bukkit.craftbukkit.v1_18_R2.inventory.CraftItemStack.asCraftMirror(this);
++            bukkitStack = org.bukkit.craftbukkit.v1_19_R1.inventory.CraftItemStack.asCraftMirror(this);
 +        }
 +        return bukkitStack;
 +    }
@@ -802,7 +810,7 @@
          if (this.getItem().canBeDepleted()) {
              this.setDamageValue(this.getDamageValue());
          }
-@@ -550,17 +840,19 @@
+@@ -564,17 +852,19 @@
      }
  
      public Component getHoverName() {
@@ -830,7 +838,7 @@
              }
          }
  
-@@ -568,21 +860,23 @@
+@@ -582,21 +872,23 @@
      }
  
      public ItemStack setHoverName(@Nullable Component name) {
@@ -861,7 +869,7 @@
                  this.removeTagKey("display");
              }
          }
-@@ -594,104 +888,124 @@
+@@ -608,104 +900,124 @@
      }
  
      public boolean hasCustomHoverName() {
@@ -875,8 +883,8 @@
 -    public List<Component> getTooltipLines(@Nullable Player player, TooltipFlag context) {
 +    public List<Component> getTooltipLines(@Nullable net.minecraft.world.entity.player.Player player, TooltipFlag context) {
          List<Component> list = Lists.newArrayList();
--        MutableComponent mutableComponent = (new TextComponent("")).append(this.getHoverName()).withStyle(this.getRarity().color);
-+        MutableComponent ichatmutablecomponent = (new TextComponent("")).append(this.getHoverName()).withStyle(this.getRarity().color);
+-        MutableComponent mutableComponent = Component.empty().append(this.getHoverName()).withStyle(this.getRarity().color);
++        MutableComponent ichatmutablecomponent = Component.empty().append(this.getHoverName()).withStyle(this.getRarity().color);
 +
          if (this.hasCustomHoverName()) {
 -            mutableComponent.withStyle(ChatFormatting.ITALIC);
@@ -889,7 +897,7 @@
              Integer integer = MapItem.getMapId(this);
 +
              if (integer != null) {
-                 list.add((new TextComponent("#" + integer)).withStyle(ChatFormatting.GRAY));
+                 list.add(Component.literal("#" + integer).withStyle(ChatFormatting.GRAY));
              }
          }
  
@@ -916,10 +924,10 @@
 +
 +                if (ItemStack.shouldShowInTooltip(i, ItemStack.TooltipPart.DYE) && nbttagcompound.contains("color", 99)) {
                      if (context.isAdvanced()) {
--                        list.add((new TranslatableComponent("item.color", String.format("#%06X", compoundTag.getInt("color")))).withStyle(ChatFormatting.GRAY));
-+                        list.add((new TranslatableComponent("item.color", new Object[]{String.format("#%06X", nbttagcompound.getInt("color"))})).withStyle(ChatFormatting.GRAY));
+-                        list.add(Component.translatable("item.color", String.format("#%06X", compoundTag.getInt("color"))).withStyle(ChatFormatting.GRAY));
++                        list.add(Component.translatable("item.color", String.format("#%06X", nbttagcompound.getInt("color"))).withStyle(ChatFormatting.GRAY));
                      } else {
-                         list.add((new TranslatableComponent("item.dyed")).withStyle(new ChatFormatting[]{ChatFormatting.GRAY, ChatFormatting.ITALIC}));
+                         list.add(Component.translatable("item.dyed").withStyle(ChatFormatting.GRAY, ChatFormatting.ITALIC));
                      }
                  }
  
@@ -967,9 +975,9 @@
 +                Multimap<Attribute, AttributeModifier> multimap = this.getAttributeModifiers(enumitemslot);
 +
                  if (!multimap.isEmpty()) {
-                     list.add(TextComponent.EMPTY);
--                    list.add((new TranslatableComponent("item.modifiers." + equipmentSlot.getName())).withStyle(ChatFormatting.GRAY));
-+                    list.add((new TranslatableComponent("item.modifiers." + enumitemslot.getName())).withStyle(ChatFormatting.GRAY));
+                     list.add(CommonComponents.EMPTY);
+-                    list.add(Component.translatable("item.modifiers." + equipmentSlot.getName()).withStyle(ChatFormatting.GRAY));
++                    list.add(Component.translatable("item.modifiers." + enumitemslot.getName()).withStyle(ChatFormatting.GRAY));
 +                    Iterator iterator = multimap.entries().iterator();
 +
 +                    while (iterator.hasNext()) {
@@ -1019,29 +1027,29 @@
                          }
  
 -                        if (bl) {
--                            list.add((new TextComponent(" ")).append(new TranslatableComponent("attribute.modifier.equals." + attributeModifier.getOperation().toValue(), ATTRIBUTE_MODIFIER_FORMAT.format(f), new TranslatableComponent(entry.getKey().getDescriptionId()))).withStyle(ChatFormatting.DARK_GREEN));
+-                            list.add(Component.literal(" ").append(Component.translatable("attribute.modifier.equals." + attributeModifier.getOperation().toValue(), ATTRIBUTE_MODIFIER_FORMAT.format(f), Component.translatable(entry.getKey().getDescriptionId()))).withStyle(ChatFormatting.DARK_GREEN));
 -                        } else if (d > 0.0D) {
--                            list.add((new TranslatableComponent("attribute.modifier.plus." + attributeModifier.getOperation().toValue(), ATTRIBUTE_MODIFIER_FORMAT.format(f), new TranslatableComponent(entry.getKey().getDescriptionId()))).withStyle(ChatFormatting.BLUE));
+-                            list.add(Component.translatable("attribute.modifier.plus." + attributeModifier.getOperation().toValue(), ATTRIBUTE_MODIFIER_FORMAT.format(f), Component.translatable(entry.getKey().getDescriptionId())).withStyle(ChatFormatting.BLUE));
 -                        } else if (d < 0.0D) {
 -                            f *= -1.0D;
--                            list.add((new TranslatableComponent("attribute.modifier.take." + attributeModifier.getOperation().toValue(), ATTRIBUTE_MODIFIER_FORMAT.format(f), new TranslatableComponent(entry.getKey().getDescriptionId()))).withStyle(ChatFormatting.RED));
+-                            list.add(Component.translatable("attribute.modifier.take." + attributeModifier.getOperation().toValue(), ATTRIBUTE_MODIFIER_FORMAT.format(f), Component.translatable(entry.getKey().getDescriptionId())).withStyle(ChatFormatting.RED));
 +                        if (flag) {
-+                            list.add((new TextComponent(" ")).append((Component) (new TranslatableComponent("attribute.modifier.equals." + attributemodifier.getOperation().toValue(), new Object[]{ItemStack.ATTRIBUTE_MODIFIER_FORMAT.format(d1), new TranslatableComponent(((Attribute) entry.getKey()).getDescriptionId())}))).withStyle(ChatFormatting.DARK_GREEN));
++                            list.add(Component.literal(" ").append((Component) Component.translatable("attribute.modifier.equals." + attributemodifier.getOperation().toValue(), ItemStack.ATTRIBUTE_MODIFIER_FORMAT.format(d1), Component.translatable(((Attribute) entry.getKey()).getDescriptionId()))).withStyle(ChatFormatting.DARK_GREEN));
 +                        } else if (d0 > 0.0D) {
-+                            list.add((new TranslatableComponent("attribute.modifier.plus." + attributemodifier.getOperation().toValue(), new Object[]{ItemStack.ATTRIBUTE_MODIFIER_FORMAT.format(d1), new TranslatableComponent(((Attribute) entry.getKey()).getDescriptionId())})).withStyle(ChatFormatting.BLUE));
++                            list.add(Component.translatable("attribute.modifier.plus." + attributemodifier.getOperation().toValue(), ItemStack.ATTRIBUTE_MODIFIER_FORMAT.format(d1), Component.translatable(((Attribute) entry.getKey()).getDescriptionId())).withStyle(ChatFormatting.BLUE));
 +                        } else if (d0 < 0.0D) {
 +                            d1 *= -1.0D;
-+                            list.add((new TranslatableComponent("attribute.modifier.take." + attributemodifier.getOperation().toValue(), new Object[]{ItemStack.ATTRIBUTE_MODIFIER_FORMAT.format(d1), new TranslatableComponent(((Attribute) entry.getKey()).getDescriptionId())})).withStyle(ChatFormatting.RED));
++                            list.add(Component.translatable("attribute.modifier.take." + attributemodifier.getOperation().toValue(), ItemStack.ATTRIBUTE_MODIFIER_FORMAT.format(d1), Component.translatable(((Attribute) entry.getKey()).getDescriptionId())).withStyle(ChatFormatting.RED));
                          }
                      }
                  }
-@@ -699,30 +1013,32 @@
+@@ -713,30 +1025,32 @@
          }
  
          if (this.hasTag()) {
 -            if (shouldShowInTooltip(i, ItemStack.TooltipPart.UNBREAKABLE) && this.tag.getBoolean("Unbreakable")) {
 +            if (ItemStack.shouldShowInTooltip(i, ItemStack.TooltipPart.UNBREAKABLE) && this.tag.getBoolean("Unbreakable")) {
-                 list.add((new TranslatableComponent("item.unbreakable")).withStyle(ChatFormatting.BLUE));
+                 list.add(Component.translatable("item.unbreakable").withStyle(ChatFormatting.BLUE));
              }
  
 -            if (shouldShowInTooltip(i, ItemStack.TooltipPart.CAN_DESTROY) && this.tag.contains("CanDestroy", 9)) {
@@ -1052,8 +1060,8 @@
 +            if (ItemStack.shouldShowInTooltip(i, ItemStack.TooltipPart.CAN_DESTROY) && this.tag.contains("CanDestroy", 9)) {
 +                nbttaglist1 = this.tag.getList("CanDestroy", 8);
 +                if (!nbttaglist1.isEmpty()) {
-                     list.add(TextComponent.EMPTY);
-                     list.add((new TranslatableComponent("item.canBreak")).withStyle(ChatFormatting.GRAY));
+                     list.add(CommonComponents.EMPTY);
+                     list.add(Component.translatable("item.canBreak").withStyle(ChatFormatting.GRAY));
  
 -                    for(int k = 0; k < listTag2.size(); ++k) {
 -                        list.addAll(expandBlockState(listTag2.getString(k)));
@@ -1069,8 +1077,8 @@
 +            if (ItemStack.shouldShowInTooltip(i, ItemStack.TooltipPart.CAN_PLACE) && this.tag.contains("CanPlaceOn", 9)) {
 +                nbttaglist1 = this.tag.getList("CanPlaceOn", 8);
 +                if (!nbttaglist1.isEmpty()) {
-                     list.add(TextComponent.EMPTY);
-                     list.add((new TranslatableComponent("item.canPlace")).withStyle(ChatFormatting.GRAY));
+                     list.add(CommonComponents.EMPTY);
+                     list.add(Component.translatable("item.canPlace").withStyle(ChatFormatting.GRAY));
  
 -                    for(int l = 0; l < listTag3.size(); ++l) {
 -                        list.addAll(expandBlockState(listTag3.getString(l)));
@@ -1079,22 +1087,7 @@
                      }
                  }
              }
-@@ -730,12 +1046,12 @@
- 
-         if (context.isAdvanced()) {
-             if (this.isDamaged()) {
--                list.add(new TranslatableComponent("item.durability", this.getMaxDamage() - this.getDamageValue(), this.getMaxDamage()));
-+                list.add(new TranslatableComponent("item.durability", new Object[]{this.getMaxDamage() - this.getDamageValue(), this.getMaxDamage()}));
-             }
- 
-             list.add((new TextComponent(Registry.ITEM.getKey(this.getItem()).toString())).withStyle(ChatFormatting.DARK_GRAY));
-             if (this.hasTag()) {
--                list.add((new TranslatableComponent("item.nbt_tags", this.tag.getAllKeys().size())).withStyle(ChatFormatting.DARK_GRAY));
-+                list.add((new TranslatableComponent("item.nbt_tags", new Object[]{this.tag.getAllKeys().size()})).withStyle(ChatFormatting.DARK_GRAY));
-             }
-         }
- 
-@@ -751,15 +1067,17 @@
+@@ -765,15 +1079,17 @@
      }
  
      public void hideTooltipPart(ItemStack.TooltipPart tooltipSection) {
@@ -1118,54 +1111,30 @@
              });
          }
  
-@@ -767,29 +1085,32 @@
+@@ -781,15 +1097,15 @@
  
      private static Collection<Component> expandBlockState(String tag) {
          try {
--            BlockStateParser blockStateParser = (new BlockStateParser(new StringReader(tag), true)).parse(true);
--            BlockState blockState = blockStateParser.getState();
--            TagKey<Block> tagKey = blockStateParser.getTag();
--            boolean bl = blockState != null;
--            boolean bl2 = tagKey != null;
--            if (bl) {
--                return Lists.newArrayList(blockState.getBlock().getName().withStyle(ChatFormatting.DARK_GRAY));
-+            BlockStateParser argumentblock = (new BlockStateParser(new StringReader(tag), true)).parse(true);
-+            net.minecraft.world.level.block.state.BlockState iblockdata = argumentblock.getState();
-+            TagKey<Block> tagkey = argumentblock.getTag();
-+            boolean flag = iblockdata != null;
-+            boolean flag1 = tagkey != null;
-+
-+            if (flag) {
-+                return Lists.newArrayList(new Component[]{iblockdata.getBlock().getName().withStyle(ChatFormatting.DARK_GRAY)});
-             }
- 
--            if (bl2) {
--                List<Component> list = Streams.stream(Registry.BLOCK.getTagOrEmpty(tagKey)).map((entry) -> {
--                    return entry.value().getName();
--                }).map((text) -> {
--                    return text.withStyle(ChatFormatting.DARK_GRAY);
-+            if (flag1) {
-+                List<Component> list = (List) Streams.stream(Registry.BLOCK.getTagOrEmpty(tagkey)).map((holder) -> {
-+                    return ((Block) holder.value()).getName();
-+                }).map((ichatmutablecomponent) -> {
-+                    return ichatmutablecomponent.withStyle(ChatFormatting.DARK_GRAY);
+-            return BlockStateParser.parseForTesting(Registry.BLOCK, tag, true).map((blockResult) -> {
+-                return Lists.newArrayList(blockResult.blockState().getBlock().getName().withStyle(ChatFormatting.DARK_GRAY));
+-            }, (tagResult) -> {
+-                return tagResult.tag().stream().map((holder) -> {
+-                    return holder.value().getName().withStyle(ChatFormatting.DARK_GRAY);
++            return (Collection) BlockStateParser.parseForTesting(Registry.BLOCK, tag, true).map((argumentblock_a) -> { // CraftBukkit - decompile error
++                return Lists.newArrayList(new Component[]{argumentblock_a.blockState().getBlock().getName().withStyle(ChatFormatting.DARK_GRAY)});
++            }, (argumentblock_b) -> {
++                return (List) argumentblock_b.tag().stream().map((holder) -> {
++                    return ((Block) holder.value()).getName().withStyle(ChatFormatting.DARK_GRAY);
                  }).collect(Collectors.toList());
-+
-                 if (!list.isEmpty()) {
-                     return list;
-                 }
-             }
--        } catch (CommandSyntaxException var7) {
+             });
+-        } catch (CommandSyntaxException var2) {
+-            return Lists.newArrayList(Component.literal("missingno").withStyle(ChatFormatting.DARK_GRAY));
 +        } catch (CommandSyntaxException commandsyntaxexception) {
-+            ;
++            return Lists.newArrayList(new Component[]{Component.literal("missingno").withStyle(ChatFormatting.DARK_GRAY)});
          }
- 
--        return Lists.newArrayList((new TextComponent("missingno")).withStyle(ChatFormatting.DARK_GRAY));
-+        return Lists.newArrayList(new Component[]{(new TextComponent("missingno")).withStyle(ChatFormatting.DARK_GRAY)});
      }
  
-     public boolean hasFoil() {
-@@ -801,11 +1122,7 @@
+@@ -802,11 +1118,7 @@
      }
  
      public boolean isEnchantable() {
@@ -1178,7 +1147,7 @@
      }
  
      public void enchant(Enchantment enchantment, int level) {
-@@ -814,16 +1131,14 @@
+@@ -815,16 +1127,14 @@
              this.tag.put("Enchantments", new ListTag());
          }
  
@@ -1200,7 +1169,7 @@
      }
  
      public void addTagElement(String key, Tag element) {
-@@ -840,7 +1155,7 @@
+@@ -841,7 +1151,7 @@
  
      @Nullable
      public ItemFrame getFrame() {
@@ -1209,7 +1178,7 @@
      }
  
      @Nullable
-@@ -853,32 +1168,42 @@
+@@ -854,32 +1164,42 @@
      }
  
      public void setRepairCost(int repairCost) {
@@ -1264,7 +1233,7 @@
      }
  
      public void addAttributeModifier(Attribute attribute, AttributeModifier modifier, @Nullable EquipmentSlot slot) {
-@@ -887,30 +1212,41 @@
+@@ -888,30 +1208,41 @@
              this.tag.put("AttributeModifiers", new ListTag());
          }
  
@@ -1282,19 +1251,19 @@
  
 -        listTag.add(compoundTag);
 +        nbttaglist.add(nbttagcompound);
-+    }
-+
+     }
+ 
 +    // CraftBukkit start
 +    @Deprecated
 +    public void setItem(Item item) {
 +        this.bukkitStack = null; // Paper
 +        this.item = item;
-     }
++    }
 +    // CraftBukkit end
- 
++
      public Component getDisplayName() {
--        MutableComponent mutableComponent = (new TextComponent("")).append(this.getHoverName());
-+        MutableComponent ichatmutablecomponent = (new TextComponent("")).append(this.getHoverName());
+-        MutableComponent mutableComponent = Component.empty().append(this.getHoverName());
++        MutableComponent ichatmutablecomponent = Component.empty().append(this.getHoverName());
 +
          if (this.hasCustomHoverName()) {
 -            mutableComponent.withStyle(ChatFormatting.ITALIC);
@@ -1317,7 +1286,7 @@
      }
  
      public boolean hasAdventureModePlaceTagForBlock(Registry<Block> blockRegistry, BlockInWorld pos) {
-@@ -980,16 +1316,13 @@
+@@ -981,16 +1312,13 @@
      }
  
      public static enum TooltipPart {

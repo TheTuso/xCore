@@ -51,7 +51,7 @@
      public GameProfileCache(GameProfileRepository profileRepository, File cacheFile) {
          this.profileRepository = profileRepository;
          this.file = cacheFile;
-@@ -65,109 +74,142 @@
+@@ -65,109 +74,143 @@
      }
  
      private void safeAdd(GameProfileCache.GameProfileInfo entry) {
@@ -101,15 +101,16 @@
 -        repository.findProfilesByNames(new String[]{name}, Agent.MINECRAFT, profileLookupCallback);
 -        GameProfile gameProfile = atomicReference.get();
 -        if (!usesAuthentication() && gameProfile == null) {
--            UUID uUID = Player.createPlayerUUID(new GameProfile((UUID)null, name));
+-            UUID uUID = UUIDUtil.getOrCreatePlayerUUID(new GameProfile((UUID)null, name));
 -            return Optional.of(new GameProfile(uUID, name));
 +
-+        if (com.destroystokyo.paper.PaperConfig.isProxyOnlineMode()) // Paper - only run in online mode - 100 COL
++        if (!org.apache.commons.lang3.StringUtils.isBlank(name) // Paper - Don't lookup a profile with a blank name
++                && io.papermc.paper.configuration.GlobalConfiguration.get().proxies.isProxyOnlineMode()) // Paper - only run in online mode - 100 COL
 +        repository.findProfilesByNames(new String[]{name}, Agent.MINECRAFT, profilelookupcallback);
 +        GameProfile gameprofile = (GameProfile) atomicreference.get();
 +
-+        if (!GameProfileCache.usesAuthentication() && gameprofile == null && !org.apache.commons.lang3.StringUtils.isBlank(name)) { // Paper - Don't lookup a profile with a blank name
-+            UUID uuid = Player.createPlayerUUID(new GameProfile((UUID) null, name));
++        if (!GameProfileCache.usesAuthentication() && gameprofile == null) {
++            UUID uuid = UUIDUtil.getOrCreatePlayerUUID(new GameProfile((UUID) null, name));
 +
 +            return Optional.of(new GameProfile(uuid, name));
          } else {
@@ -125,7 +126,7 @@
  
      private static boolean usesAuthentication() {
 -        return usesAuthentication;
-+        return com.destroystokyo.paper.PaperConfig.isProxyOnlineMode(); // Paper
++        return io.papermc.paper.configuration.GlobalConfiguration.get().proxies.isProxyOnlineMode(); // Paper
      }
  
      public void add(GameProfile profile) {
@@ -242,7 +243,7 @@
                  }, this.executor));
              }
  
-@@ -175,13 +217,16 @@
+@@ -175,13 +218,16 @@
      }
  
      public Optional<GameProfile> get(UUID uuid) {
@@ -263,7 +264,7 @@
      }
  
      public void setExecutor(Executor executor) {
-@@ -197,128 +242,167 @@
+@@ -197,128 +243,167 @@
      }
  
      public List<GameProfileCache.GameProfileInfo> load() {
@@ -499,7 +500,7 @@
                  } else {
                      return Optional.empty();
                  }
-@@ -330,7 +414,8 @@
+@@ -330,7 +415,8 @@
          }
      }
  

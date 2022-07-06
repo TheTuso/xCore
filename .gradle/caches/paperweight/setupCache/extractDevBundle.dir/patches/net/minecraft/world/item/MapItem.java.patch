@@ -1,6 +1,6 @@
 --- a/net/minecraft/world/item/MapItem.java
 +++ b/net/minecraft/world/item/MapItem.java
-@@ -31,8 +31,13 @@
+@@ -32,8 +32,13 @@
  import net.minecraft.world.level.material.FluidState;
  import net.minecraft.world.level.material.MaterialColor;
  import net.minecraft.world.level.saveddata.maps.MapItemSavedData;
@@ -14,7 +14,7 @@
      public static final int IMAGE_WIDTH = 128;
      public static final int IMAGE_HEIGHT = 128;
      private static final int DEFAULT_MAP_COLOR = -12173266;
-@@ -43,33 +48,41 @@
+@@ -44,33 +49,41 @@
      }
  
      public static ItemStack create(Level world, int x, int z, byte scale, boolean showIcons, boolean unlimitedTracking) {
@@ -68,7 +68,7 @@
      }
  
      private static void storeMapData(ItemStack stack, int id) {
-@@ -77,8 +90,9 @@
+@@ -78,8 +91,9 @@
      }
  
      private static void createAndStoreSavedData(ItemStack stack, Level world, int x, int z, int scale, boolean showIcons, boolean unlimitedTracking, ResourceKey<Level> dimension) {
@@ -80,7 +80,7 @@
      }
  
      public static String makeKey(int mapId) {
-@@ -90,112 +104,122 @@
+@@ -91,112 +105,122 @@
              int i = 1 << state.scale;
              int j = state.x;
              int k = state.z;
@@ -276,7 +276,7 @@
                                  }
                              }
                          }
-@@ -207,8 +231,9 @@
+@@ -208,8 +232,9 @@
      }
  
      private BlockState getCorrectStateForFluidBlock(Level world, BlockState state, BlockPos pos) {
@@ -288,7 +288,7 @@
      }
  
      private static boolean isBiomeWatery(boolean[] biomes, int x, int z) {
-@@ -216,73 +241,78 @@
+@@ -217,73 +242,78 @@
      }
  
      public static void renderBiomePreviewMap(ServerLevel world, ItemStack map) {
@@ -314,16 +314,16 @@
  
 -                for(int n = 0; n < 128; ++n) {
 -                    for(int o = 0; o < 128; ++o) {
--                        Biome.BiomeCategory biomeCategory = Biome.getBiomeCategory(world.getBiome(mutableBlockPos.set((l + o) * i, 0, (m + n) * i)));
--                        bls[n * 128 + o] = biomeCategory == Biome.BiomeCategory.OCEAN || biomeCategory == Biome.BiomeCategory.RIVER || biomeCategory == Biome.BiomeCategory.SWAMP;
+-                        Holder<Biome> holder = world.getBiome(mutableBlockPos.set((l + o) * i, 0, (m + n) * i));
+-                        bls[n * 128 + o] = holder.is(BiomeTags.WATER_ON_MAP_OUTLINES);
 +                int j1;
 +                int k1;
 +
 +                for (j1 = 0; j1 < 128; ++j1) {
 +                    for (k1 = 0; k1 < 128; ++k1) {
-+                        Biome.BiomeCategory biomebase_geography = Biome.getBiomeCategory(world.getUncachedNoiseBiome((l + k1) * i, 0, (i1 + j1) * i)); // Paper
++                        Holder<Biome> holder = world.getUncachedNoiseBiome((l + k1) * i, 0, (i1 + j1) * i); // Paper
 +
-+                        aboolean[j1 * 128 + k1] = biomebase_geography == Biome.BiomeCategory.OCEAN || biomebase_geography == Biome.BiomeCategory.RIVER || biomebase_geography == Biome.BiomeCategory.SWAMP;
++                        aboolean[j1 * 128 + k1] = holder.is(BiomeTags.WATER_ON_MAP_OUTLINES);
                      }
                  }
  
@@ -411,7 +411,7 @@
                          }
                      }
                  }
-@@ -294,15 +324,17 @@
+@@ -295,15 +325,17 @@
      @Override
      public void inventoryTick(ItemStack stack, Level world, Entity entity, int slot, boolean selected) {
          if (!world.isClientSide) {
@@ -435,7 +435,7 @@
                  }
  
              }
-@@ -312,59 +344,66 @@
+@@ -313,59 +345,66 @@
      @Nullable
      @Override
      public Packet<?> getUpdatePacket(ItemStack stack, Level world, Player player) {
@@ -511,27 +511,25 @@
 -        Integer integer = getMapId(stack);
 -        MapItemSavedData mapItemSavedData = world == null ? null : getSavedData(integer, world);
 -        if (mapItemSavedData != null && mapItemSavedData.locked) {
--            tooltip.add((new TranslatableComponent("filled_map.locked", integer)).withStyle(ChatFormatting.GRAY));
 +        Integer integer = MapItem.getMapId(stack);
 +        MapItemSavedData worldmap = world == null ? null : MapItem.getSavedData(integer, world);
 +
 +        if (worldmap != null && worldmap.locked) {
-+            tooltip.add((new TranslatableComponent("filled_map.locked", new Object[]{integer})).withStyle(ChatFormatting.GRAY));
+             tooltip.add(Component.translatable("filled_map.locked", integer).withStyle(ChatFormatting.GRAY));
          }
  
          if (context.isAdvanced()) {
 -            if (mapItemSavedData != null) {
--                tooltip.add((new TranslatableComponent("filled_map.id", integer)).withStyle(ChatFormatting.GRAY));
--                tooltip.add((new TranslatableComponent("filled_map.scale", 1 << mapItemSavedData.scale)).withStyle(ChatFormatting.GRAY));
--                tooltip.add((new TranslatableComponent("filled_map.level", mapItemSavedData.scale, 4)).withStyle(ChatFormatting.GRAY));
 +            if (worldmap != null) {
-+                tooltip.add((new TranslatableComponent("filled_map.id", new Object[]{integer})).withStyle(ChatFormatting.GRAY));
-+                tooltip.add((new TranslatableComponent("filled_map.scale", new Object[]{1 << worldmap.scale})).withStyle(ChatFormatting.GRAY));
-+                tooltip.add((new TranslatableComponent("filled_map.level", new Object[]{worldmap.scale, 4})).withStyle(ChatFormatting.GRAY));
+                 tooltip.add(Component.translatable("filled_map.id", integer).withStyle(ChatFormatting.GRAY));
+-                tooltip.add(Component.translatable("filled_map.scale", 1 << mapItemSavedData.scale).withStyle(ChatFormatting.GRAY));
+-                tooltip.add(Component.translatable("filled_map.level", mapItemSavedData.scale, 4).withStyle(ChatFormatting.GRAY));
++                tooltip.add(Component.translatable("filled_map.scale", 1 << worldmap.scale).withStyle(ChatFormatting.GRAY));
++                tooltip.add(Component.translatable("filled_map.level", worldmap.scale, 4).withStyle(ChatFormatting.GRAY));
              } else {
-                 tooltip.add((new TranslatableComponent("filled_map.unknown")).withStyle(ChatFormatting.GRAY));
+                 tooltip.add(Component.translatable("filled_map.unknown").withStyle(ChatFormatting.GRAY));
              }
-@@ -373,9 +412,11 @@
+@@ -374,9 +413,11 @@
      }
  
      public static int getColor(ItemStack stack) {
@@ -546,7 +544,7 @@
              return -16777216 | i & 16777215;
          } else {
              return -12173266;
-@@ -384,11 +425,13 @@
+@@ -385,11 +426,13 @@
  
      @Override
      public InteractionResult useOn(UseOnContext context) {

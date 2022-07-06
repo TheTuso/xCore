@@ -40,9 +40,9 @@
      }
  
      @Override
--    public void randomTick(BlockState state, ServerLevel world, BlockPos pos, Random random) {
+-    public void randomTick(BlockState state, ServerLevel world, BlockPos pos, RandomSource random) {
 -        if (world.getMaxLocalRawBrightness(pos.above()) >= 9 && random.nextInt(7) == 0) {
-+    public void randomTick(net.minecraft.world.level.block.state.BlockState state, ServerLevel world, BlockPos pos, Random random) {
++    public void randomTick(net.minecraft.world.level.block.state.BlockState state, ServerLevel world, BlockPos pos, RandomSource random) {
 +        if (world.getMaxLocalRawBrightness(pos.above()) >= 9 && random.nextInt(Math.max(2, (int) (((100.0F / world.spigotConfig.saplingModifier) * 7) + 0.5F))) == 0) { // Spigot
 +            // CraftBukkit start
 +            world.captureTreeGeneration = true;
@@ -72,10 +72,10 @@
  
      }
  
--    public void advanceTree(ServerLevel world, BlockPos pos, BlockState state, Random random) {
+-    public void advanceTree(ServerLevel world, BlockPos pos, BlockState state, RandomSource random) {
 -        if (state.getValue(STAGE) == 0) {
 -            world.setBlock(pos, state.cycle(STAGE), 4);
-+    public void advanceTree(ServerLevel world, BlockPos pos, net.minecraft.world.level.block.state.BlockState state, Random random) {
++    public void advanceTree(ServerLevel world, BlockPos pos, net.minecraft.world.level.block.state.BlockState state, RandomSource random) {
 +        if ((Integer) state.getValue(SaplingBlock.STAGE) == 0) {
 +            world.setBlock(pos, (net.minecraft.world.level.block.state.BlockState) state.cycle(SaplingBlock.STAGE), 4);
          } else {
@@ -91,15 +91,15 @@
      }
  
      @Override
--    public boolean isBonemealSuccess(Level world, Random random, BlockPos pos, BlockState state) {
+-    public boolean isBonemealSuccess(Level world, RandomSource random, BlockPos pos, BlockState state) {
 -        return (double)world.random.nextFloat() < 0.45D;
-+    public boolean isBonemealSuccess(Level world, Random random, BlockPos pos, net.minecraft.world.level.block.state.BlockState state) {
++    public boolean isBonemealSuccess(Level world, RandomSource random, BlockPos pos, net.minecraft.world.level.block.state.BlockState state) {
 +        return (double) world.random.nextFloat() < 0.45D;
      }
  
      @Override
--    public void performBonemeal(ServerLevel world, Random random, BlockPos pos, BlockState state) {
-+    public void performBonemeal(ServerLevel world, Random random, BlockPos pos, net.minecraft.world.level.block.state.BlockState state) {
+-    public void performBonemeal(ServerLevel world, RandomSource random, BlockPos pos, BlockState state) {
++    public void performBonemeal(ServerLevel world, RandomSource random, BlockPos pos, net.minecraft.world.level.block.state.BlockState state) {
          this.advanceTree(world, pos, state, random);
      }
  

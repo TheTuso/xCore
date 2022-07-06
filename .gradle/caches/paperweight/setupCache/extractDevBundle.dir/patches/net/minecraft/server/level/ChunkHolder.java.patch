@@ -135,8 +135,8 @@
          this.changedBlocksPerSection = new ShortSet[world.getSectionsCount()];
 +        this.chunkMap = (ChunkMap)playersWatchingChunkProvider; // Paper
 +        this.onChunkAdd(); // Paper - optimise anyPlayerCloseEnoughForSpawning
-     }
- 
++    }
++
 +    // Paper start
 +    public @Nullable ChunkAccess getAvailableChunkNow() {
 +        // TODO can we just getStatusFuture(EMPTY)?
@@ -156,8 +156,8 @@
 +        // Note: We use the oldTicketLevel for isLoaded checks.
 +        if (!ChunkHolder.getFullChunkStatus(this.oldTicketLevel).isOrAfter(ChunkHolder.FullChunkStatus.BORDER)) return null;
 +        return this.getFullChunkNowUnchecked();
-+    }
-+
+     }
+ 
 +    public LevelChunk getFullChunkNowUnchecked() {
 +        CompletableFuture<Either<ChunkAccess, ChunkHolder.ChunkLoadingFailure>> statusFuture = this.getFutureIfPresentUnchecked(ChunkStatus.FULL);
 +        Either<ChunkAccess, ChunkHolder.ChunkLoadingFailure> either = (Either<ChunkAccess, ChunkHolder.ChunkLoadingFailure>) statusFuture.getNow(null);
@@ -296,43 +296,49 @@
                  this.changedBlocksPerSection[i] = new ShortOpenHashSet();
              }
  
-@@ -164,19 +295,24 @@
+@@ -164,21 +295,28 @@
      }
  
      public void sectionLightChanged(LightLayer lightType, int y) {
--        LevelChunk levelChunk = this.getFullChunk();
--        if (levelChunk != null) {
--            levelChunk.setUnsaved(true);
--            LevelChunk levelChunk2 = this.getTickingChunk();
--            if (levelChunk2 != null) {
--                int i = this.lightEngine.getMinLightSection();
--                int j = this.lightEngine.getMaxLightSection();
--                if (y >= i && y <= j) {
--                    int k = y - i;
-+        ChunkAccess chunk = this.getAvailableChunkNow(); // Paper - no-tick view distance
+-        Either<ChunkAccess, ChunkHolder.ChunkLoadingFailure> either = this.getFutureIfPresent(ChunkStatus.FEATURES).getNow((Either<ChunkAccess, ChunkHolder.ChunkLoadingFailure>)null);
+-        if (either != null) {
+-            ChunkAccess chunkAccess = either.left().orElse((ChunkAccess)null);
+-            if (chunkAccess != null) {
+-                chunkAccess.setUnsaved(true);
+-                LevelChunk levelChunk = this.getTickingChunk();
+-                if (levelChunk != null) {
+-                    int i = this.lightEngine.getMinLightSection();
+-                    int j = this.lightEngine.getMaxLightSection();
+-                    if (y >= i && y <= j) {
+-                        int k = y - i;
++        // Paper start - no-tick view distance
 +
-+        if (chunk != null) {
-+            chunk.setUnsaved(true);
-+            LevelChunk chunk1 = this.getSendingChunk(); // Paper - no-tick view distance
++        if (true) {
++            ChunkAccess ichunkaccess = this.getAvailableChunkNow();
 +
-+            if (chunk1 != null) {
-+                int j = this.lightEngine.getMinLightSection();
-+                int k = this.lightEngine.getMaxLightSection();
++            if (ichunkaccess != null) {
++                ichunkaccess.setUnsaved(true);
++                LevelChunk chunk = this.getSendingChunk();
++                // Paper end - no-tick view distance
 +
-+                if (y >= j && y <= k) {
++                if (chunk != null) {
++                    int j = this.lightEngine.getMinLightSection();
++                    int k = this.lightEngine.getMaxLightSection();
++
++                    if (y >= j && y <= k) {
 +                    this.addToBroadcastMap(); // Paper - optimise chunk tick iteration
-+                    int l = y - j;
++                        int l = y - j;
 +
-                     if (lightType == LightLayer.SKY) {
--                        this.skyChangedLightSectionFilter.set(k);
-+                        this.skyChangedLightSectionFilter.set(l);
-                     } else {
--                        this.blockChangedLightSectionFilter.set(k);
-+                        this.blockChangedLightSectionFilter.set(l);
-                     }
+                         if (lightType == LightLayer.SKY) {
+-                            this.skyChangedLightSectionFilter.set(k);
++                            this.skyChangedLightSectionFilter.set(l);
+                         } else {
+-                            this.blockChangedLightSectionFilter.set(k);
++                            this.blockChangedLightSectionFilter.set(l);
+                         }
  
-                 }
-@@ -184,12 +320,25 @@
+                     }
+@@ -187,12 +325,25 @@
          }
      }
  
@@ -361,7 +367,7 @@
                  i += this.changedBlocksPerSection[j] != null ? this.changedBlocksPerSection[j].size() : 0;
              }
  
-@@ -200,26 +349,30 @@
+@@ -203,26 +354,30 @@
                  this.blockChangedLightSectionFilter.clear();
              }
  
@@ -408,7 +414,7 @@
                  }
              }
  
-@@ -235,9 +388,11 @@
+@@ -238,9 +393,11 @@
      }
  
      private void broadcastBlockEntity(Level world, BlockPos pos) {
@@ -423,7 +429,7 @@
              if (packet != null) {
                  this.broadcast(packet, false);
              }
-@@ -246,33 +401,56 @@
+@@ -249,33 +406,56 @@
      }
  
      public void broadcast(Packet<?> packet, boolean onlyOnWatchDistanceEdge) {
@@ -496,7 +502,7 @@
          }
      }
  
-@@ -281,8 +459,8 @@
+@@ -284,8 +464,8 @@
              this.chunkToSaveHistory.push(new ChunkHolder.ChunkSaveDebug(Thread.currentThread(), then, thenDesc));
          }
  
@@ -507,7 +513,7 @@
          });
      }
  
-@@ -291,24 +469,24 @@
+@@ -294,24 +474,24 @@
              this.chunkToSaveHistory.push(new ChunkHolder.ChunkSaveDebug(Thread.currentThread(), then, thenDesc));
          }
  
@@ -540,7 +546,7 @@
          return this.ticketLevel;
      }
  
-@@ -324,98 +502,276 @@
+@@ -327,98 +507,276 @@
          this.ticketLevel = level;
      }
  
@@ -604,7 +610,7 @@
 +        ChunkStatus chunkstatus = ChunkHolder.getStatus(this.oldTicketLevel);
 +        ChunkStatus chunkstatus1 = ChunkHolder.getStatus(this.ticketLevel);
 +        boolean flag = this.oldTicketLevel <= ChunkMap.MAX_CHUNK_DISTANCE;
-+        boolean flag1 = this.ticketLevel <= ChunkMap.MAX_CHUNK_DISTANCE; // Paper - diff on change: (flag1 = new ticket level is in loadable range)
++        boolean flag1 = this.ticketLevel <= ChunkMap.MAX_CHUNK_DISTANCE;
 +        ChunkHolder.FullChunkStatus playerchunk_state = ChunkHolder.getFullChunkStatus(this.oldTicketLevel);
 +        ChunkHolder.FullChunkStatus playerchunk_state1 = ChunkHolder.getFullChunkStatus(this.ticketLevel);
 +        // CraftBukkit start
@@ -685,7 +691,7 @@
 +            long timeSinceAutoSave = this.inactiveTimeStart - this.lastAutoSaveTime;
 +            if (timeSinceAutoSave < 0) {
 +                // safest bet is to assume autosave is needed here
-+                timeSinceAutoSave = this.chunkMap.level.paperConfig.autoSavePeriod;
++                timeSinceAutoSave = this.chunkMap.level.paperConfig().chunks.autoSaveInterval.value();
 +            }
 +            this.lastAutoSaveTime = this.chunkMap.level.getGameTime() - timeSinceAutoSave;
 +            this.chunkMap.autoSaveQueue.add(this);
@@ -862,7 +868,7 @@
      }
  
      public static ChunkStatus getStatus(int level) {
-@@ -423,7 +779,7 @@
+@@ -426,7 +784,7 @@
      }
  
      public static ChunkHolder.FullChunkStatus getFullChunkStatus(int distance) {
@@ -871,7 +877,7 @@
      }
  
      public boolean wasAccessibleSinceLastSave() {
-@@ -431,14 +787,40 @@
+@@ -434,14 +792,40 @@
      }
  
      public void refreshAccessibility() {
@@ -883,7 +889,7 @@
 +                long timeSinceAutoSave = this.inactiveTimeStart - this.lastAutoSaveTime;
 +                if (timeSinceAutoSave < 0) {
 +                    // safest bet is to assume autosave is needed here
-+                    timeSinceAutoSave = this.chunkMap.level.paperConfig.autoSavePeriod;
++                    timeSinceAutoSave = this.chunkMap.level.paperConfig().chunks.autoSaveInterval.value();
 +                }
 +                this.lastAutoSaveTime = this.chunkMap.level.getGameTime() - timeSinceAutoSave;
 +                this.chunkMap.autoSaveQueue.add(this);
@@ -916,7 +922,7 @@
                  if (!optional.isEmpty() && optional.get() instanceof ProtoChunk) {
                      this.futures.set(i, CompletableFuture.completedFuture(Either.left(chunk)));
                  }
-@@ -449,25 +831,28 @@
+@@ -452,25 +836,28 @@
      }
  
      public List<Pair<ChunkStatus, CompletableFuture<Either<ChunkAccess, ChunkHolder.ChunkLoadingFailure>>>> getAllFutures() {
@@ -956,7 +962,7 @@
          private final Thread thread;
          private final CompletableFuture<?> future;
          private final String source;
-@@ -480,22 +865,163 @@
+@@ -483,22 +870,163 @@
      }
  
      public static enum FullChunkStatus {

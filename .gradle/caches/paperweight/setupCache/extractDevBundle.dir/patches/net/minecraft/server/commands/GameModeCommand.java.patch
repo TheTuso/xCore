@@ -1,6 +1,6 @@
 --- a/net/minecraft/server/commands/GameModeCommand.java
 +++ b/net/minecraft/server/commands/GameModeCommand.java
-@@ -52,9 +52,14 @@
+@@ -50,9 +50,14 @@
          int i = 0;
  
          for(ServerPlayer serverPlayer : targets) {

@@ -1,6 +1,6 @@
 --- a/net/minecraft/world/level/chunk/LevelChunkSection.java
 +++ b/net/minecraft/world/level/chunk/LevelChunkSection.java
-@@ -15,40 +15,149 @@
+@@ -15,40 +15,151 @@
  import net.minecraft.world.level.material.FluidState;
  
  public class LevelChunkSection {
@@ -15,14 +15,20 @@
      private short tickingBlockCount;
      private short tickingFluidCount;
      public final PalettedContainer<BlockState> states;
-     private final PalettedContainer<Holder<Biome>> biomes;
+-    private PalettedContainerRO<Holder<Biome>> biomes;
++    // CraftBukkit start - read/write
++    private PalettedContainer<Holder<Biome>> biomes;
 +    public final com.destroystokyo.paper.util.maplist.IBlockDataList tickingList = new com.destroystokyo.paper.util.maplist.IBlockDataList(); // Paper
  
-     public LevelChunkSection(int chunkPos, PalettedContainer<BlockState> blockStateContainer, PalettedContainer<Holder<Biome>> biomeContainer) {
+-    public LevelChunkSection(int chunkPos, PalettedContainer<BlockState> blockStateContainer, PalettedContainerRO<Holder<Biome>> palettedContainerRO) {
 -        this.bottomBlockY = getBottomBlockY(chunkPos);
-+        this.bottomBlockY = LevelChunkSection.getBottomBlockY(chunkPos);
-         this.states = blockStateContainer;
-         this.biomes = biomeContainer;
+-        this.states = blockStateContainer;
+-        this.biomes = palettedContainerRO;
++    public LevelChunkSection(int i, PalettedContainer<BlockState> datapaletteblock, PalettedContainer<Holder<Biome>> palettedcontainerro) {
++        // CraftBukkit end
++        this.bottomBlockY = LevelChunkSection.getBottomBlockY(i);
++        this.states = datapaletteblock;
++        this.biomes = palettedcontainerro;
          this.recalcBlockCounts();
      }
  
@@ -158,7 +164,7 @@
      }
  
      public void acquire() {
-@@ -63,24 +172,29 @@
+@@ -63,24 +174,29 @@
          return this.setBlockState(x, y, z, state, true);
      }
  
@@ -197,7 +203,7 @@
              --this.tickingFluidCount;
          }
  
-@@ -88,14 +202,18 @@
+@@ -88,14 +204,18 @@
              ++this.nonEmptyBlockCount;
              if (state.isRandomlyTicking()) {
                  ++this.tickingBlockCount;
@@ -218,7 +224,7 @@
      }
  
      public boolean hasOnlyAir() {
-@@ -119,36 +237,32 @@
+@@ -119,36 +239,32 @@
      }
  
      public void recalcBlockCounts() {
@@ -275,8 +281,17 @@
      }
  
      public PalettedContainer<BlockState> getStates() {
-@@ -165,10 +279,13 @@
-         this.biomes.read(buf);
+@@ -162,15 +278,19 @@
+     public void read(FriendlyByteBuf buf) {
+         this.nonEmptyBlockCount = buf.readShort();
+         this.states.read(buf);
+-        PalettedContainer<Holder<Biome>> palettedContainer = this.biomes.recreate();
+-        palettedContainer.read(buf);
+-        this.biomes = palettedContainer;
++        PalettedContainer<Holder<Biome>> datapaletteblock = this.biomes.recreate();
++
++        datapaletteblock.read(buf);
++        this.biomes = datapaletteblock;
      }
  
 -    public void write(FriendlyByteBuf buf) {
@@ -292,47 +307,41 @@
      }
  
      public int getSerializedSize() {
-@@ -180,26 +297,33 @@
+@@ -182,22 +302,28 @@
      }
  
      public Holder<Biome> getNoiseBiome(int x, int y, int z) {
 -        return this.biomes.get(x, y, z);
 +        return (Holder) this.biomes.get(x, y, z);
-     }
- 
++    }
++
 +    // CraftBukkit start
 +    public void setBiome(int i, int j, int k, Holder<Biome> biome) {
 +        this.biomes.set(i, j, k, biome);
-+    }
+     }
 +    // CraftBukkit end
-+
+ 
      public void fillBiomesFromNoise(BiomeResolver biomeSupplier, Climate.Sampler sampler, int x, int z) {
--        PalettedContainer<Holder<Biome>> palettedContainer = this.getBiomes();
--        palettedContainer.acquire();
-+        PalettedContainer<Holder<Biome>> datapaletteblock = this.getBiomes();
-+
-+        datapaletteblock.acquire();
+-        PalettedContainer<Holder<Biome>> palettedContainer = this.biomes.recreate();
+-        int i = QuartPos.fromBlock(this.bottomBlockY());
+-        int j = 4;
++        PalettedContainer<Holder<Biome>> datapaletteblock = this.biomes.recreate();
++        int k = QuartPos.fromBlock(this.bottomBlockY());
++        boolean flag = true;
  
-         try {
--            int i = QuartPos.fromBlock(this.bottomBlockY());
--            int j = 4;
-+            int k = QuartPos.fromBlock(this.bottomBlockY());
-+            boolean flag = true;
- 
--            for(int k = 0; k < 4; ++k) {
--                for(int l = 0; l < 4; ++l) {
--                    for(int m = 0; m < 4; ++m) {
--                        palettedContainer.getAndSetUnchecked(k, l, m, biomeSupplier.getNoiseBiome(x + k, i + l, z + m, sampler));
-+            for (int l = 0; l < 4; ++l) {
-+                for (int i1 = 0; i1 < 4; ++i1) {
-+                    for (int j1 = 0; j1 < 4; ++j1) {
-+                        datapaletteblock.getAndSetUnchecked(l, i1, j1, biomeSupplier.getNoiseBiome(x + l, k + i1, z + j1, sampler));
-                     }
+-        for(int k = 0; k < 4; ++k) {
+-            for(int l = 0; l < 4; ++l) {
+-                for(int m = 0; m < 4; ++m) {
+-                    palettedContainer.getAndSetUnchecked(k, l, m, biomeSupplier.getNoiseBiome(x + k, i + l, z + m, sampler));
++        for (int l = 0; l < 4; ++l) {
++            for (int i1 = 0; i1 < 4; ++i1) {
++                for (int j1 = 0; j1 < 4; ++j1) {
++                    datapaletteblock.getAndSetUnchecked(l, i1, j1, biomeSupplier.getNoiseBiome(x + l, k + i1, z + j1, sampler));
                  }
              }
-         } finally {
--            palettedContainer.release();
-+            datapaletteblock.release();
          }
  
+-        this.biomes = palettedContainer;
++        this.biomes = datapaletteblock;
      }
+ }

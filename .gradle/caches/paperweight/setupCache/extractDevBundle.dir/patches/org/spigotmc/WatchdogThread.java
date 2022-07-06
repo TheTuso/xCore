@@ -5,7 +5,6 @@ import java.lang.management.MonitorInfo;
 import java.lang.management.ThreadInfo;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import com.destroystokyo.paper.PaperConfig;
 import net.minecraft.server.MinecraftServer;
 import org.bukkit.Bukkit;
 
@@ -100,8 +99,8 @@ public class WatchdogThread extends Thread
         super( "Paper Watchdog Thread" );
         this.timeoutTime = timeoutTime;
         this.restart = restart;
-        earlyWarningEvery = Math.min(PaperConfig.watchdogPrintEarlyWarningEvery, timeoutTime); // Paper
-        earlyWarningDelay = Math.min(PaperConfig.watchdogPrintEarlyWarningDelay, timeoutTime); // Paper
+        earlyWarningEvery = Math.min(io.papermc.paper.configuration.GlobalConfiguration.get().watchdog.earlyWarningEvery, timeoutTime); // Paper
+        earlyWarningDelay = Math.min(io.papermc.paper.configuration.GlobalConfiguration.get().watchdog.earlyWarningDelay, timeoutTime); // Paper
     }
 
     private static long monotonicMillis()
@@ -172,13 +171,13 @@ public class WatchdogThread extends Thread
                     log.log( Level.SEVERE, "near " + net.minecraft.world.level.Level.lastPhysicsProblem );
                 }
                 // Paper start - Warn in watchdog if an excessive velocity was ever set
-                if ( org.bukkit.craftbukkit.v1_18_R2.CraftServer.excessiveVelEx != null )
+                if ( org.bukkit.craftbukkit.v1_19_R1.CraftServer.excessiveVelEx != null )
                 {
                     log.log( Level.SEVERE, "------------------------------" );
                     log.log( Level.SEVERE, "During the run of the server, a plugin set an excessive velocity on an entity" );
                     log.log( Level.SEVERE, "This may be the cause of the issue, or it may be entirely unrelated" );
-                    log.log( Level.SEVERE, org.bukkit.craftbukkit.v1_18_R2.CraftServer.excessiveVelEx.getMessage());
-                    for ( StackTraceElement stack : io.papermc.paper.util.StacktraceDeobfuscator.INSTANCE.deobfuscateStacktrace(org.bukkit.craftbukkit.v1_18_R2.CraftServer.excessiveVelEx.getStackTrace()) ) // Paper
+                    log.log( Level.SEVERE, org.bukkit.craftbukkit.v1_19_R1.CraftServer.excessiveVelEx.getMessage());
+                    for ( StackTraceElement stack : io.papermc.paper.util.StacktraceDeobfuscator.INSTANCE.deobfuscateStacktrace(org.bukkit.craftbukkit.v1_19_R1.CraftServer.excessiveVelEx.getStackTrace()) ) // Paper
                     {
                         log.log( Level.SEVERE, "\t\t" + stack );
                     }

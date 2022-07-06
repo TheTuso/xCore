@@ -34,7 +34,7 @@
          super.slotsChanged(inventory);
          if (inventory == this.inputSlots) {
              this.createResult();
-+            org.bukkit.craftbukkit.v1_18_R2.event.CraftEventFactory.callPrepareResultEvent(this, 2); // Paper
++            org.bukkit.craftbukkit.v1_19_R1.event.CraftEventFactory.callPrepareResultEvent(this, RESULT_SLOT); // Paper
          }
  
      }

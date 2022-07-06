@@ -8,15 +8,7 @@
  import java.util.Collections;
  import java.util.List;
  import java.util.Optional;
-@@ -22,6 +23,7 @@
- import net.minecraft.world.level.block.state.properties.IntegerProperty;
- import net.minecraft.world.level.material.FlowingFluid;
- import net.minecraft.world.level.material.FluidState;
-+import net.minecraft.world.level.material.Material;
- import net.minecraft.world.level.pathfinder.PathComputationType;
- import net.minecraft.world.level.storage.loot.LootContext;
- import net.minecraft.world.phys.shapes.CollisionContext;
-@@ -29,6 +31,7 @@
+@@ -29,6 +30,7 @@
  import net.minecraft.world.phys.shapes.VoxelShape;
  
  public class LiquidBlock extends Block implements BucketPickup {
@@ -24,7 +16,7 @@
      public static final IntegerProperty LEVEL = BlockStateProperties.LEVEL;
      protected final FlowingFluid fluid;
      private final List<FluidState> stateCache;
-@@ -41,17 +44,17 @@
+@@ -41,17 +43,17 @@
          this.stateCache = Lists.newArrayList();
          this.stateCache.add(fluid.getSource(false));
  
@@ -45,7 +37,7 @@
      }
  
      @Override
-@@ -76,8 +79,9 @@
+@@ -76,8 +78,9 @@
  
      @Override
      public FluidState getFluidState(BlockState state) {
@@ -57,7 +49,7 @@
      }
  
      @Override
-@@ -103,11 +107,27 @@
+@@ -103,11 +106,27 @@
      @Override
      public void onPlace(BlockState state, Level world, BlockPos pos, BlockState oldState, boolean notify) {
          if (this.shouldSpreadLiquid(world, pos, state)) {
@@ -69,14 +61,14 @@
  
 +    // Paper start - Get flow speed. Throttle if its water and flowing adjacent to lava
 +    public int getFlowSpeed(Level world, BlockPos blockposition) {
-+        if (this.material == Material.WATER) {
++        if (this.material == net.minecraft.world.level.material.Material.WATER) {
 +            if (
-+                world.getMaterialIfLoaded(blockposition.north(1)) == Material.LAVA ||
-+                world.getMaterialIfLoaded(blockposition.south(1)) == Material.LAVA ||
-+                world.getMaterialIfLoaded(blockposition.west(1)) == Material.LAVA ||
-+                world.getMaterialIfLoaded(blockposition.east(1)) == Material.LAVA
++                world.getMaterialIfLoaded(blockposition.north(1)) == net.minecraft.world.level.material.Material.LAVA ||
++                world.getMaterialIfLoaded(blockposition.south(1)) == net.minecraft.world.level.material.Material.LAVA ||
++                world.getMaterialIfLoaded(blockposition.west(1)) == net.minecraft.world.level.material.Material.LAVA ||
++                world.getMaterialIfLoaded(blockposition.east(1)) == net.minecraft.world.level.material.Material.LAVA
 +            ) {
-+                return world.paperConfig.waterOverLavaFlowSpeed;
++                return world.paperConfig().environment.waterOverLavaFlowSpeed;
 +            }
 +        }
 +        return this.fluid.getTickDelay(world);
@@ -86,9 +78,9 @@
      @Override
      public BlockState updateShape(BlockState state, Direction direction, BlockState neighborState, LevelAccessor world, BlockPos pos, BlockPos neighborPos) {
          if (state.getFluidState().isSource() || neighborState.getFluidState().isSource()) {
-@@ -120,27 +140,37 @@
+@@ -120,27 +139,37 @@
      @Override
-     public void neighborChanged(BlockState state, Level world, BlockPos pos, Block block, BlockPos fromPos, boolean notify) {
+     public void neighborChanged(BlockState state, Level world, BlockPos pos, Block sourceBlock, BlockPos sourcePos, boolean notify) {
          if (this.shouldSpreadLiquid(world, pos, state)) {
 -            world.scheduleTick(pos, state.getFluidState().getType(), this.fluid.getTickDelay(world));
 +            world.scheduleTick(pos, state.getFluidState().getType(), this.getFlowSpeed(world, pos)); // Paper
@@ -115,7 +107,7 @@
 -                    this.fizz(world, pos);
 +
 +                    // CraftBukkit start
-+                    if (org.bukkit.craftbukkit.v1_18_R2.event.CraftEventFactory.handleBlockFormEvent(world, pos, block.defaultBlockState())) {
++                    if (org.bukkit.craftbukkit.v1_19_R1.event.CraftEventFactory.handleBlockFormEvent(world, pos, block.defaultBlockState())) {
 +                        this.fizz(world, pos);
 +                    }
 +                    // CraftBukkit end
@@ -127,14 +119,14 @@
 -                    this.fizz(world, pos);
 +                if (flag && world.getBlockState(blockposition1).is(Blocks.BLUE_ICE)) {
 +                    // CraftBukkit start
-+                    if (org.bukkit.craftbukkit.v1_18_R2.event.CraftEventFactory.handleBlockFormEvent(world, pos, Blocks.BASALT.defaultBlockState())) {
++                    if (org.bukkit.craftbukkit.v1_19_R1.event.CraftEventFactory.handleBlockFormEvent(world, pos, Blocks.BASALT.defaultBlockState())) {
 +                        this.fizz(world, pos);
 +                    }
 +                    // CraftBukkit end
                      return false;
                  }
              }
-@@ -155,12 +185,12 @@
+@@ -155,12 +184,12 @@
  
      @Override
      protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {

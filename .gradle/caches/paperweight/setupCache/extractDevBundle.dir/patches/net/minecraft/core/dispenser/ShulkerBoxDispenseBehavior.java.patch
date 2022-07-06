@@ -5,7 +5,7 @@
  import org.slf4j.Logger;
  
 +// CraftBukkit start
-+import org.bukkit.craftbukkit.v1_18_R2.inventory.CraftItemStack;
++import org.bukkit.craftbukkit.v1_19_R1.inventory.CraftItemStack;
 +import org.bukkit.event.block.BlockDispenseEvent;
 +// CraftBukkit end
 +

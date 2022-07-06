@@ -5,8 +5,8 @@
  
 +import java.util.Iterator;
  import java.util.List;
- import java.util.Random;
  import javax.annotation.Nullable;
+ import net.minecraft.advancements.CriteriaTriggers;
 @@ -17,6 +18,7 @@
  import net.minecraft.world.InteractionHand;
  import net.minecraft.world.InteractionResult;
@@ -105,8 +105,8 @@
 +
 +            if (itemstack.is(Items.SHEARS)) {
 +                // Paper start - Add PlayerShearBlockEvent
-+                io.papermc.paper.event.block.PlayerShearBlockEvent event = new io.papermc.paper.event.block.PlayerShearBlockEvent((org.bukkit.entity.Player) player.getBukkitEntity(), net.minecraft.server.MCUtil.toBukkitBlock(world, pos), org.bukkit.craftbukkit.v1_18_R2.inventory.CraftItemStack.asCraftMirror(itemstack), (hand == InteractionHand.OFF_HAND ? org.bukkit.inventory.EquipmentSlot.OFF_HAND : org.bukkit.inventory.EquipmentSlot.HAND), new java.util.ArrayList<>());
-+                event.getDrops().add(org.bukkit.craftbukkit.v1_18_R2.inventory.CraftItemStack.asCraftMirror(new ItemStack(Items.HONEYCOMB, 3)));
++                io.papermc.paper.event.block.PlayerShearBlockEvent event = new io.papermc.paper.event.block.PlayerShearBlockEvent((org.bukkit.entity.Player) player.getBukkitEntity(), net.minecraft.server.MCUtil.toBukkitBlock(world, pos), org.bukkit.craftbukkit.v1_19_R1.inventory.CraftItemStack.asCraftMirror(itemstack), (hand == InteractionHand.OFF_HAND ? org.bukkit.inventory.EquipmentSlot.OFF_HAND : org.bukkit.inventory.EquipmentSlot.HAND), new java.util.ArrayList<>());
++                event.getDrops().add(org.bukkit.craftbukkit.v1_19_R1.inventory.CraftItemStack.asCraftMirror(new ItemStack(Items.HONEYCOMB, 3)));
 +                if (!event.callEvent()) {
 +                    return InteractionResult.PASS;
 +                }
@@ -117,17 +117,18 @@
 -                    playerx.broadcastBreakEvent(hand);
 +                // Paper start - Add PlayerShearBlockEvent
 +                for (org.bukkit.inventory.ItemStack itemDrop : event.getDrops()) {
-+                    popResource(world, pos, org.bukkit.craftbukkit.v1_18_R2.inventory.CraftItemStack.asNMSCopy(itemDrop));
++                    popResource(world, pos, org.bukkit.craftbukkit.v1_19_R1.inventory.CraftItemStack.asNMSCopy(itemDrop));
 +                }
 +                // Paper end
 +                itemstack.hurtAndBreak(1, player, (entityhuman1) -> {
 +                    entityhuman1.broadcastBreakEvent(hand);
                  });
 -                bl = true;
-+                flag = true;
-                 world.gameEvent(player, GameEvent.SHEAR, pos);
+-                world.gameEvent(player, GameEvent.SHEAR, pos);
 -            } else if (itemStack.is(Items.GLASS_BOTTLE)) {
 -                itemStack.shrink(1);
++                flag = true;
++                world.gameEvent((Entity) player, GameEvent.SHEAR, pos);
 +            } else if (itemstack.is(Items.GLASS_BOTTLE)) {
 +                itemstack.shrink(1);
                  world.playSound(player, player.getX(), player.getY(), player.getZ(), SoundEvents.BOTTLE_FILL, SoundSource.NEUTRAL, 1.0F, 1.0F);
@@ -139,8 +140,9 @@
                  }
  
 -                bl = true;
+-                world.gameEvent(player, GameEvent.FLUID_PICKUP, pos);
 +                flag = true;
-                 world.gameEvent(player, GameEvent.FLUID_PICKUP, pos);
++                world.gameEvent((Entity) player, GameEvent.FLUID_PICKUP, pos);
              }
  
 -            if (!world.isClientSide() && bl) {
@@ -193,7 +195,7 @@
      }
  
      @Override
-     public void animateTick(BlockState state, Level world, BlockPos pos, Random random) {
+     public void animateTick(BlockState state, Level world, BlockPos pos, RandomSource random) {
 -        if (state.getValue(HONEY_LEVEL) >= 5) {
 -            for(int i = 0; i < random.nextInt(1) + 1; ++i) {
 +        if ((Integer) state.getValue(BeehiveBlock.HONEY_LEVEL) >= 5) {

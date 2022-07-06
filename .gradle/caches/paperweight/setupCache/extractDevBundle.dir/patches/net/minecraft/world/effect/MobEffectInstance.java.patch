@@ -1,6 +1,6 @@
 --- a/net/minecraft/world/effect/MobEffectInstance.java
 +++ b/net/minecraft/world/effect/MobEffectInstance.java
-@@ -235,7 +235,7 @@
+@@ -265,7 +265,7 @@
      }
  
      private static MobEffectInstance loadSpecifiedEffect(MobEffect type, CompoundTag nbt) {

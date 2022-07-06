@@ -11,8 +11,8 @@
 -import net.minecraft.commands.Commands;
  import net.minecraft.network.chat.Component;
  import net.minecraft.network.chat.ComponentUtils;
- import net.minecraft.network.chat.TranslatableComponent;
-@@ -13,29 +13,39 @@
+ import net.minecraft.server.level.ServerPlayer;
+@@ -12,29 +12,39 @@
  import net.minecraft.world.entity.player.Player;
  
  public class ListPlayersCommand {
@@ -38,9 +38,9 @@
  
      private static int listPlayersWithUuids(CommandSourceStack source) {
 -        return format(source, (player) -> {
--            return new TranslatableComponent("commands.list.nameAndId", player.getName(), player.getGameProfile().getId());
+-            return Component.translatable("commands.list.nameAndId", player.getName(), player.getGameProfile().getId());
 +        return ListPlayersCommand.format(source, (entityplayer) -> {
-+            return new TranslatableComponent("commands.list.nameAndId", new Object[]{entityplayer.getName(), entityplayer.getGameProfile().getId()});
++            return Component.translatable("commands.list.nameAndId", entityplayer.getName(), entityplayer.getGameProfile().getId());
          });
      }
  
@@ -48,7 +48,7 @@
 -        PlayerList playerList = source.getServer().getPlayerList();
 -        List<ServerPlayer> list = playerList.getPlayers();
 -        Component component = ComponentUtils.formatList(list, nameProvider);
--        source.sendSuccess(new TranslatableComponent("commands.list.players", list.size(), playerList.getMaxPlayers(), component), false);
+-        source.sendSuccess(Component.translatable("commands.list.players", list.size(), playerList.getMaxPlayers(), component), false);
 +        PlayerList playerlist = source.getServer().getPlayerList();
 +        List<ServerPlayer> list = playerlist.getPlayers();
 +        // CraftBukkit start
@@ -59,7 +59,7 @@
 +        // CraftBukkit end
 +        Component ichatbasecomponent = ComponentUtils.formatList(list, nameProvider);
 +
-+        source.sendSuccess(new TranslatableComponent("commands.list.players", new Object[]{list.size(), playerlist.getMaxPlayers(), ichatbasecomponent}), false);
++        source.sendSuccess(Component.translatable("commands.list.players", list.size(), playerlist.getMaxPlayers(), ichatbasecomponent), false);
          return list.size();
      }
  }

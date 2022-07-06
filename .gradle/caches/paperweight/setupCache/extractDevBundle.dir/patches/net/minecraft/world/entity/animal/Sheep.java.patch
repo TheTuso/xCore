@@ -6,9 +6,9 @@
  import java.util.Map;
 +import java.util.Objects;
 +import java.util.Optional;
- import java.util.Random;
  import java.util.stream.Collectors;
  import javax.annotation.Nullable;
+ import net.minecraft.Util;
 @@ -23,6 +25,7 @@
  import net.minecraft.world.InteractionResult;
  import net.minecraft.world.damagesource.DamageSource;
@@ -34,7 +34,7 @@
 +import net.minecraft.world.item.DyeColor;
 +import net.minecraft.world.item.DyeItem;
 +import net.minecraft.world.item.Item;
-+import org.bukkit.craftbukkit.v1_18_R2.event.CraftEventFactory;
++import org.bukkit.craftbukkit.v1_19_R1.event.CraftEventFactory;
 +import org.bukkit.event.entity.SheepRegrowWoolEvent;
 +import org.bukkit.inventory.InventoryView;
 +// CraftBukkit end
@@ -161,10 +161,9 @@
 +                }
 +                // CraftBukkit end
                  this.shear(SoundSource.PLAYERS);
--                this.gameEvent(GameEvent.SHEAR, player);
+                 this.gameEvent(GameEvent.SHEAR, player);
 -                itemStack.hurtAndBreak(1, player, (playerx) -> {
 -                    playerx.broadcastBreakEvent(hand);
-+                this.gameEvent(GameEvent.SHEAR, (Entity) player);
 +                itemstack.hurtAndBreak(1, player, (entityhuman1) -> {
 +                    entityhuman1.broadcastBreakEvent(hand);
                  });
@@ -237,7 +236,7 @@
  
      }
  
-     public static DyeColor getRandomSheepColor(Random random) {
+     public static DyeColor getRandomSheepColor(RandomSource random) {
          int i = random.nextInt(100);
 -        if (i < 5) {
 -            return DyeColor.BLACK;
@@ -276,10 +275,10 @@
 +
 +        if (event.isCancelled()) return;
 +        // CraftBukkit end
+         super.ate();
          this.setSheared(false);
          if (this.isBaby()) {
-             this.ageUp(60);
-@@ -347,31 +362,45 @@
+@@ -348,23 +363,28 @@
      @Nullable
      @Override
      public SpawnGroupData finalizeSpawn(ServerLevelAccessor world, DifficultyInstance difficulty, MobSpawnType spawnReason, @Nullable SpawnGroupData entityData, @Nullable CompoundTag entityNbt) {
@@ -315,6 +314,9 @@
 -        CraftingContainer craftingContainer = new CraftingContainer(new AbstractContainerMenu((MenuType)null, -1) {
 +        CraftingContainer inventorycrafting = new CraftingContainer(new AbstractContainerMenu((MenuType) null, -1) {
              @Override
+             public ItemStack quickMoveStack(Player player, int index) {
+                 return ItemStack.EMPTY;
+@@ -374,10 +394,19 @@
              public boolean stillValid(Player player) {
                  return false;
              }

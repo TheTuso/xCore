@@ -8,15 +8,15 @@
  import io.netty.channel.ChannelHandlerContext;
  import io.netty.channel.ChannelInboundHandlerAdapter;
  import io.netty.channel.ChannelInitializer;
-@@ -40,7 +41,6 @@
- import net.minecraft.network.RateKickingConnection;
+@@ -41,6 +42,7 @@
  import net.minecraft.network.Varint21FrameDecoder;
  import net.minecraft.network.Varint21LengthFieldPrepender;
--import net.minecraft.network.chat.Component;
- import net.minecraft.network.chat.TextComponent;
+ import net.minecraft.network.chat.Component;
++import net.minecraft.network.chat.MutableComponent;
  import net.minecraft.network.protocol.PacketFlow;
  import net.minecraft.network.protocol.game.ClientboundDisconnectPacket;
-@@ -49,110 +49,206 @@
+ import net.minecraft.server.MinecraftServer;
+@@ -48,110 +50,206 @@
  import org.slf4j.Logger;
  
  public class ServerConnectionListener {
@@ -93,7 +93,7 @@
 +            // Paper end
 +
 +            // Paper start - indicate Proxy Protocol usage
-+            if (com.destroystokyo.paper.PaperConfig.useProxyProtocol) {
++            if (io.papermc.paper.configuration.GlobalConfiguration.get().proxies.proxyProtocol) {
 +                ServerConnectionListener.LOGGER.info("Paper: Using Proxy Protocol");
 +            }
 +            // Paper end
@@ -118,7 +118,7 @@
 +                    Object object = j > 0 ? new RateKickingConnection(j) : new Connection(PacketFlow.SERVERBOUND);
 +
 +                    // Paper start - Add support for Proxy Protocol
-+                    if (com.destroystokyo.paper.PaperConfig.useProxyProtocol) {
++                    if (io.papermc.paper.configuration.GlobalConfiguration.get().proxies.proxyProtocol) {
 +                        channel.pipeline().addAfter("timeout", "haproxy-decoder", new io.netty.handler.codec.haproxy.HAProxyMessageDecoder());
 +                        channel.pipeline().addAfter("haproxy-decoder", "haproxy-handler", new ChannelInboundHandlerAdapter() {
 +                            @Override
@@ -249,14 +249,14 @@
                              }
  
 -                            LOGGER.warn("Failed to handle packet for {}", connection.getRemoteAddress(), var7);
--                            Component component = new TextComponent("Internal server error");
+-                            Component component = Component.literal("Internal server error");
 -                            connection.send(new ClientboundDisconnectPacket(component), (future) -> {
 -                                connection.disconnect(component);
-+                            ServerConnectionListener.LOGGER.warn("Failed to handle packet for {}", com.destroystokyo.paper.PaperConfig.logPlayerIpAddresses ? String.valueOf(networkmanager.getRemoteAddress()) : "<ip address withheld>", exception); // Paper
-+                            TextComponent chatcomponenttext = new TextComponent("Internal server error");
++                            ServerConnectionListener.LOGGER.warn("Failed to handle packet for {}", io.papermc.paper.configuration.GlobalConfiguration.get().logging.logPlayerIpAddresses ? String.valueOf(networkmanager.getRemoteAddress()) : "<ip address withheld>", exception); // Paper
++                            MutableComponent ichatmutablecomponent = Component.literal("Internal server error");
 +
-+                            networkmanager.send(new ClientboundDisconnectPacket(chatcomponenttext), (future) -> {
-+                                networkmanager.disconnect(chatcomponenttext);
++                            networkmanager.send(new ClientboundDisconnectPacket(ichatmutablecomponent), (future) -> {
++                                networkmanager.disconnect(ichatmutablecomponent);
                              });
 -                            connection.setReadOnly();
 +                            networkmanager.setReadOnly();
@@ -272,7 +272,7 @@
                      }
                  }
              }
-@@ -168,7 +264,8 @@
+@@ -167,7 +265,8 @@
          return this.connections;
      }
  
@@ -282,7 +282,7 @@
          private static final Timer TIMER = new HashedWheelTimer();
          private final int delay;
          private final int jitter;
-@@ -179,22 +276,25 @@
+@@ -178,22 +277,25 @@
              this.jitter = extraDelay;
          }
  

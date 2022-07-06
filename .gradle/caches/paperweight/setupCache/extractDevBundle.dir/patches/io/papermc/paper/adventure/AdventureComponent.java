@@ -9,8 +9,10 @@ import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.TextComponent;
 import net.kyori.adventure.text.serializer.gson.GsonComponentSerializer;
 import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
+import net.minecraft.network.chat.ComponentContents;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.network.chat.Style;
+import net.minecraft.network.chat.contents.LiteralContents;
 import net.minecraft.util.FormattedCharSequence;
 import org.checkerframework.checker.nullness.qual.MonotonicNonNull;
 import org.jetbrains.annotations.Nullable;
@@ -42,9 +44,9 @@ public final class AdventureComponent implements net.minecraft.network.chat.Comp
     }
 
     @Override
-    public String getContents() {
+    public ComponentContents getContents() {
         if (this.adventure instanceof TextComponent) {
-            return ((TextComponent) this.adventure).content();
+            return new LiteralContents(((TextComponent) this.adventure).content());
         } else {
             return this.deepConverted().getContents();
         }

@@ -1,6 +1,6 @@
 --- a/net/minecraft/world/level/block/TripWireHookBlock.java
 +++ b/net/minecraft/world/level/block/TripWireHookBlock.java
-@@ -25,8 +25,10 @@
+@@ -26,8 +26,10 @@
  import net.minecraft.world.level.gameevent.GameEvent;
  import net.minecraft.world.phys.shapes.CollisionContext;
  import net.minecraft.world.phys.shapes.VoxelShape;
@@ -11,7 +11,7 @@
      public static final DirectionProperty FACING = HorizontalDirectionalBlock.FACING;
      public static final BooleanProperty POWERED = BlockStateProperties.POWERED;
      public static final BooleanProperty ATTACHED = BlockStateProperties.ATTACHED;
-@@ -41,51 +43,57 @@
+@@ -42,51 +44,57 @@
  
      public TripWireHookBlock(BlockBehaviour.Properties settings) {
          super(settings);
@@ -90,7 +90,7 @@
                  }
              }
          }
-@@ -95,73 +103,100 @@
+@@ -96,73 +104,100 @@
  
      @Override
      public void setPlacedBy(Level world, BlockPos pos, BlockState state, LivingEntity placer, ItemStack itemStack) {
@@ -181,16 +181,16 @@
 -            Direction direction2 = direction.getOpposite();
 -            world.setBlock(blockPos2, blockState3.setValue(FACING, direction2), 3);
 -            this.notifyNeighbors(world, blockPos2, direction2);
--            this.playSound(world, blockPos2, bl4, bl5, bl2, bl3);
+-            this.emitState(world, blockPos2, bl4, bl5, bl2, bl3);
 +            blockposition1 = pos.relative(enumdirection, j);
 +            Direction enumdirection1 = enumdirection.getOpposite();
 +
 +            world.setBlock(blockposition1, (BlockState) iblockdata3.setValue(TripWireHookBlock.FACING, enumdirection1), 3);
 +            this.notifyNeighbors(world, blockposition1, enumdirection1);
-+            this.playSound(world, blockposition1, flag4, flag5, flag2, flag3);
++            this.emitState(world, blockposition1, flag4, flag5, flag2, flag3);
          }
  
--        this.playSound(world, pos, bl4, bl5, bl2, bl3);
+-        this.emitState(world, pos, bl4, bl5, bl2, bl3);
 +        // CraftBukkit start
 +        org.bukkit.block.Block block = world.getWorld().getBlockAt(pos.getX(), pos.getY(), pos.getZ());
 +
@@ -202,7 +202,7 @@
 +        }
 +        // CraftBukkit end
 +
-+        this.playSound(world, pos, flag4, flag5, flag2, flag3);
++        this.emitState(world, pos, flag4, flag5, flag2, flag3);
          if (!beingRemoved) {
 -            world.setBlock(pos, blockState3.setValue(FACING, direction), 3);
 -            if (bl) {
@@ -233,34 +233,39 @@
                      }
                  }
              }
-@@ -171,21 +206,21 @@
+@@ -172,22 +207,22 @@
  
      @Override
-     public void tick(BlockState state, ServerLevel world, BlockPos pos, Random random) {
+     public void tick(BlockState state, ServerLevel world, BlockPos pos, RandomSource random) {
 -        this.calculateState(world, pos, state, false, true, -1, (BlockState)null);
 +        this.calculateState(world, pos, state, false, true, -1, (BlockState) null);
      }
  
-     private void playSound(Level world, BlockPos pos, boolean attached, boolean on, boolean detached, boolean off) {
+     private void emitState(Level world, BlockPos pos, boolean attached, boolean on, boolean detached, boolean off) {
          if (on && !off) {
 -            world.playSound((Player)null, pos, SoundEvents.TRIPWIRE_CLICK_ON, SoundSource.BLOCKS, 0.4F, 0.6F);
+-            world.gameEvent((Entity)null, GameEvent.BLOCK_ACTIVATE, pos);
 +            world.playSound((Player) null, pos, SoundEvents.TRIPWIRE_CLICK_ON, SoundSource.BLOCKS, 0.4F, 0.6F);
-             world.gameEvent(GameEvent.BLOCK_PRESS, pos);
++            world.gameEvent((Entity) null, GameEvent.BLOCK_ACTIVATE, pos);
          } else if (!on && off) {
 -            world.playSound((Player)null, pos, SoundEvents.TRIPWIRE_CLICK_OFF, SoundSource.BLOCKS, 0.4F, 0.5F);
+-            world.gameEvent((Entity)null, GameEvent.BLOCK_DEACTIVATE, pos);
 +            world.playSound((Player) null, pos, SoundEvents.TRIPWIRE_CLICK_OFF, SoundSource.BLOCKS, 0.4F, 0.5F);
-             world.gameEvent(GameEvent.BLOCK_UNPRESS, pos);
++            world.gameEvent((Entity) null, GameEvent.BLOCK_DEACTIVATE, pos);
          } else if (attached && !detached) {
 -            world.playSound((Player)null, pos, SoundEvents.TRIPWIRE_ATTACH, SoundSource.BLOCKS, 0.4F, 0.7F);
+-            world.gameEvent((Entity)null, GameEvent.BLOCK_ATTACH, pos);
 +            world.playSound((Player) null, pos, SoundEvents.TRIPWIRE_ATTACH, SoundSource.BLOCKS, 0.4F, 0.7F);
-             world.gameEvent(GameEvent.BLOCK_ATTACH, pos);
++            world.gameEvent((Entity) null, GameEvent.BLOCK_ATTACH, pos);
          } else if (!attached && detached) {
 -            world.playSound((Player)null, pos, SoundEvents.TRIPWIRE_DETACH, SoundSource.BLOCKS, 0.4F, 1.2F / (world.random.nextFloat() * 0.2F + 0.9F));
+-            world.gameEvent((Entity)null, GameEvent.BLOCK_DETACH, pos);
 +            world.playSound((Player) null, pos, SoundEvents.TRIPWIRE_DETACH, SoundSource.BLOCKS, 0.4F, 1.2F / (world.random.nextFloat() * 0.2F + 0.9F));
-             world.gameEvent(GameEvent.BLOCK_DETACH, pos);
++            world.gameEvent((Entity) null, GameEvent.BLOCK_DETACH, pos);
          }
  
-@@ -199,15 +234,16 @@
+     }
+@@ -200,15 +235,16 @@
      @Override
      public void onRemove(BlockState state, Level world, BlockPos pos, BlockState newState, boolean moved) {
          if (!moved && !state.is(newState.getBlock())) {
@@ -283,7 +288,7 @@
              }
  
              super.onRemove(state, world, pos, newState, moved);
-@@ -216,16 +252,12 @@
+@@ -217,16 +253,12 @@
  
      @Override
      public int getSignal(BlockState state, BlockGetter world, BlockPos pos, Direction direction) {
@@ -302,22 +307,8 @@
      }
  
      @Override
-@@ -233,18 +265,30 @@
-         return true;
-     }
+@@ -236,16 +268,16 @@
  
-+    // Paper start - optimize redstone (Alternate Current)
-+    @Override
-+    public boolean isSignalSourceTo(Level level, BlockPos pos, BlockState state, Direction dir) {
-+        return true;
-+    }
-+
-+    @Override
-+    public boolean isDirectSignalSourceTo(Level level, BlockPos pos, BlockState state, Direction dir) {
-+        return state.getValue(FACING) == dir;
-+    }
-+    // Paper end
-+
      @Override
      public BlockState rotate(BlockState state, Rotation rotation) {
 -        return state.setValue(FACING, rotation.rotate(state.getValue(FACING)));

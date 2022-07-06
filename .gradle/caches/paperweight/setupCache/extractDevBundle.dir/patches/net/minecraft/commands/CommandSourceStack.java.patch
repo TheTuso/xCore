@@ -9,14 +9,14 @@
  import java.util.Set;
  import java.util.concurrent.CompletableFuture;
 @@ -20,6 +21,7 @@
- import net.minecraft.core.Registry;
  import net.minecraft.core.RegistryAccess;
+ import net.minecraft.network.chat.ChatSender;
  import net.minecraft.network.chat.Component;
 +import net.minecraft.network.chat.MutableComponent;
- import net.minecraft.network.chat.TextComponent;
- import net.minecraft.network.chat.TranslatableComponent;
  import net.minecraft.resources.ResourceKey;
-@@ -34,8 +36,10 @@
+ import net.minecraft.resources.ResourceLocation;
+ import net.minecraft.server.MinecraftServer;
+@@ -32,8 +34,10 @@
  import net.minecraft.world.level.dimension.DimensionType;
  import net.minecraft.world.phys.Vec2;
  import net.minecraft.world.phys.Vec3;
@@ -25,19 +25,19 @@
 +public class CommandSourceStack implements SharedSuggestionProvider, com.destroystokyo.paper.brigadier.BukkitBrigadierCommandSource { // Paper
  
 -public class CommandSourceStack implements SharedSuggestionProvider {
-     public static final SimpleCommandExceptionType ERROR_NOT_PLAYER = new SimpleCommandExceptionType(new TranslatableComponent("permissions.requires.player"));
-     public static final SimpleCommandExceptionType ERROR_NOT_ENTITY = new SimpleCommandExceptionType(new TranslatableComponent("permissions.requires.entity"));
+     public static final SimpleCommandExceptionType ERROR_NOT_PLAYER = new SimpleCommandExceptionType(Component.translatable("permissions.requires.player"));
+     public static final SimpleCommandExceptionType ERROR_NOT_ENTITY = new SimpleCommandExceptionType(Component.translatable("permissions.requires.entity"));
      public final CommandSource source;
-@@ -52,9 +56,10 @@
-     private final ResultConsumer<CommandSourceStack> consumer;
+@@ -51,9 +55,10 @@
      private final EntityAnchorArgument.Anchor anchor;
      private final Vec2 rotation;
+     private final CommandSigningContext signingContext;
 +    public java.util.Map<Thread, CommandNode> currentCommand = new java.util.concurrent.ConcurrentHashMap<>(); // CraftBukkit // Paper
  
      public CommandSourceStack(CommandSource output, Vec3 pos, Vec2 rot, ServerLevel world, int level, String name, Component displayName, MinecraftServer server, @Nullable Entity entity) {
 -        this(output, pos, rot, world, level, name, displayName, server, entity, false, (context, success, result) -> {
 +        this(output, pos, rot, world, level, name, displayName, server, entity, false, (commandcontext, flag, j) -> {
-         }, EntityAnchorArgument.Anchor.FEET);
+         }, EntityAnchorArgument.Anchor.FEET, CommandSigningContext.NONE);
      }
  
 @@ -94,8 +99,9 @@
@@ -58,11 +58,11 @@
          } else {
 -            double d = DimensionType.getTeleportationScale(this.level.dimensionType(), world.dimensionType());
 -            Vec3 vec3 = new Vec3(this.worldPosition.x * d, this.worldPosition.y, this.worldPosition.z * d);
--            return new CommandSourceStack(this.source, vec3, this.rotation, world, this.permissionLevel, this.textName, this.displayName, this.server, this.entity, this.silent, this.consumer, this.anchor);
+-            return new CommandSourceStack(this.source, vec3, this.rotation, world, this.permissionLevel, this.textName, this.displayName, this.server, this.entity, this.silent, this.consumer, this.anchor, this.signingContext);
 +            double d0 = DimensionType.getTeleportationScale(this.level.dimensionType(), world.dimensionType());
 +            Vec3 vec3d = new Vec3(this.worldPosition.x * d0, this.worldPosition.y, this.worldPosition.z * d0);
 +
-+            return new CommandSourceStack(this.source, vec3d, this.rotation, world, this.permissionLevel, this.textName, this.displayName, this.server, this.entity, this.silent, this.consumer, this.anchor);
++            return new CommandSourceStack(this.source, vec3d, this.rotation, world, this.permissionLevel, this.textName, this.displayName, this.server, this.entity, this.silent, this.consumer, this.anchor, this.signingContext);
          }
      }
  
@@ -89,9 +89,9 @@
 +        return this.withRotation(new Vec2(f, f1));
      }
  
-     public Component getDisplayName() {
-@@ -147,11 +155,46 @@
-         return this.textName;
+     public CommandSourceStack withSigningContext(CommandSigningContext signer) {
+@@ -155,11 +163,46 @@
+         return this.entity != null ? this.entity.asChatSender() : ChatSender.system(this.getDisplayName());
      }
  
 +    // Paper start
@@ -119,7 +119,7 @@
 +        // Paper start - fix concurrency issue
 +        CommandNode currentCommand = this.currentCommand.get(Thread.currentThread());
 +        if (currentCommand != null) {
-+            return this.hasPermission(level, org.bukkit.craftbukkit.v1_18_R2.command.VanillaCommandWrapper.getPermission(currentCommand));
++            return this.hasPermission(level, org.bukkit.craftbukkit.v1_19_R1.command.VanillaCommandWrapper.getPermission(currentCommand));
 +            // Paper end
 +        }
 +        // CraftBukkit end
@@ -137,7 +137,7 @@
      public Vec3 getPosition() {
          return this.worldPosition;
      }
-@@ -167,7 +210,7 @@
+@@ -175,32 +218,38 @@
  
      public Entity getEntityOrException() throws CommandSyntaxException {
          if (this.entity == null) {
@@ -146,48 +146,77 @@
          } else {
              return this.entity;
          }
-@@ -175,9 +218,9 @@
+     }
  
      public ServerPlayer getPlayerOrException() throws CommandSyntaxException {
-         if (!(this.entity instanceof ServerPlayer)) {
+-        Entity var2 = this.entity;
+-        if (var2 instanceof ServerPlayer) {
+-            return (ServerPlayer)var2;
++        Entity entity = this.entity;
++
++        if (entity instanceof ServerPlayer) {
++            ServerPlayer entityplayer = (ServerPlayer) entity;
++
++            return entityplayer;
+         } else {
 -            throw ERROR_NOT_PLAYER.create();
 +            throw CommandSourceStack.ERROR_NOT_PLAYER.create();
-         } else {
--            return (ServerPlayer)this.entity;
-+            return (ServerPlayer) this.entity;
          }
      }
  
-@@ -205,17 +248,22 @@
+     @Nullable
+     public ServerPlayer getPlayer() {
+-        Entity var2 = this.entity;
+-        ServerPlayer var10000;
+-        if (var2 instanceof ServerPlayer serverPlayer) {
+-            var10000 = serverPlayer;
++        Entity entity = this.entity;
++        ServerPlayer entityplayer;
++
++        if (entity instanceof ServerPlayer) {
++            ServerPlayer entityplayer1 = (ServerPlayer) entity;
++
++            entityplayer = entityplayer1;
+         } else {
+-            var10000 = null;
++            entityplayer = null;
+         }
+ 
+-        return var10000;
++        return entityplayer;
+     }
+ 
+     public boolean isPlayer() {
+@@ -235,17 +284,22 @@
      }
  
      private void broadcastToAdmins(Component message) {
--        Component component = (new TranslatableComponent("chat.type.admin", this.getDisplayName(), message)).withStyle(new ChatFormatting[]{ChatFormatting.GRAY, ChatFormatting.ITALIC});
-+        MutableComponent ichatmutablecomponent = (new TranslatableComponent("chat.type.admin", new Object[]{this.getDisplayName(), message})).withStyle(new ChatFormatting[]{ChatFormatting.GRAY, ChatFormatting.ITALIC});
+-        Component component = Component.translatable("chat.type.admin", this.getDisplayName(), message).withStyle(ChatFormatting.GRAY, ChatFormatting.ITALIC);
++        MutableComponent ichatmutablecomponent = Component.translatable("chat.type.admin", this.getDisplayName(), message).withStyle(ChatFormatting.GRAY, ChatFormatting.ITALIC);
 +
          if (this.server.getGameRules().getBoolean(GameRules.RULE_SENDCOMMANDFEEDBACK)) {
 -            for(ServerPlayer serverPlayer : this.server.getPlayerList().getPlayers()) {
 -                if (serverPlayer != this.source && this.server.getPlayerList().isOp(serverPlayer.getGameProfile())) {
--                    serverPlayer.sendMessage(component, Util.NIL_UUID);
+-                    serverPlayer.sendSystemMessage(component);
 +            Iterator iterator = this.server.getPlayerList().getPlayers().iterator();
 +
 +            while (iterator.hasNext()) {
 +                ServerPlayer entityplayer = (ServerPlayer) iterator.next();
 +
 +                if (entityplayer != this.source && entityplayer.getBukkitEntity().hasPermission("minecraft.admin.command_feedback")) { // CraftBukkit
-+                    entityplayer.sendMessage(ichatmutablecomponent, Util.NIL_UUID);
++                    entityplayer.sendSystemMessage(ichatmutablecomponent);
                  }
              }
          }
  
 -        if (this.source != this.server && this.server.getGameRules().getBoolean(GameRules.RULE_LOGADMINCOMMANDS)) {
--            this.server.sendMessage(component, Util.NIL_UUID);
+-            this.server.sendSystemMessage(component);
 +        if (this.source != this.server && this.server.getGameRules().getBoolean(GameRules.RULE_LOGADMINCOMMANDS) && !org.spigotmc.SpigotConfig.silentCommandBlocks) { // Spigot
-+            this.server.sendMessage(ichatmutablecomponent, Util.NIL_UUID);
++            this.server.sendSystemMessage(ichatmutablecomponent);
          }
  
      }
-@@ -261,8 +309,8 @@
+@@ -291,8 +345,8 @@
  
      @Override
      public CompletableFuture<Suggestions> suggestRegistryElements(ResourceKey<? extends Registry<?>> registryRef, SharedSuggestionProvider.ElementSuggestionType suggestedIdType, SuggestionsBuilder builder, CommandContext<?> context) {
@@ -198,7 +227,7 @@
              return builder.buildFuture();
          }).orElseGet(Suggestions::empty);
      }
-@@ -276,4 +324,26 @@
+@@ -306,4 +360,26 @@
      public RegistryAccess registryAccess() {
          return this.server.registryAccess();
      }
@@ -211,7 +240,7 @@
 +    // Paper start - override getSelectedEntities
 +    @Override
 +    public Collection<String> getSelectedEntities() {
-+        if (com.destroystokyo.paper.PaperConfig.fixTargetSelectorTagCompletion && this.source instanceof ServerPlayer player) {
++        if (io.papermc.paper.configuration.GlobalConfiguration.get().commands.fixTargetSelectorTagCompletion && this.source instanceof ServerPlayer player) {
 +            double pickDistance = player.gameMode.getGameModeForPlayer().isCreative() ? 5.0F : 4.5F;
 +            Vec3 min = player.getEyePosition(1.0F);
 +            Vec3 viewVector = player.getViewVector(1.0F);

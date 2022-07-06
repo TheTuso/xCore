@@ -1,6 +1,6 @@
 --- a/net/minecraft/network/FriendlyByteBuf.java
 +++ b/net/minecraft/network/FriendlyByteBuf.java
-@@ -14,6 +14,8 @@
+@@ -18,6 +18,8 @@
  import io.netty.util.ByteProcessor;
  import it.unimi.dsi.fastutil.ints.IntArrayList;
  import it.unimi.dsi.fastutil.ints.IntList;
@@ -9,7 +9,7 @@
  import java.io.IOException;
  import java.io.InputStream;
  import java.io.OutputStream;
-@@ -27,6 +29,7 @@
+@@ -33,6 +35,7 @@
  import java.util.BitSet;
  import java.util.Collection;
  import java.util.Date;
@@ -17,11 +17,19 @@
  import java.util.List;
  import java.util.Map;
  import java.util.Optional;
-@@ -51,13 +54,16 @@
- import net.minecraft.world.level.ChunkPos;
+@@ -54,6 +57,7 @@
+ import net.minecraft.nbt.NbtOps;
+ import net.minecraft.nbt.Tag;
+ import net.minecraft.network.chat.Component;
++import net.minecraft.network.chat.MutableComponent;
+ import net.minecraft.resources.ResourceKey;
+ import net.minecraft.resources.ResourceLocation;
+ import net.minecraft.util.Crypt;
+@@ -64,13 +68,16 @@
+ import net.minecraft.world.level.Level;
  import net.minecraft.world.phys.BlockHitResult;
  import net.minecraft.world.phys.Vec3;
-+import org.bukkit.craftbukkit.v1_18_R2.inventory.CraftItemStack; // CraftBukkit
++import org.bukkit.craftbukkit.v1_19_R1.inventory.CraftItemStack; // CraftBukkit
  
  public class FriendlyByteBuf extends ByteBuf {
 +
@@ -33,9 +41,9 @@
 +    public java.util.Locale adventure$locale; // Paper
 +    public static final short MAX_STRING_LENGTH = 32767;
      public static final int MAX_COMPONENT_STRING_LENGTH = 262144;
- 
-     public FriendlyByteBuf(ByteBuf parent) {
-@@ -65,9 +71,9 @@
+     private static final int PUBLIC_KEY_SIZE = 256;
+     private static final int MAX_PUBLIC_KEY_HEADER_SIZE = 256;
+@@ -81,9 +88,9 @@
      }
  
      public static int getVarIntSize(int value) {
@@ -48,7 +56,7 @@
              }
          }
  
-@@ -75,9 +81,9 @@
+@@ -91,9 +98,9 @@
      }
  
      public static int getVarLongSize(long value) {
@@ -61,9 +69,9 @@
              }
          }
  
-@@ -85,83 +91,93 @@
-     }
+@@ -102,25 +109,32 @@
  
+     /** @deprecated */
      public <T> T readWithCodec(Codec<T> codec) {
 -        CompoundTag compoundTag = this.readAnySizeNbt();
 -        DataResult<T> dataResult = codec.parse(NbtOps.INSTANCE, compoundTag);
@@ -81,6 +89,7 @@
 +        return dataresult.result().get();
      }
  
+     /** @deprecated */
      public <T> void writeWithCodec(Codec<T> codec, T object) {
 -        DataResult<Tag> dataResult = codec.encodeStart(NbtOps.INSTANCE, object);
 -        dataResult.error().ifPresent((partial) -> {
@@ -94,6 +103,20 @@
          });
 -        this.writeNbt((CompoundTag)dataResult.result().get());
 +        this.writeNbt((CompoundTag) dataresult.result().get());
+     }
+ 
+     public <T> void writeId(IdMap<T> registry, T value) {
+         int i = registry.getId(value);
++
+         if (i == -1) {
+             throw new IllegalArgumentException("Can't find id for '" + value + "' in map " + registry);
+         } else {
+@@ -131,70 +145,75 @@
+     @Nullable
+     public <T> T readById(IdMap<T> registry) {
+         int i = this.readVarInt();
++
+         return registry.byId(i);
      }
  
      public static <T> IntFunction<T> limitValue(IntFunction<T> applier, int max) {
@@ -110,38 +133,38 @@
          };
      }
  
-     public <T, C extends Collection<T>> C readCollection(IntFunction<C> collectionFactory, Function<FriendlyByteBuf, T> entryParser) {
+     public <T, C extends Collection<T>> C readCollection(IntFunction<C> collectionFactory, FriendlyByteBuf.Reader<T> reader) {
          int i = this.readVarInt();
 -        C collection = collectionFactory.apply(i);
 +        C c0 = collectionFactory.apply(i); // CraftBukkit - decompile error
  
 -        for(int j = 0; j < i; ++j) {
--            collection.add(entryParser.apply(this));
+-            collection.add(reader.apply((T)this));
 +        for (int j = 0; j < i; ++j) {
-+            c0.add(entryParser.apply(this));
++            c0.add(reader.apply(this));
          }
  
 -        return collection;
 +        return c0;
      }
  
-     public <T> void writeCollection(Collection<T> collection, BiConsumer<FriendlyByteBuf, T> entrySerializer) {
+     public <T> void writeCollection(Collection<T> collection, FriendlyByteBuf.Writer<T> writer) {
          this.writeVarInt(collection.size());
 +        Iterator<T> iterator = collection.iterator(); // CraftBukkit - decompile error
  
 -        for(T object : collection) {
--            entrySerializer.accept(this, object);
+-            writer.accept((T)this, object);
 +        while (iterator.hasNext()) {
 +            T t0 = iterator.next();
 +
-+            entrySerializer.accept(this, t0);
++            writer.accept(this, t0);
          }
  
      }
  
-     public <T> List<T> readList(Function<FriendlyByteBuf, T> entryParser) {
--        return this.readCollection(Lists::newArrayListWithCapacity, entryParser);
-+        return (List) this.readCollection((java.util.function.IntFunction) Lists::newArrayListWithCapacity, entryParser); // CraftBukkit - decompile error
+     public <T> List<T> readList(FriendlyByteBuf.Reader<T> reader) {
+-        return this.readCollection(Lists::newArrayListWithCapacity, reader);
++        return (List) this.readCollection(Lists::newArrayListWithCapacity, reader);
      }
  
      public IntList readIntIdList() {
@@ -165,18 +188,18 @@
 +        list.forEach((java.util.function.IntConsumer) this::writeVarInt); // CraftBukkit - decompile error
      }
  
-     public <K, V, M extends Map<K, V>> M readMap(IntFunction<M> mapFactory, Function<FriendlyByteBuf, K> keyParser, Function<FriendlyByteBuf, V> valueParser) {
+     public <K, V, M extends Map<K, V>> M readMap(IntFunction<M> mapFactory, FriendlyByteBuf.Reader<K> keyReader, FriendlyByteBuf.Reader<V> valueReader) {
          int i = this.readVarInt();
 -        M map = mapFactory.apply(i);
 +        M m0 = mapFactory.apply(i); // CraftBukkit - decompile error
  
 -        for(int j = 0; j < i; ++j) {
--            K object = keyParser.apply(this);
--            V object2 = valueParser.apply(this);
+-            K object = keyReader.apply((K)this);
+-            V object2 = valueReader.apply((V)this);
 -            map.put(object, object2);
 +        for (int j = 0; j < i; ++j) {
-+            K k0 = keyParser.apply(this);
-+            V v0 = valueParser.apply(this);
++            K k0 = keyReader.apply(this);
++            V v0 = valueReader.apply(this);
 +
 +            m0.put(k0, v0);
          }
@@ -185,17 +208,17 @@
 +        return m0;
      }
  
-     public <K, V> Map<K, V> readMap(Function<FriendlyByteBuf, K> keyParser, Function<FriendlyByteBuf, V> valueParser) {
-@@ -170,16 +186,16 @@
+     public <K, V> Map<K, V> readMap(FriendlyByteBuf.Reader<K> keyReader, FriendlyByteBuf.Reader<V> valueReader) {
+@@ -203,16 +222,16 @@
  
-     public <K, V> void writeMap(Map<K, V> map, BiConsumer<FriendlyByteBuf, K> keySerializer, BiConsumer<FriendlyByteBuf, V> valueSerializer) {
+     public <K, V> void writeMap(Map<K, V> map, FriendlyByteBuf.Writer<K> keyWriter, FriendlyByteBuf.Writer<V> valueWriter) {
          this.writeVarInt(map.size());
 -        map.forEach((key, value) -> {
--            keySerializer.accept(this, key);
--            valueSerializer.accept(this, value);
+-            keyWriter.accept((K)this, key);
+-            valueWriter.accept((V)this, value);
 +        map.forEach((object, object1) -> {
-+            keySerializer.accept(this, object);
-+            valueSerializer.accept(this, object1);
++            keyWriter.accept(this, object);
++            valueWriter.accept(this, object1);
          });
      }
  
@@ -207,7 +230,57 @@
              consumer.accept(this);
          }
  
-@@ -210,21 +226,27 @@
+@@ -221,7 +240,7 @@
+     public <T> void writeOptional(Optional<T> value, FriendlyByteBuf.Writer<T> writer) {
+         if (value.isPresent()) {
+             this.writeBoolean(true);
+-            writer.accept((T)this, value.get());
++            writer.accept(this, value.get());
+         } else {
+             this.writeBoolean(false);
+         }
+@@ -229,18 +248,18 @@
+     }
+ 
+     public <T> Optional<T> readOptional(FriendlyByteBuf.Reader<T> reader) {
+-        return this.readBoolean() ? Optional.of(reader.apply((T)this)) : Optional.empty();
++        return this.readBoolean() ? Optional.of(reader.apply(this)) : Optional.empty();
+     }
+ 
+     @Nullable
+     public <T> T readNullable(FriendlyByteBuf.Reader<T> reader) {
+-        return (T)(this.readBoolean() ? reader.apply((T)this) : null);
++        return this.readBoolean() ? reader.apply(this) : null;
+     }
+ 
+     public <T> void writeNullable(@Nullable T value, FriendlyByteBuf.Writer<T> writer) {
+         if (value != null) {
+             this.writeBoolean(true);
+-            writer.accept((T)this, value);
++            writer.accept(this, value);
+         } else {
+             this.writeBoolean(false);
+         }
+@@ -250,15 +269,15 @@
+     public <L, R> void writeEither(Either<L, R> either, FriendlyByteBuf.Writer<L> leftWriter, FriendlyByteBuf.Writer<R> rightWriter) {
+         either.ifLeft((object) -> {
+             this.writeBoolean(true);
+-            leftWriter.accept((L)this, object);
++            leftWriter.accept(this, object);
+         }).ifRight((object) -> {
+             this.writeBoolean(false);
+-            rightWriter.accept((R)this, object);
++            rightWriter.accept(this, object);
+         });
+     }
+ 
+     public <L, R> Either<L, R> readEither(FriendlyByteBuf.Reader<L> leftReader, FriendlyByteBuf.Reader<R> rightReader) {
+-        return this.readBoolean() ? Either.left(leftReader.apply((L)this)) : Either.right(rightReader.apply((R)this));
++        return this.readBoolean() ? Either.left(leftReader.apply(this)) : Either.right(rightReader.apply(this));
+     }
+ 
+     public byte[] readByteArray() {
+@@ -272,21 +291,27 @@
      }
  
      public byte[] readByteArray(int maxSize) {
@@ -243,7 +316,7 @@
          }
  
          return this;
-@@ -235,32 +257,37 @@
+@@ -297,32 +322,37 @@
      }
  
      public int[] readVarIntArray(int maxSize) {
@@ -291,7 +364,7 @@
      }
  
      public long[] readLongArray(@Nullable long[] toArray) {
-@@ -268,17 +295,18 @@
+@@ -330,17 +360,18 @@
      }
  
      public long[] readLongArray(@Nullable long[] toArray, int maxSize) {
@@ -317,7 +390,7 @@
          }
  
          return toArray;
-@@ -287,9 +315,10 @@
+@@ -349,9 +380,10 @@
      @VisibleForTesting
      public byte[] accessByteBufWithCorrectSize() {
          int i = this.writerIndex();
@@ -331,8 +404,34 @@
      }
  
      public BlockPos readBlockPos() {
-@@ -323,12 +352,24 @@
-         return Component.Serializer.fromJson(this.readUtf(262144));
+@@ -382,9 +414,10 @@
+     }
+ 
+     public GlobalPos readGlobalPos() {
+-        ResourceKey<Level> resourceKey = this.readResourceKey(Registry.DIMENSION_REGISTRY);
+-        BlockPos blockPos = this.readBlockPos();
+-        return GlobalPos.of(resourceKey, blockPos);
++        ResourceKey<Level> resourcekey = this.readResourceKey(Registry.DIMENSION_REGISTRY);
++        BlockPos blockposition = this.readBlockPos();
++
++        return GlobalPos.of(resourcekey, blockposition);
+     }
+ 
+     public void writeGlobalPos(GlobalPos pos) {
+@@ -393,20 +426,33 @@
+     }
+ 
+     public Component readComponent() {
+-        Component component = Component.Serializer.fromJson(this.readUtf(262144));
+-        if (component == null) {
++        MutableComponent ichatmutablecomponent = Component.Serializer.fromJson(this.readUtf(262144));
++
++        if (ichatmutablecomponent == null) {
+             throw new DecoderException("Received unexpected null component");
+         } else {
+-            return component;
++            return ichatmutablecomponent;
+         }
      }
  
 +    // Paper start
@@ -358,7 +457,7 @@
      }
  
      public FriendlyByteBuf writeEnum(Enum<?> instance) {
-@@ -339,32 +380,34 @@
+@@ -417,32 +463,34 @@
          int i = 0;
          int j = 0;
  
@@ -405,7 +504,7 @@
      }
  
      public FriendlyByteBuf writeUUID(UUID uuid) {
-@@ -378,7 +421,7 @@
+@@ -456,7 +504,7 @@
      }
  
      public FriendlyByteBuf writeVarInt(int value) {
@@ -414,7 +513,7 @@
              this.writeByte(value & 127 | 128);
              value >>>= 7;
          }
-@@ -388,12 +431,12 @@
+@@ -466,12 +514,12 @@
      }
  
      public FriendlyByteBuf writeVarLong(long value) {
@@ -430,7 +529,7 @@
          return this;
      }
  
-@@ -402,9 +445,9 @@
+@@ -480,9 +528,9 @@
              this.writeByte(0);
          } else {
              try {
@@ -443,7 +542,7 @@
              }
          }
  
-@@ -424,34 +467,50 @@
+@@ -502,34 +550,41 @@
      @Nullable
      public CompoundTag readNbt(NbtAccounter sizeTracker) {
          int i = this.readerIndex();
@@ -474,7 +573,7 @@
              this.writeBoolean(true);
              Item item = stack.getItem();
 +
-             this.writeVarInt(Item.getId(item));
+             this.writeId(Registry.ITEM, item);
              this.writeByte(stack.getCount());
 -            CompoundTag compoundTag = null;
 +            CompoundTag nbttagcompound = null;
@@ -483,18 +582,9 @@
 -                compoundTag = stack.getTag();
 +                // Spigot start - filter
 +                stack = stack.copy();
-+                // CraftItemStack.setItemMeta(stack, CraftItemStack.getItemMeta(stack)); // Paper - This is no longer needed due to NBT being supported
++                // CraftItemStack.setItemMeta(stack, CraftItemStack.getItemMeta(stack)); // Paper - This is no longer with raw NBT being handled in metadata
 +                // Spigot end
 +                nbttagcompound = stack.getTag();
-+                // Paper start
-+                if (nbttagcompound != null && nbttagcompound.contains("SkullOwner", 10)) {
-+                    CompoundTag owner = nbttagcompound.getCompound("SkullOwner");
-+                    if (owner.hasUUID("Id")) {
-+                        nbttagcompound.putUUID("SkullOwnerOrig", owner.getUUID("Id"));
-+                        net.minecraft.world.level.block.entity.SkullBlockEntity.sanitizeUUID(owner);
-+                    }
-+                }
-+                // Paper end
              }
  
 -            this.writeNbt(compoundTag);
@@ -502,86 +592,113 @@
          }
  
          return this;
-@@ -462,10 +521,25 @@
+@@ -539,11 +594,17 @@
+         if (!this.readBoolean()) {
              return ItemStack.EMPTY;
          } else {
-             int i = this.readVarInt();
--            int j = this.readByte();
--            ItemStack itemStack = new ItemStack(Item.byId(i), j);
+-            Item item = this.readById(Registry.ITEM);
+-            int i = this.readByte();
+-            ItemStack itemStack = new ItemStack(item, i);
 -            itemStack.setTag(this.readNbt());
 -            return itemStack;
++            Item item = (Item) this.readById(Registry.ITEM);
 +            byte b0 = this.readByte();
-+            ItemStack itemstack = new ItemStack(Item.byId(i), b0);
++            ItemStack itemstack = new ItemStack(item, b0);
 +
 +            itemstack.setTag(this.readNbt());
 +            // CraftBukkit start
-+            if (itemstack.getTag() != null) {
-+                // Paper start - Fix skulls of same owner - restore orig ID since we changed it on send to client
-+                if (itemstack.tag.contains("SkullOwnerOrig")) {
-+                    CompoundTag owner = itemstack.tag.getCompound("SkullOwner");
-+                    if (itemstack.tag.contains("SkullOwnerOrig")) {
-+                        owner.tags.put("Id", itemstack.tag.tags.get("SkullOwnerOrig"));
-+                        itemstack.tag.remove("SkullOwnerOrig");
-+                    }
-+                }
-+                // Paper end
-+                // CraftItemStack.setItemMeta(itemstack, CraftItemStack.getItemMeta(itemstack)); // Paper - This is no longer needed due to NBT being supported
++            if (false && itemstack.getTag() != null) { // Paper - This is no longer needed with raw NBT being handled in metadata
++                CraftItemStack.setItemMeta(itemstack, CraftItemStack.getItemMeta(itemstack));
 +            }
 +            // CraftBukkit end
 +            return itemstack;
          }
      }
  
-@@ -474,18 +548,20 @@
+@@ -552,19 +613,23 @@
      }
  
      public String readUtf(int maxLength) {
--        int i = this.readVarInt();
--        if (i > maxLength * 4) {
--            throw new DecoderException("The received encoded string buffer length is longer than maximum allowed (" + i + " > " + maxLength * 4 + ")");
--        } else if (i < 0) {
-+        int j = this.readVarInt();
+-        int i = getMaxEncodedUtfLength(maxLength);
+-        int j = this.readVarInt();
+-        if (j > i) {
+-            throw new DecoderException("The received encoded string buffer length is longer than maximum allowed (" + j + " > " + i + ")");
+-        } else if (j < 0) {
++        int j = FriendlyByteBuf.getMaxEncodedUtfLength(maxLength);
++        int k = this.readVarInt();
 +
-+        if (j > maxLength * 4) {
-+            throw new DecoderException("The received encoded string buffer length is longer than maximum allowed (" + j + " > " + maxLength * 4 + ")");
-+        } else if (j < 0) {
++        if (k > j) {
++            throw new DecoderException("The received encoded string buffer length is longer than maximum allowed (" + k + " > " + j + ")");
++        } else if (k < 0) {
              throw new DecoderException("The received encoded string buffer length is less than zero! Weird string!");
          } else {
--            String string = this.toString(this.readerIndex(), i, StandardCharsets.UTF_8);
--            this.readerIndex(this.readerIndex() + i);
+-            String string = this.toString(this.readerIndex(), j, StandardCharsets.UTF_8);
+-            this.readerIndex(this.readerIndex() + j);
 -            if (string.length() > maxLength) {
--                throw new DecoderException("The received string length is longer than maximum allowed (" + i + " > " + maxLength + ")");
-+            String s = this.toString(this.readerIndex(), j, StandardCharsets.UTF_8);
+-                throw new DecoderException("The received string length is longer than maximum allowed (" + string.length() + " > " + maxLength + ")");
++            String s = this.toString(this.readerIndex(), k, StandardCharsets.UTF_8);
 +
-+            this.readerIndex(this.readerIndex() + j);
++            this.readerIndex(this.readerIndex() + k);
 +            if (s.length() > maxLength) {
-+                throw new DecoderException("The received string length is longer than maximum allowed (" + j + " > " + maxLength + ")");
++                int l = s.length();
++
++                throw new DecoderException("The received string length is longer than maximum allowed (" + l + " > " + maxLength + ")");
              } else {
 -                return string;
 +                return s;
              }
          }
      }
-@@ -495,12 +571,13 @@
-     }
+@@ -575,15 +640,18 @@
  
      public FriendlyByteBuf writeUtf(String string, int maxLength) {
--        byte[] bs = string.getBytes(StandardCharsets.UTF_8);
--        if (bs.length > maxLength) {
--            throw new EncoderException("String too big (was " + bs.length + " bytes encoded, max " + maxLength + ")");
-+        byte[] abyte = string.getBytes(StandardCharsets.UTF_8);
+         if (string.length() > maxLength) {
+-            throw new EncoderException("String too big (was " + string.length() + " characters, max " + maxLength + ")");
++            int j = string.length();
 +
-+        if (abyte.length > maxLength) {
-+            throw new EncoderException("String too big (was " + abyte.length + " bytes encoded, max " + maxLength + ")");
++            throw new EncoderException("String too big (was " + j + " characters, max " + maxLength + ")");
          } else {
--            this.writeVarInt(bs.length);
--            this.writeBytes(bs);
-+            this.writeVarInt(abyte.length);
-+            this.writeBytes(abyte);
-             return this;
+-            byte[] bs = string.getBytes(StandardCharsets.UTF_8);
+-            int i = getMaxEncodedUtfLength(maxLength);
+-            if (bs.length > i) {
+-                throw new EncoderException("String too big (was " + bs.length + " bytes encoded, max " + i + ")");
++            byte[] abyte = string.getBytes(StandardCharsets.UTF_8);
++            int k = FriendlyByteBuf.getMaxEncodedUtfLength(maxLength);
++
++            if (abyte.length > k) {
++                throw new EncoderException("String too big (was " + abyte.length + " bytes encoded, max " + k + ")");
+             } else {
+-                this.writeVarInt(bs.length);
+-                this.writeBytes(bs);
++                this.writeVarInt(abyte.length);
++                this.writeBytes(abyte);
+                 return this;
+             }
+         }
+@@ -603,8 +671,9 @@
+     }
+ 
+     public <T> ResourceKey<T> readResourceKey(ResourceKey<? extends Registry<T>> registryRef) {
+-        ResourceLocation resourceLocation = this.readResourceLocation();
+-        return ResourceKey.create(registryRef, resourceLocation);
++        ResourceLocation minecraftkey = this.readResourceLocation();
++
++        return ResourceKey.create(registryRef, minecraftkey);
+     }
+ 
+     public void writeResourceKey(ResourceKey<?> key) {
+@@ -631,8 +700,8 @@
+     public PublicKey readPublicKey() {
+         try {
+             return Crypt.byteToPublicKey(this.readByteArray(512));
+-        } catch (CryptException var2) {
+-            throw new DecoderException("Malformed public key bytes", var2);
++        } catch (CryptException cryptographyexception) {
++            throw new DecoderException("Malformed public key bytes", cryptographyexception);
          }
      }
-@@ -524,23 +601,26 @@
+ 
+@@ -642,23 +711,26 @@
      }
  
      public BlockHitResult readBlockHitResult() {
@@ -620,7 +737,53 @@
          this.writeBoolean(hitResult.isInside());
      }
  
-@@ -572,8 +652,8 @@
+@@ -671,15 +743,17 @@
+     }
+ 
+     public GameProfile readGameProfile() {
+-        UUID uUID = this.readUUID();
+-        String string = this.readUtf(16);
+-        GameProfile gameProfile = new GameProfile(uUID, string);
+-        PropertyMap propertyMap = gameProfile.getProperties();
+-        this.readWithCount((buf) -> {
++        UUID uuid = this.readUUID();
++        String s = this.readUtf(16);
++        GameProfile gameprofile = new GameProfile(uuid, s);
++        PropertyMap propertymap = gameprofile.getProperties();
++
++        this.readWithCount((packetdataserializer) -> {
+             Property property = this.readProperty();
+-            propertyMap.put(property.getName(), property);
++
++            propertymap.put(property.getName(), property);
+         });
+-        return gameProfile;
++        return gameprofile;
+     }
+ 
+     public void writeGameProfile(GameProfile gameProfile) {
+@@ -689,13 +763,15 @@
+     }
+ 
+     public Property readProperty() {
+-        String string = this.readUtf();
+-        String string2 = this.readUtf();
++        String s = this.readUtf();
++        String s1 = this.readUtf();
++
+         if (this.readBoolean()) {
+-            String string3 = this.readUtf();
+-            return new Property(string, string2, string3);
++            String s2 = this.readUtf();
++
++            return new Property(s, s1, s2);
+         } else {
+-            return new Property(string, string2);
++            return new Property(s, s1);
+         }
+     }
+ 
+@@ -731,8 +807,8 @@
          return this.source.order();
      }
  
@@ -631,7 +794,7 @@
      }
  
      public ByteBuf unwrap() {
-@@ -672,8 +752,8 @@
+@@ -831,8 +907,8 @@
          return this.source.ensureWritable(i);
      }
  
@@ -642,7 +805,7 @@
      }
  
      public boolean getBoolean(int i) {
-@@ -756,48 +836,48 @@
+@@ -915,48 +991,48 @@
          return this.source.getDouble(i);
      }
  
@@ -711,7 +874,7 @@
      }
  
      public ByteBuf setByte(int i, int j) {
-@@ -828,12 +908,12 @@
+@@ -987,12 +1063,12 @@
          return this.source.setIntLE(i, j);
      }
  
@@ -728,7 +891,7 @@
      }
  
      public ByteBuf setChar(int i, int j) {
-@@ -844,52 +924,52 @@
+@@ -1003,52 +1079,52 @@
          return this.source.setFloat(i, f);
      }
  
@@ -803,7 +966,7 @@
      }
  
      public boolean readBoolean() {
-@@ -984,52 +1064,52 @@
+@@ -1143,52 +1219,52 @@
          return this.source.readRetainedSlice(i);
      }
  
@@ -876,7 +1039,7 @@
      }
  
      public ByteBuf writeByte(int i) {
-@@ -1060,12 +1140,12 @@
+@@ -1219,12 +1295,12 @@
          return this.source.writeIntLE(i);
      }
  
@@ -893,7 +1056,7 @@
      }
  
      public ByteBuf writeChar(int i) {
-@@ -1076,84 +1156,84 @@
+@@ -1235,84 +1311,84 @@
          return this.source.writeFloat(f);
      }
  
@@ -1016,7 +1179,7 @@
      }
  
      public ByteBuf copy() {
-@@ -1248,8 +1328,8 @@
+@@ -1407,8 +1483,8 @@
          return this.source.equals(object);
      }
  
@@ -1027,3 +1190,28 @@
      }
  
      public String toString() {
+@@ -1445,18 +1521,20 @@
+ 
+     @FunctionalInterface
+     public interface Reader<T> extends Function<FriendlyByteBuf, T> {
++
+         default FriendlyByteBuf.Reader<Optional<T>> asOptional() {
+-            return (buf) -> {
+-                return buf.readOptional(this);
++            return (packetdataserializer) -> {
++                return packetdataserializer.readOptional(this);
+             };
+         }
+     }
+ 
+     @FunctionalInterface
+     public interface Writer<T> extends BiConsumer<FriendlyByteBuf, T> {
++
+         default FriendlyByteBuf.Writer<Optional<T>> asOptional() {
+-            return (buf, value) -> {
+-                buf.writeOptional(value, this);
++            return (packetdataserializer, optional) -> {
++                packetdataserializer.writeOptional(optional, this);
+             };
+         }
+     }

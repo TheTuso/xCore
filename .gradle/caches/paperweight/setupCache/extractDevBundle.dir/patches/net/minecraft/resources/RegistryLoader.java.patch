@@ -1,6 +1,6 @@
 --- a/net/minecraft/resources/RegistryLoader.java
 +++ b/net/minecraft/resources/RegistryLoader.java
-@@ -42,6 +42,12 @@
+@@ -46,6 +46,12 @@
          RegistryLoader.ReadCache<E> readCache = this.readCache(registryRef);
          DataResult<Holder<E>> dataResult = readCache.values.get(entryKey);
          if (dataResult != null) {
@@ -12,8 +12,8 @@
 +            // Paper end
              return dataResult;
          } else {
-             Holder<E> holder = registry.getOrCreateHolder(entryKey);
-@@ -73,7 +79,7 @@
+             Holder<E> holder = registry.getOrCreateHolderOrThrow(entryKey);
+@@ -76,7 +82,7 @@
      }
  
      private <E> RegistryLoader.ReadCache<E> readCache(ResourceKey<? extends Registry<E>> registryRef) {

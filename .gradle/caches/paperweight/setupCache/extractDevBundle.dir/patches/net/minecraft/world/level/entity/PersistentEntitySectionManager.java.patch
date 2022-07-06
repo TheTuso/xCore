@@ -31,7 +31,7 @@
 +import net.minecraft.world.level.ChunkPos;
 +// CraftBukkit start
 +import net.minecraft.world.level.chunk.storage.EntityStorage;
-+import org.bukkit.craftbukkit.v1_18_R2.event.CraftEventFactory;
++import org.bukkit.craftbukkit.v1_19_R1.event.CraftEventFactory;
 +// CraftBukkit end
  
  public class PersistentEntitySectionManager<T extends EntityAccess> implements AutoCloseable {
@@ -151,11 +151,11 @@
 +            // Paper end
 +            PersistentEntitySectionManager.LOGGER.warn("UUID of added entity already exists: {}", entity);
 +            // Paper start
-+            if (net.minecraft.world.level.Level.DEBUG_ENTITIES && ((Entity) entity).level.paperConfig.duplicateUUIDMode != com.destroystokyo.paper.PaperWorldConfig.DuplicateUUIDMode.NOTHING) {
++            if (net.minecraft.world.level.Level.DEBUG_ENTITIES && ((Entity) entity).level.paperConfig().entities.spawning.duplicateUuid.mode != io.papermc.paper.configuration.WorldConfiguration.Entities.Spawning.DuplicateUUID.DuplicateUUIDMode.NOTHING) {
 +                if (((Entity) entity).addedToWorldStack != null) {
 +                    ((Entity) entity).addedToWorldStack.printStackTrace();
 +                }
-+                net.minecraft.server.level.ServerLevel.getAddToWorldStackTrace((net.minecraft.world.entity.Entity) entity).printStackTrace();
++                net.minecraft.server.level.ServerLevel.getAddToWorldStackTrace((Entity) entity).printStackTrace();
 +            }
 +            // Paper end
              return false;
@@ -561,7 +561,7 @@
                      }
                  }
  
-@@ -345,57 +502,94 @@
+@@ -345,66 +502,103 @@
  
      @VisibleForDebug
      public String gatherStats() {
@@ -652,14 +652,20 @@
          private void updateStatus(Visibility oldStatus, Visibility newStatus) {
 -            Visibility visibility = PersistentEntitySectionManager.getEffectiveStatus(this.entity, oldStatus);
 -            Visibility visibility2 = PersistentEntitySectionManager.getEffectiveStatus(this.entity, newStatus);
--            if (visibility != visibility2) {
--                boolean bl = visibility.isAccessible();
--                boolean bl2 = visibility2.isAccessible();
--                if (bl && !bl2) {
+-            if (visibility == visibility2) {
+-                if (visibility2.isAccessible()) {
 +            Visibility visibility2 = PersistentEntitySectionManager.getEffectiveStatus(this.entity, oldStatus);
 +            Visibility visibility3 = PersistentEntitySectionManager.getEffectiveStatus(this.entity, newStatus);
 +
-+            if (visibility2 != visibility3) {
++            if (visibility2 == visibility3) {
++                if (visibility3.isAccessible()) {
+                     PersistentEntitySectionManager.this.callbacks.onSectionChange(this.entity);
+                 }
+ 
+             } else {
+-                boolean bl = visibility.isAccessible();
+-                boolean bl2 = visibility2.isAccessible();
+-                if (bl && !bl2) {
 +                boolean flag = visibility2.isAccessible();
 +                boolean flag1 = visibility3.isAccessible();
 +
@@ -683,7 +689,12 @@
                      PersistentEntitySectionManager.this.startTicking(this.entity);
                  }
  
-@@ -404,11 +598,14 @@
+-                if (bl2) {
++                if (flag1) {
+                     PersistentEntitySectionManager.this.callbacks.onSectionChange(this.entity);
+                 }
+ 
+@@ -413,11 +607,14 @@
  
          @Override
          public void onRemove(Entity.RemovalReason reason) {
@@ -699,7 +710,7 @@
              if (visibility.isTicking()) {
                  PersistentEntitySectionManager.this.stopTicking(this.entity);
              }
-@@ -422,14 +619,8 @@
+@@ -431,14 +628,8 @@
              }
  
              PersistentEntitySectionManager.this.knownUuids.remove(this.entity.getUUID());

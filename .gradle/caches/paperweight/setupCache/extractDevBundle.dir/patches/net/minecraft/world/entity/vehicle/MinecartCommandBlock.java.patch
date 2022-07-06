@@ -1,6 +1,6 @@
 --- a/net/minecraft/world/entity/vehicle/MinecartCommandBlock.java
 +++ b/net/minecraft/world/entity/vehicle/MinecartCommandBlock.java
-@@ -19,6 +19,7 @@
+@@ -21,6 +21,7 @@
  import net.minecraft.world.phys.Vec3;
  
  public class MinecartCommandBlock extends AbstractMinecart {
@@ -8,14 +8,14 @@
      public static final EntityDataAccessor<String> DATA_ID_COMMAND_NAME = SynchedEntityData.defineId(MinecartCommandBlock.class, EntityDataSerializers.STRING);
      static final EntityDataAccessor<Component> DATA_ID_LAST_OUTPUT = SynchedEntityData.defineId(MinecartCommandBlock.class, EntityDataSerializers.COMPONENT);
      private final BaseCommandBlock commandBlock = new MinecartCommandBlock.MinecartCommandBase();
-@@ -36,16 +37,16 @@
+@@ -43,16 +44,16 @@
      @Override
      protected void defineSynchedData() {
          super.defineSynchedData();
 -        this.getEntityData().define(DATA_ID_COMMAND_NAME, "");
--        this.getEntityData().define(DATA_ID_LAST_OUTPUT, TextComponent.EMPTY);
+-        this.getEntityData().define(DATA_ID_LAST_OUTPUT, CommonComponents.EMPTY);
 +        this.getEntityData().define(MinecartCommandBlock.DATA_ID_COMMAND_NAME, "");
-+        this.getEntityData().define(MinecartCommandBlock.DATA_ID_LAST_OUTPUT, TextComponent.EMPTY);
++        this.getEntityData().define(MinecartCommandBlock.DATA_ID_LAST_OUTPUT, CommonComponents.EMPTY);
      }
  
      @Override
@@ -29,7 +29,7 @@
      }
  
      @Override
-@@ -85,13 +86,14 @@
+@@ -92,13 +93,14 @@
      @Override
      public void onSyncedDataUpdated(EntityDataAccessor<?> data) {
          super.onSyncedDataUpdated(data);
@@ -49,7 +49,7 @@
          }
  
      }
-@@ -102,9 +104,12 @@
+@@ -109,9 +111,12 @@
      }
  
      public class MinecartCommandBase extends BaseCommandBlock {
@@ -63,7 +63,7 @@
          }
  
          @Override
-@@ -126,5 +131,12 @@
+@@ -133,5 +138,12 @@
          public CommandSourceStack createCommandSourceStack() {
              return new CommandSourceStack(this, MinecartCommandBlock.this.position(), MinecartCommandBlock.this.getRotationVector(), this.getLevel(), 2, this.getName().getString(), MinecartCommandBlock.this.getDisplayName(), this.getLevel().getServer(), MinecartCommandBlock.this);
          }
@@ -71,7 +71,7 @@
 +        // CraftBukkit start
 +        @Override
 +        public org.bukkit.command.CommandSender getBukkitSender(CommandSourceStack wrapper) {
-+            return (org.bukkit.craftbukkit.v1_18_R2.entity.CraftMinecartCommand) MinecartCommandBlock.this.getBukkitEntity();
++            return (org.bukkit.craftbukkit.v1_19_R1.entity.CraftMinecartCommand) MinecartCommandBlock.this.getBukkitEntity();
 +        }
 +        // CraftBukkit end
      }

@@ -7,8 +7,8 @@ import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
 import org.bukkit.attribute.Attributable;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.attribute.AttributeInstance;
-import org.bukkit.craftbukkit.v1_18_R2.attribute.CraftAttributeInstance;
-import org.bukkit.craftbukkit.v1_18_R2.attribute.CraftAttributeMap;
+import org.bukkit.craftbukkit.v1_19_R1.attribute.CraftAttributeInstance;
+import org.bukkit.craftbukkit.v1_19_R1.attribute.CraftAttributeMap;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 

@@ -1,6 +1,14 @@
 --- a/net/minecraft/world/level/block/LeverBlock.java
 +++ b/net/minecraft/world/level/block/LeverBlock.java
-@@ -22,8 +22,10 @@
+@@ -8,6 +8,7 @@
+ import net.minecraft.util.RandomSource;
+ import net.minecraft.world.InteractionHand;
+ import net.minecraft.world.InteractionResult;
++import net.minecraft.world.entity.Entity;
+ import net.minecraft.world.entity.player.Player;
+ import net.minecraft.world.level.BlockGetter;
+ import net.minecraft.world.level.Level;
+@@ -22,8 +23,10 @@
  import net.minecraft.world.phys.BlockHitResult;
  import net.minecraft.world.phys.shapes.CollisionContext;
  import net.minecraft.world.phys.shapes.VoxelShape;
@@ -11,7 +19,7 @@
      public static final BooleanProperty POWERED = BlockStateProperties.POWERED;
      protected static final int DEPTH = 6;
      protected static final int WIDTH = 6;
-@@ -39,82 +41,100 @@
+@@ -39,82 +42,100 @@
  
      protected LeverBlock(BlockBehaviour.Properties settings) {
          super(settings);
@@ -84,7 +92,7 @@
 -            BlockState blockState2 = this.pull(state, world, pos);
 -            float f = blockState2.getValue(POWERED) ? 0.6F : 0.5F;
 -            world.playSound((Player)null, pos, SoundEvents.LEVER_CLICK, SoundSource.BLOCKS, 0.3F, f);
--            world.gameEvent(player, blockState2.getValue(POWERED) ? GameEvent.BLOCK_SWITCH : GameEvent.BLOCK_UNSWITCH, pos);
+-            world.gameEvent(player, blockState2.getValue(POWERED) ? GameEvent.BLOCK_ACTIVATE : GameEvent.BLOCK_DEACTIVATE, pos);
 +            // CraftBukkit start - Interact Lever
 +            boolean powered = state.getValue(LeverBlock.POWERED); // Old powered state
 +            org.bukkit.block.Block block = world.getWorld().getBlockAt(pos.getX(), pos.getY(), pos.getZ());
@@ -103,7 +111,7 @@
 +            float f = (Boolean) iblockdata1.getValue(LeverBlock.POWERED) ? 0.6F : 0.5F;
 +
 +            world.playSound((Player) null, pos, SoundEvents.LEVER_CLICK, SoundSource.BLOCKS, 0.3F, f);
-+            world.gameEvent(player, (Boolean) iblockdata1.getValue(LeverBlock.POWERED) ? GameEvent.BLOCK_SWITCH : GameEvent.BLOCK_UNSWITCH, pos);
++            world.gameEvent((Entity) player, (Boolean) iblockdata1.getValue(LeverBlock.POWERED) ? GameEvent.BLOCK_ACTIVATE : GameEvent.BLOCK_DEACTIVATE, pos);
              return InteractionResult.CONSUME;
          }
      }
@@ -133,7 +141,7 @@
      }
  
      @Override
-     public void animateTick(BlockState state, Level world, BlockPos pos, Random random) {
+     public void animateTick(BlockState state, Level world, BlockPos pos, RandomSource random) {
 -        if (state.getValue(POWERED) && random.nextFloat() < 0.25F) {
 -            makeParticle(state, world, pos, 0.5F);
 +        if ((Boolean) state.getValue(LeverBlock.POWERED) && random.nextFloat() < 0.25F) {
@@ -141,7 +149,7 @@
          }
  
      }
-@@ -122,7 +142,7 @@
+@@ -122,7 +143,7 @@
      @Override
      public void onRemove(BlockState state, Level world, BlockPos pos, BlockState newState, boolean moved) {
          if (!moved && !state.is(newState.getBlock())) {
@@ -150,7 +158,7 @@
                  this.updateNeighbours(state, world, pos);
              }
  
-@@ -132,12 +152,12 @@
+@@ -132,12 +153,12 @@
  
      @Override
      public int getSignal(BlockState state, BlockGetter world, BlockPos pos, Direction direction) {
@@ -165,26 +173,7 @@
      }
  
      @Override
-@@ -145,6 +165,18 @@
-         return true;
-     }
- 
-+    // Paper start - optimize redstone (Alternate Current)
-+    @Override
-+    public boolean isSignalSourceTo(Level level, BlockPos pos, BlockState state, Direction dir) {
-+        return true;
-+    }
-+
-+    @Override
-+    public boolean isDirectSignalSourceTo(Level level, BlockPos pos, BlockState state, Direction dir) {
-+        return getConnectedDirection(state) == dir;
-+    }
-+    // Paper end
-+
-     private void updateNeighbours(BlockState state, Level world, BlockPos pos) {
-         world.updateNeighborsAt(pos, this);
-         world.updateNeighborsAt(pos.relative(getConnectedDirection(state).getOpposite()), this);
-@@ -152,6 +184,6 @@
+@@ -152,6 +173,6 @@
  
      @Override
      protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {

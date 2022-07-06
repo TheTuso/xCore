@@ -42,5 +42,5 @@
  
      boolean isClientSide();
 +
-+    org.bukkit.craftbukkit.v1_18_R2.inventory.CraftMerchant getCraftMerchant(); // CraftBukkit
++    org.bukkit.craftbukkit.v1_19_R1.inventory.CraftMerchant getCraftMerchant(); // CraftBukkit
  }

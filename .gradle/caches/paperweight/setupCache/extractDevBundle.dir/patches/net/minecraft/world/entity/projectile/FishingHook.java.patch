@@ -6,8 +6,8 @@
  import java.util.Collections;
 +import java.util.Iterator;
  import java.util.List;
- import java.util.Random;
  import javax.annotation.Nullable;
+ import net.minecraft.advancements.CriteriaTriggers;
 @@ -26,7 +27,6 @@
  import net.minecraft.world.entity.ExperienceOrb;
  import net.minecraft.world.entity.MoverType;
@@ -29,8 +29,8 @@
  public class FishingHook extends Projectile {
 +
      private static final Logger LOGGER = LogUtils.getLogger();
--    private final Random syncronizedRandom = new Random();
-+    private final Random syncronizedRandom;
+-    private final RandomSource syncronizedRandom = RandomSource.create();
++    private final RandomSource syncronizedRandom;
      private boolean biting;
      private int outOfWaterTime;
      private static final int MAX_OUT_OF_WATER_TIME = 10;
@@ -55,15 +55,15 @@
 +
      private FishingHook(EntityType<? extends FishingHook> type, Level world, int luckOfTheSeaLevel, int lureLevel) {
          super(type, world);
-+        this.syncronizedRandom = new Random();
++        this.syncronizedRandom = RandomSource.create();
 +        this.openWater = true;
 +        this.currentState = FishingHook.FishHookState.FLYING;
          this.noCulling = true;
          this.luck = Math.max(0, luckOfTheSeaLevel);
          this.lureSpeed = Math.max(0, lureLevel);
 +        // Paper start
-+        minWaitTime = world.paperConfig.fishingMinTicks;
-+        maxWaitTime = world.paperConfig.fishingMaxTicks;
++        minWaitTime = world.paperConfig().fishingTimeRange.minimum;
++        maxWaitTime = world.paperConfig().fishingTimeRange.maximum;
 +        // Paper end
      }
  
@@ -87,7 +87,7 @@
 -        this.moveTo(d, e, l, g, f);
 -        Vec3 vec3 = new Vec3((double)(-i), (double)Mth.clamp(-(k / j), -5.0F, 5.0F), (double)(-h));
 -        double m = vec3.length();
--        vec3 = vec3.multiply(0.6D / m + 0.5D + this.random.nextGaussian() * 0.0045D, 0.6D / m + 0.5D + this.random.nextGaussian() * 0.0045D, 0.6D / m + 0.5D + this.random.nextGaussian() * 0.0045D);
+-        vec3 = vec3.multiply(0.6D / m + this.random.triangle(0.5D, 0.0103365D), 0.6D / m + this.random.triangle(0.5D, 0.0103365D), 0.6D / m + this.random.triangle(0.5D, 0.0103365D));
 -        this.setDeltaMovement(vec3);
 -        this.setYRot((float)(Mth.atan2(vec3.x, vec3.z) * (double)(180F / (float)Math.PI)));
 -        this.setXRot((float)(Mth.atan2(vec3.y, vec3.horizontalDistance()) * (double)(180F / (float)Math.PI)));
@@ -104,7 +104,7 @@
 +        Vec3 vec3d = new Vec3((double) (-f3), (double) Mth.clamp(-(f5 / f4), -5.0F, 5.0F), (double) (-f2));
 +        double d3 = vec3d.length();
 +
-+        vec3d = vec3d.multiply(0.6D / d3 + 0.5D + this.random.nextGaussian() * 0.0045D, 0.6D / d3 + 0.5D + this.random.nextGaussian() * 0.0045D, 0.6D / d3 + 0.5D + this.random.nextGaussian() * 0.0045D);
++        vec3d = vec3d.multiply(0.6D / d3 + this.random.triangle(0.5D, 0.0103365D), 0.6D / d3 + this.random.triangle(0.5D, 0.0103365D), 0.6D / d3 + this.random.triangle(0.5D, 0.0103365D));
 +        this.setDeltaMovement(vec3d);
 +        this.setYRot((float) (Mth.atan2(vec3d.x, vec3d.z) * 57.2957763671875D));
 +        this.setXRot((float) (Mth.atan2(vec3d.y, vec3d.horizontalDistance()) * 57.2957763671875D));
@@ -344,7 +344,7 @@
 +            BlockState iblockdata;
 +
              if (this.timeUntilHooked > 0) {
--                this.fishAngle += (float)(this.random.nextGaussian() * 4.0D);
+-                this.fishAngle += (float)this.random.triangle(0.0D, 9.188D);
 -                float f = this.fishAngle * ((float)Math.PI / 180F);
 -                float g = Mth.sin(f);
 -                float h = Mth.cos(f);
@@ -357,7 +357,7 @@
 -                        serverLevel.sendParticles(ParticleTypes.BUBBLE, d, e - (double)0.1F, j, 1, (double)g, 0.1D, (double)h, 0.0D);
 +                this.timeUntilHooked -= i;
 +                if (this.timeUntilHooked > 0) {
-+                    this.fishAngle += (float) (this.random.nextGaussian() * 4.0D);
++                    this.fishAngle += (float) this.random.triangle(0.0D, 9.188D);
 +                    f = this.fishAngle * 0.017453292F;
 +                    f1 = Mth.sin(f);
 +                    f2 = Mth.cos(f);

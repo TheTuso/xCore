@@ -4,7 +4,7 @@
  import net.minecraft.world.level.LevelAccessor;
  import net.minecraft.world.level.block.state.BlockState;
  import net.minecraft.world.phys.Vec3;
-+import org.bukkit.craftbukkit.v1_18_R2.event.CraftEventFactory; // CraftBukkit
++import org.bukkit.craftbukkit.v1_19_R1.event.CraftEventFactory; // CraftBukkit
  
  public class Bat extends AmbientCreature {
 +
@@ -170,9 +170,9 @@
      }
  
      @Override
--    protected void checkFallDamage(double heightDifference, boolean onGround, BlockState landedState, BlockPos landedPosition) {
+-    protected void checkFallDamage(double heightDifference, boolean onGround, BlockState state, BlockPos landedPosition) {
 -    }
-+    protected void checkFallDamage(double heightDifference, boolean onGround, BlockState landedState, BlockPos landedPosition) {}
++    protected void checkFallDamage(double heightDifference, boolean onGround, BlockState state, BlockPos landedPosition) {}
  
      @Override
      public boolean isIgnoringBlockTriggers() {
@@ -204,7 +204,7 @@
 +        nbt.putByte("BatFlags", (Byte) this.entityData.get(Bat.DATA_ID_FLAGS));
      }
  
-     public static boolean checkBatSpawnRules(EntityType<Bat> type, LevelAccessor world, MobSpawnType spawnReason, BlockPos pos, Random random) {
+     public static boolean checkBatSpawnRules(EntityType<Bat> type, LevelAccessor world, MobSpawnType spawnReason, BlockPos pos, RandomSource random) {
 @@ -221,21 +241,23 @@
              return false;
          } else {

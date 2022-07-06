@@ -9,6 +9,7 @@ import pl.tuso.core.config.Configuration;
 import pl.tuso.core.info.ServerInfo;
 import pl.tuso.core.info.ServerInfoPuller;
 import pl.tuso.core.lettuce.messaging.MessagingService;
+import pl.tuso.core.lettuce.wrapper.RedisWrapper;
 import pl.tuso.core.whereami.WhereAmICommand;
 
 import java.util.concurrent.ExecutorService;
@@ -17,6 +18,7 @@ import java.util.concurrent.Executors;
 public class XCore extends JavaPlugin { // TODO config
     private Configuration configuration;
     private RedisClient redisClient;
+    private RedisWrapper redisWrapper;
     private MongoClient mongoClient;
     private MessagingService messagingService;
     private ExecutorService executorService;
@@ -28,6 +30,7 @@ public class XCore extends JavaPlugin { // TODO config
         INSTANCE = this;
         this.configuration = new Configuration(this);
         this.redisClient = this.createRedisConnection();
+        this.redisWrapper = new RedisWrapper(this.redisClient);
         this.mongoClient = this.createMongoConnection();
         this.messagingService = new MessagingService(this);
         this.executorService = Executors.newCachedThreadPool();
@@ -58,16 +61,15 @@ public class XCore extends JavaPlugin { // TODO config
 
     private @NotNull MongoClient createMongoConnection() {
         MongoClient mongoClient = MongoClients.create(this.configuration.getMongoUri());
-        try {
-            this.getLogger().info("Checking mongo connection → " + mongoClient.getClusterDescription().getShortDescription());
-        } catch (Exception ignore) {
-            // Ignore
-        }
         return mongoClient;
     }
 
     public RedisClient getRedisClient() {
         return this.redisClient;
+    }
+
+    public RedisWrapper getRedisWrapper() {
+        return this.redisWrapper;
     }
 
     public MongoClient getMongoClient() {

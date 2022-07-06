@@ -6,8 +6,8 @@
  
 +// CraftBukkit start
 +import java.util.List;
-+import org.bukkit.craftbukkit.v1_18_R2.block.CraftBlockState;
-+import org.bukkit.craftbukkit.v1_18_R2.util.BlockStateListPopulator;
++import org.bukkit.craftbukkit.v1_19_R1.block.CraftBlockState;
++import org.bukkit.craftbukkit.v1_19_R1.util.BlockStateListPopulator;
 +import org.bukkit.event.block.SpongeAbsorbEvent;
 +// CraftBukkit end
 +

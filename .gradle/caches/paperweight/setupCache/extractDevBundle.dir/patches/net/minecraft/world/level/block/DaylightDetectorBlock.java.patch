@@ -1,6 +1,6 @@
 --- a/net/minecraft/world/level/block/DaylightDetectorBlock.java
 +++ b/net/minecraft/world/level/block/DaylightDetectorBlock.java
-@@ -25,18 +25,19 @@
+@@ -26,18 +26,19 @@
  import net.minecraft.world.phys.shapes.VoxelShape;
  
  public class DaylightDetectorBlock extends BaseEntityBlock {
@@ -22,7 +22,7 @@
      }
  
      @Override
-@@ -46,24 +47,27 @@
+@@ -47,24 +48,27 @@
  
      @Override
      public int getSignal(BlockState state, BlockGetter world, BlockPos pos, Direction direction) {
@@ -54,40 +54,28 @@
 -            world.setBlock(pos, state.setValue(POWER, Integer.valueOf(i)), 3);
 +        i = Mth.clamp(i, (int) 0, (int) 15);
 +        if ((Integer) state.getValue(DaylightDetectorBlock.POWER) != i) {
-+            i = org.bukkit.craftbukkit.v1_18_R2.event.CraftEventFactory.callRedstoneChange(world, pos, ((Integer) state.getValue(POWER)), i).getNewCurrent(); // CraftBukkit - Call BlockRedstoneEvent
++            i = org.bukkit.craftbukkit.v1_19_R1.event.CraftEventFactory.callRedstoneChange(world, pos, ((Integer) state.getValue(POWER)), i).getNewCurrent(); // CraftBukkit - Call BlockRedstoneEvent
 +            world.setBlock(pos, (BlockState) state.setValue(DaylightDetectorBlock.POWER, i), 3);
          }
  
      }
-@@ -74,9 +78,10 @@
+@@ -75,10 +79,11 @@
              if (world.isClientSide) {
                  return InteractionResult.SUCCESS;
              } else {
 -                BlockState blockState = state.cycle(INVERTED);
 -                world.setBlock(pos, blockState, 4);
+-                world.gameEvent(GameEvent.BLOCK_CHANGE, pos, GameEvent.Context.of(player, blockState));
 -                updateSignalStrength(blockState, world, pos);
 +                BlockState iblockdata1 = (BlockState) state.cycle(DaylightDetectorBlock.INVERTED);
 +
 +                world.setBlock(pos, iblockdata1, 4);
++                world.gameEvent(GameEvent.BLOCK_CHANGE, pos, GameEvent.Context.of(player, iblockdata1));
 +                DaylightDetectorBlock.updateSignalStrength(iblockdata1, world, pos);
                  return InteractionResult.CONSUME;
              }
          } else {
-@@ -94,6 +99,13 @@
-         return true;
-     }
- 
-+    // Paper start - optimize redstone (Alternate Current)
-+    @Override
-+    public boolean isSignalSourceTo(Level level, BlockPos pos, BlockState state, Direction dir) {
-+        return true;
-+    }
-+    // Paper end
-+
-     @Override
-     public BlockEntity newBlockEntity(BlockPos pos, BlockState state) {
-         return new DaylightDetectorBlockEntity(pos, state);
-@@ -107,13 +119,13 @@
+@@ -109,13 +114,13 @@
  
      private static void tickEntity(Level world, BlockPos pos, BlockState state, DaylightDetectorBlockEntity blockEntity) {
          if (world.getGameTime() % 20L == 0L) {

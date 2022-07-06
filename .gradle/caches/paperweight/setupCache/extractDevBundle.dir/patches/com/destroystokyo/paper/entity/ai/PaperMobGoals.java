@@ -8,7 +8,7 @@ import java.util.List;
 import java.util.Set;
 import net.minecraft.world.entity.ai.goal.GoalSelector;
 import net.minecraft.world.entity.ai.goal.WrappedGoal;
-import org.bukkit.craftbukkit.v1_18_R2.entity.CraftMob;
+import org.bukkit.craftbukkit.v1_19_R1.entity.CraftMob;
 import org.bukkit.entity.Mob;
 
 public class PaperMobGoals implements MobGoals {

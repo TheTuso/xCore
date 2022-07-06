@@ -1,6 +1,6 @@
 --- a/net/minecraft/world/level/entity/EntitySectionStorage.java
 +++ b/net/minecraft/world/level/entity/EntitySectionStorage.java
-@@ -111,13 +111,20 @@
+@@ -112,13 +112,20 @@
      }
  
      public void getEntities(AABB box, Consumer<T> action) {

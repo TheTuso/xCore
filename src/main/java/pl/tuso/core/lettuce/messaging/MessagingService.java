@@ -10,7 +10,6 @@ import pl.tuso.core.util.ExpiringSet;
 import java.util.LinkedHashSet;
 import java.util.Objects;
 import java.util.UUID;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 
 public class MessagingService {

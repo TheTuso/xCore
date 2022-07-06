@@ -3,7 +3,7 @@
 @@ -65,6 +65,7 @@
          state = this.updateDir(world, pos, state, true);
          if (this.isStraight) {
-             state.neighborChanged(world, pos, this, pos, notify);
+             world.neighborChanged(state, pos, this, pos, notify);
 +            state = world.getBlockState(pos); // Paper - don't desync, update again
          }
  

@@ -14,11 +14,11 @@
      protected CoralWallFanBlock(Block deadCoralBlock, BlockBehaviour.Properties settings) {
 @@ -26,18 +28,23 @@
      @Override
-     public void tick(BlockState state, ServerLevel world, BlockPos pos, Random random) {
+     public void tick(BlockState state, ServerLevel world, BlockPos pos, RandomSource random) {
          if (!scanForWater(state, world, pos)) {
 -            world.setBlock(pos, this.deadBlock.defaultBlockState().setValue(WATERLOGGED, Boolean.valueOf(false)).setValue(FACING, state.getValue(FACING)), 2);
 +            // CraftBukkit start
-+            if (org.bukkit.craftbukkit.v1_18_R2.event.CraftEventFactory.callBlockFadeEvent(world, pos, this.deadBlock.defaultBlockState().setValue(CoralWallFanBlock.WATERLOGGED, false).setValue(CoralWallFanBlock.FACING, state.getValue(CoralWallFanBlock.FACING))).isCancelled()) {
++            if (org.bukkit.craftbukkit.v1_19_R1.event.CraftEventFactory.callBlockFadeEvent(world, pos, this.deadBlock.defaultBlockState().setValue(CoralWallFanBlock.WATERLOGGED, false).setValue(CoralWallFanBlock.FACING, state.getValue(CoralWallFanBlock.FACING))).isCancelled()) {
 +                return;
 +            }
 +            // CraftBukkit end

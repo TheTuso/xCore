@@ -1,6 +1,6 @@
 --- a/net/minecraft/ChatFormatting.java
 +++ b/net/minecraft/ChatFormatting.java
-@@ -110,6 +110,18 @@
+@@ -113,6 +113,18 @@
          return name == null ? null : FORMATTING_BY_NAME.get(cleanName(name));
      }
  

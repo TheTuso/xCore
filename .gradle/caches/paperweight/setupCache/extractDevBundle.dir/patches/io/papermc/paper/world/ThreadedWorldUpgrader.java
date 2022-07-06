@@ -173,7 +173,7 @@ public class ThreadedWorldUpgrader {
                     try {
                         // no need to check the coordinate of the chunk, the regionfilecache does that for us
 
-                        CompoundTag chunkNBT = loader.read(chunkPos);
+                        CompoundTag chunkNBT = (loader.read(chunkPos).join()).orElse(null);
 
                         if (chunkNBT == null) {
                             continue;

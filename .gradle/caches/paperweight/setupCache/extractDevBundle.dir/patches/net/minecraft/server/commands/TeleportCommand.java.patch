@@ -21,19 +21,19 @@
  import net.minecraft.commands.arguments.EntityAnchorArgument;
  import net.minecraft.commands.arguments.EntityArgument;
  import net.minecraft.commands.arguments.coordinates.Coordinates;
-@@ -32,53 +34,67 @@
+@@ -32,42 +34,55 @@
  import net.minecraft.world.level.Level;
  import net.minecraft.world.phys.Vec2;
  import net.minecraft.world.phys.Vec3;
 +// CraftBukkit start
 +import org.bukkit.Location;
-+import org.bukkit.craftbukkit.v1_18_R2.CraftWorld;
++import org.bukkit.craftbukkit.v1_19_R1.CraftWorld;
 +import org.bukkit.event.entity.EntityTeleportEvent;
 +// CraftBukkit end
  
  public class TeleportCommand {
 +
-     private static final SimpleCommandExceptionType INVALID_POSITION = new SimpleCommandExceptionType(new TranslatableComponent("commands.teleport.invalidPosition"));
+     private static final SimpleCommandExceptionType INVALID_POSITION = new SimpleCommandExceptionType(Component.translatable("commands.teleport.invalidPosition"));
  
 +    public TeleportCommand() {}
 +
@@ -96,14 +96,12 @@
          }
  
          if (targets.size() == 1) {
--            source.sendSuccess(new TranslatableComponent("commands.teleport.success.entity.single", targets.iterator().next().getDisplayName(), destination.getDisplayName()), true);
-+            source.sendSuccess(new TranslatableComponent("commands.teleport.success.entity.single", new Object[]{((Entity) targets.iterator().next()).getDisplayName(), destination.getDisplayName()}), true);
+-            source.sendSuccess(Component.translatable("commands.teleport.success.entity.single", targets.iterator().next().getDisplayName(), destination.getDisplayName()), true);
++            source.sendSuccess(Component.translatable("commands.teleport.success.entity.single", ((Entity) targets.iterator().next()).getDisplayName(), destination.getDisplayName()), true);
          } else {
--            source.sendSuccess(new TranslatableComponent("commands.teleport.success.entity.multiple", targets.size(), destination.getDisplayName()), true);
-+            source.sendSuccess(new TranslatableComponent("commands.teleport.success.entity.multiple", new Object[]{targets.size(), destination.getDisplayName()}), true);
+             source.sendSuccess(Component.translatable("commands.teleport.success.entity.multiple", targets.size(), destination.getDisplayName()), true);
          }
- 
-         return targets.size();
+@@ -76,9 +91,10 @@
      }
  
      private static int teleportToPos(CommandSourceStack source, Collection<? extends Entity> targets, ServerLevel world, Coordinates location, @Nullable Coordinates rotation, @Nullable TeleportCommand.LookAt facingLocation) throws CommandSyntaxException {
@@ -136,11 +134,11 @@
          }
  
          if (targets.size() == 1) {
--            source.sendSuccess(new TranslatableComponent("commands.teleport.success.location.single", targets.iterator().next().getDisplayName(), formatDouble(vec3.x), formatDouble(vec3.y), formatDouble(vec3.z)), true);
-+            source.sendSuccess(new TranslatableComponent("commands.teleport.success.location.single", new Object[]{((Entity) targets.iterator().next()).getDisplayName(), TeleportCommand.formatDouble(vec3d.x), TeleportCommand.formatDouble(vec3d.y), TeleportCommand.formatDouble(vec3d.z)}), true);
+-            source.sendSuccess(Component.translatable("commands.teleport.success.location.single", targets.iterator().next().getDisplayName(), formatDouble(vec3.x), formatDouble(vec3.y), formatDouble(vec3.z)), true);
++            source.sendSuccess(Component.translatable("commands.teleport.success.location.single", ((Entity) targets.iterator().next()).getDisplayName(), TeleportCommand.formatDouble(vec3d.x), TeleportCommand.formatDouble(vec3d.y), TeleportCommand.formatDouble(vec3d.z)), true);
          } else {
--            source.sendSuccess(new TranslatableComponent("commands.teleport.success.location.multiple", targets.size(), formatDouble(vec3.x), formatDouble(vec3.y), formatDouble(vec3.z)), true);
-+            source.sendSuccess(new TranslatableComponent("commands.teleport.success.location.multiple", new Object[]{targets.size(), TeleportCommand.formatDouble(vec3d.x), TeleportCommand.formatDouble(vec3d.y), TeleportCommand.formatDouble(vec3d.z)}), true);
+-            source.sendSuccess(Component.translatable("commands.teleport.success.location.multiple", targets.size(), formatDouble(vec3.x), formatDouble(vec3.y), formatDouble(vec3.z)), true);
++            source.sendSuccess(Component.translatable("commands.teleport.success.location.multiple", targets.size(), TeleportCommand.formatDouble(vec3d.x), TeleportCommand.formatDouble(vec3d.y), TeleportCommand.formatDouble(vec3d.z)), true);
          }
  
          return targets.size();

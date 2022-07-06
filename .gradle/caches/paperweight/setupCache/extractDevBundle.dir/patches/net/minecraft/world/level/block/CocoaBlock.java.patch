@@ -4,7 +4,7 @@
  import net.minecraft.world.level.pathfinder.PathComputationType;
  import net.minecraft.world.phys.shapes.CollisionContext;
  import net.minecraft.world.phys.shapes.VoxelShape;
-+import org.bukkit.craftbukkit.v1_18_R2.event.CraftEventFactory; // CraftBukkit
++import org.bukkit.craftbukkit.v1_19_R1.event.CraftEventFactory; // CraftBukkit
  
  public class CocoaBlock extends HorizontalDirectionalBlock implements BonemealableBlock {
 +
@@ -26,7 +26,7 @@
      }
  
      @Override
-     public void randomTick(BlockState state, ServerLevel world, BlockPos pos, Random random) {
+     public void randomTick(BlockState state, ServerLevel world, BlockPos pos, RandomSource random) {
 -        if (world.random.nextInt(5) == 0) {
 -            int i = state.getValue(AGE);
 +        if (world.random.nextInt(Math.max(1, (int) (100.0F / world.spigotConfig.cocoaModifier) * 5)) == 0) { // Spigot
@@ -117,7 +117,7 @@
 @@ -116,12 +125,12 @@
  
      @Override
-     public void performBonemeal(ServerLevel world, Random random, BlockPos pos, BlockState state) {
+     public void performBonemeal(ServerLevel world, RandomSource random, BlockPos pos, BlockState state) {
 -        world.setBlock(pos, state.setValue(AGE, Integer.valueOf(state.getValue(AGE) + 1)), 2);
 +        CraftEventFactory.handleBlockGrowEvent(world, pos, (BlockState) state.setValue(CocoaBlock.AGE, (Integer) state.getValue(CocoaBlock.AGE) + 1), 2); // CraftBukkit
      }

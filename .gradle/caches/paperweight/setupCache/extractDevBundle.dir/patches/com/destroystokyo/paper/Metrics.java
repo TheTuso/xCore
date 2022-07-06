@@ -3,7 +3,7 @@ package com.destroystokyo.paper;
 import net.minecraft.server.MinecraftServer;
 import org.bukkit.Bukkit;
 import org.bukkit.configuration.file.YamlConfiguration;
-import org.bukkit.craftbukkit.v1_18_R2.util.CraftMagicNumbers;
+import org.bukkit.craftbukkit.v1_19_R1.util.CraftMagicNumbers;
 import org.bukkit.plugin.Plugin;
 
 import org.json.simple.JSONArray;
@@ -560,8 +560,8 @@ public class Metrics {
 
     }
 
-    static class PaperMetrics {
-        static void startMetrics() {
+    public static class PaperMetrics {
+        public static void startMetrics() {
             // Get the config file
             File configFile = new File(new File((File) MinecraftServer.getServer().options.valueOf("plugins"), "bStats"), "config.yml");
             YamlConfiguration config = YamlConfiguration.loadConfiguration(configFile);

@@ -32,7 +32,7 @@
  
      public final boolean tryStart(ServerLevel world, E entity, long time) {
 +        // Paper start - behavior tick rate
-+        int tickRate = world.paperConfig.getBehaviorTickRate(this.configKey, entity.getType().id, -1);
++        int tickRate = java.util.Objects.requireNonNullElse(world.paperConfig().tickRates.behavior.get(entity.getType(), this.configKey), -1);
 +        if (tickRate > -1 && time < this.endTimestamp + tickRate) {
 +            return false;
 +        }

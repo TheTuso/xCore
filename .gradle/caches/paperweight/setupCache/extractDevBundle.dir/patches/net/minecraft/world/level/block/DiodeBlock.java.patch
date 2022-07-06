@@ -4,7 +4,7 @@
  import net.minecraft.world.phys.shapes.CollisionContext;
  import net.minecraft.world.phys.shapes.VoxelShape;
  import net.minecraft.world.ticks.TickPriority;
-+import org.bukkit.craftbukkit.v1_18_R2.event.CraftEventFactory; // CraftBukkit
++import org.bukkit.craftbukkit.v1_19_R1.event.CraftEventFactory; // CraftBukkit
  
  public abstract class DiodeBlock extends HorizontalDirectionalBlock {
 +
@@ -22,7 +22,7 @@
      @Override
 @@ -40,14 +42,25 @@
      @Override
-     public void tick(BlockState state, ServerLevel world, BlockPos pos, Random random) {
+     public void tick(BlockState state, ServerLevel world, BlockPos pos, RandomSource random) {
          if (!this.isLocked(world, pos, state)) {
 -            boolean bl = state.getValue(POWERED);
 -            boolean bl2 = this.shouldTurnOn(world, pos, state);
@@ -168,22 +168,8 @@
      }
  
      @Override
-@@ -147,15 +159,27 @@
-         return true;
-     }
+@@ -149,13 +161,13 @@
  
-+    // Paper start - optimize redstone (Alternate Current)
-+    @Override
-+    public boolean isSignalSourceTo(Level level, BlockPos pos, BlockState state, Direction dir) {
-+        return state.getValue(FACING) == dir;
-+    }
-+
-+    @Override
-+    public boolean isDirectSignalSourceTo(Level level, BlockPos pos, BlockState state, Direction dir) {
-+        return state.getValue(FACING) == dir;
-+    }
-+    // Paper end
-+
      @Override
      public BlockState getStateForPlacement(BlockPlaceContext ctx) {
 -        return this.defaultBlockState().setValue(FACING, ctx.getHorizontalDirection().getOpposite());
@@ -198,7 +184,7 @@
          }
  
      }
-@@ -174,10 +198,11 @@
+@@ -174,10 +186,11 @@
      }
  
      protected void updateNeighborsInFront(Level world, BlockPos pos, BlockState state) {
@@ -214,7 +200,7 @@
      }
  
      protected boolean isAlternateInput(BlockState state) {
-@@ -193,9 +218,10 @@
+@@ -193,9 +206,10 @@
      }
  
      public boolean shouldPrioritize(BlockGetter world, BlockPos pos, BlockState state) {

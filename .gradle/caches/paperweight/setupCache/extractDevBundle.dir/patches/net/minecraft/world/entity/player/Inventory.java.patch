@@ -8,7 +8,7 @@
  import java.util.List;
  import java.util.function.Predicate;
  import net.minecraft.CrashReport;
-@@ -18,13 +19,21 @@
+@@ -17,13 +18,21 @@
  import net.minecraft.world.ContainerHelper;
  import net.minecraft.world.Nameable;
  import net.minecraft.world.damagesource.DamageSource;
@@ -21,7 +21,7 @@
 +// CraftBukkit start
 +import java.util.ArrayList;
 +import org.bukkit.Location;
-+import org.bukkit.craftbukkit.v1_18_R2.entity.CraftHumanEntity;
++import org.bukkit.craftbukkit.v1_19_R1.entity.CraftHumanEntity;
 +import org.bukkit.entity.HumanEntity;
 +// CraftBukkit end
  
@@ -30,7 +30,7 @@
      public static final int POP_TIME_DURATION = 5;
      public static final int INVENTORY_SIZE = 36;
      private static final int SELECTION_SIZE = 9;
-@@ -32,20 +41,72 @@
+@@ -31,20 +40,72 @@
      public static final int NOT_FOUND_INDEX = -1;
      public static final int[] ALL_ARMOR_SLOTS = new int[]{0, 1, 2, 3};
      public static final int[] HELMET_SLOT_ONLY = new int[]{3};
@@ -108,7 +108,7 @@
      }
  
      public static int getSelectionSize() {
-@@ -56,9 +117,31 @@
+@@ -55,9 +116,31 @@
          return !existingStack.isEmpty() && ItemStack.isSameItemSameTags(existingStack, stack) && existingStack.isStackable() && existingStack.getCount() < existingStack.getMaxStackSize() && existingStack.getCount() < this.getMaxStackSize();
      }
  
@@ -142,7 +142,7 @@
                  return i;
              }
          }
-@@ -68,15 +151,17 @@
+@@ -67,15 +150,17 @@
  
      public void setPickedItem(ItemStack stack) {
          int i = this.findSlotMatchingItem(stack);
@@ -163,7 +163,7 @@
                      }
                  }
  
-@@ -90,9 +175,10 @@
+@@ -89,9 +174,10 @@
  
      public void pickSlot(int slot) {
          this.selected = this.getSuitableHotbarSlot();
@@ -177,7 +177,7 @@
      }
  
      public static boolean isHotbarSlot(int slot) {
-@@ -100,8 +186,8 @@
+@@ -99,8 +185,8 @@
      }
  
      public int findSlotMatchingItem(ItemStack stack) {
@@ -188,7 +188,7 @@
                  return i;
              }
          }
-@@ -110,9 +196,10 @@
+@@ -109,9 +195,10 @@
      }
  
      public int findSlotMatchingUnusedItem(ItemStack stack) {
@@ -202,7 +202,7 @@
                  return i;
              }
          }
-@@ -121,17 +208,20 @@
+@@ -120,17 +207,20 @@
      }
  
      public int getSuitableHotbarSlot() {
@@ -231,7 +231,7 @@
              }
          }
  
-@@ -139,33 +229,37 @@
+@@ -138,33 +228,37 @@
      }
  
      public void swapPaint(double scrollAmount) {
@@ -280,7 +280,7 @@
          if (i == -1) {
              i = this.getFreeSlot();
          }
-@@ -175,33 +269,35 @@
+@@ -174,33 +268,35 @@
  
      private int addResource(int slot, ItemStack stack) {
          Item item = stack.getItem();
@@ -333,7 +333,7 @@
          }
      }
  
-@@ -211,8 +307,8 @@
+@@ -210,8 +306,8 @@
          } else if (this.hasRemainingSpaceForItem(this.getItem(40), stack)) {
              return 40;
          } else {
@@ -344,7 +344,7 @@
                      return i;
                  }
              }
-@@ -222,10 +318,14 @@
+@@ -221,10 +317,14 @@
      }
  
      public void tick() {
@@ -363,7 +363,7 @@
                  }
              }
          }
-@@ -248,7 +348,7 @@
+@@ -247,7 +347,7 @@
  
                      if (slot >= 0) {
                          this.items.set(slot, stack.copy());
@@ -372,7 +372,7 @@
                          stack.setCount(0);
                          return true;
                      } else if (this.player.getAbilities().instabuild) {
-@@ -258,32 +358,34 @@
+@@ -257,32 +357,34 @@
                          return false;
                      }
                  } else {
@@ -419,7 +419,7 @@
              }
          }
      }
-@@ -293,17 +395,19 @@
+@@ -292,17 +394,19 @@
      }
  
      public void placeItemBackInInventory(ItemStack stack, boolean notifiesClient) {
@@ -441,7 +441,7 @@
                      }
                      continue;
                  }
-@@ -319,23 +423,28 @@
+@@ -318,23 +422,28 @@
      public ItemStack removeItem(int slot, int amount) {
          List<ItemStack> list = null;
  
@@ -480,7 +480,7 @@
                      break;
                  }
              }
-@@ -345,21 +454,23 @@
+@@ -344,21 +453,23 @@
  
      @Override
      public ItemStack removeItemNoUpdate(int slot) {
@@ -514,7 +514,7 @@
          } else {
              return ItemStack.EMPTY;
          }
-@@ -367,52 +478,56 @@
+@@ -366,52 +477,56 @@
  
      @Override
      public void setItem(int slot, ItemStack stack) {
@@ -598,7 +598,7 @@
              }
          }
  
-@@ -424,17 +539,18 @@
+@@ -423,17 +538,18 @@
          this.armor.clear();
          this.offhand.clear();
  
@@ -625,7 +625,7 @@
                  }
              }
          }
-@@ -448,41 +564,56 @@
+@@ -447,41 +563,56 @@
  
      @Override
      public boolean isEmpty() {
@@ -702,7 +702,7 @@
      }
  
      @Override
-@@ -491,21 +622,26 @@
+@@ -490,21 +621,26 @@
      }
  
      public ItemStack getArmor(int slot) {
@@ -736,7 +736,7 @@
                      });
                  }
              }
-@@ -514,11 +650,16 @@
+@@ -513,11 +649,16 @@
      }
  
      public void dropAll() {
@@ -758,7 +758,7 @@
                      list.set(i, ItemStack.EMPTY);
                  }
              }
-@@ -537,17 +678,20 @@
+@@ -536,17 +677,20 @@
  
      @Override
      public boolean stillValid(Player player) {
@@ -787,7 +787,7 @@
                      return true;
                  }
              }
-@@ -557,9 +701,16 @@
+@@ -556,9 +700,16 @@
      }
  
      public boolean contains(TagKey<Item> tag) {
@@ -807,7 +807,7 @@
                      return true;
                  }
              }
-@@ -569,7 +720,7 @@
+@@ -568,7 +719,7 @@
      }
  
      public void replaceWith(Inventory other) {
@@ -816,7 +816,7 @@
              this.setItem(i, other.getItem(i));
          }
  
-@@ -578,21 +729,30 @@
+@@ -577,21 +728,30 @@
  
      @Override
      public void clearContent() {

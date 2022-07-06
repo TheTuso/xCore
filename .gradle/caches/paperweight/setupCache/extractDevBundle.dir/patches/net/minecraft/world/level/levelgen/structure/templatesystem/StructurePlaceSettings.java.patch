@@ -17,7 +17,7 @@
 -    private boolean keepLiquids = true;
 +    private boolean keepLiquids;
      @Nullable
-     private Random random;
+     private RandomSource random;
 -    private int palette;
 -    private final List<StructureProcessor> processors = Lists.newArrayList();
 +    public int palette = -1; // CraftBukkit - Set initial value so we know if the palette has been set forcefully
@@ -67,13 +67,13 @@
 @@ -110,11 +120,7 @@
      }
  
-     public Random getRandom(@Nullable BlockPos pos) {
+     public RandomSource getRandom(@Nullable BlockPos pos) {
 -        if (this.random != null) {
 -            return this.random;
 -        } else {
--            return pos == null ? new Random(Util.getMillis()) : new Random(Mth.getSeed(pos));
+-            return pos == null ? RandomSource.create(Util.getMillis()) : RandomSource.create(Mth.getSeed(pos));
 -        }
-+        return this.random != null ? this.random : (pos == null ? new Random(Util.getMillis()) : new Random(Mth.getSeed(pos)));
++        return this.random != null ? this.random : (pos == null ? RandomSource.create(Util.getMillis()) : RandomSource.create(Mth.getSeed(pos)));
      }
  
      public boolean isIgnoreEntities() {

@@ -5,8 +5,8 @@
  import net.minecraft.world.level.Level;
  import net.minecraft.world.level.block.DispenserBlock;
 +// CraftBukkit start
-+import org.bukkit.craftbukkit.v1_18_R2.inventory.CraftItemStack;
-+import org.bukkit.craftbukkit.v1_18_R2.util.CraftVector;
++import org.bukkit.craftbukkit.v1_19_R1.inventory.CraftItemStack;
++import org.bukkit.craftbukkit.v1_19_R1.util.CraftVector;
 +import org.bukkit.event.block.BlockDispenseEvent;
 +// CraftBukkit end
  
@@ -77,12 +77,12 @@
  
 -        ItemEntity itemEntity = new ItemEntity(world, d, e, f, stack);
 -        double g = world.random.nextDouble() * 0.1D + 0.2D;
--        itemEntity.setDeltaMovement(world.random.nextGaussian() * (double)0.0075F * (double)speed + (double)side.getStepX() * g, world.random.nextGaussian() * (double)0.0075F * (double)speed + (double)0.2F, world.random.nextGaussian() * (double)0.0075F * (double)speed + (double)side.getStepZ() * g);
+-        itemEntity.setDeltaMovement(world.random.triangle((double)side.getStepX() * g, 0.0172275D * (double)speed), world.random.triangle(0.2D, 0.0172275D * (double)speed), world.random.triangle((double)side.getStepZ() * g, 0.0172275D * (double)speed));
 -        world.addFreshEntity(itemEntity);
 +        ItemEntity entityitem = new ItemEntity(world, d0, d1, d2, itemstack);
 +        double d3 = world.random.nextDouble() * 0.1D + 0.2D;
 +
-+        entityitem.setDeltaMovement(world.random.nextGaussian() * 0.007499999832361937D * (double) i + (double) enumdirection.getStepX() * d3, world.random.nextGaussian() * 0.007499999832361937D * (double) i + 0.20000000298023224D, world.random.nextGaussian() * 0.007499999832361937D * (double) i + (double) enumdirection.getStepZ() * d3);
++        entityitem.setDeltaMovement(world.random.triangle((double) enumdirection.getStepX() * d3, 0.0172275D * (double) i), world.random.triangle(0.2D, 0.0172275D * (double) i), world.random.triangle((double) enumdirection.getStepZ() * d3, 0.0172275D * (double) i));
 +
 +        // CraftBukkit start
 +        org.bukkit.block.Block block = world.getWorld().getBlockAt(isourceblock.getPos().getX(), isourceblock.getPos().getY(), isourceblock.getPos().getZ());

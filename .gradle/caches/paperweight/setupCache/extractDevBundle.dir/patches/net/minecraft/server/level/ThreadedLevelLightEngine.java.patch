@@ -394,7 +394,7 @@
          this.addTask(pos.x, pos.z, () -> {
              return 0;
          }, ThreadedLevelLightEngine.TaskType.PRE_UPDATE, Util.name(() -> {
-@@ -141,9 +430,46 @@
+@@ -153,9 +442,46 @@
      }
  
      public CompletableFuture<ChunkAccess> lightChunk(ChunkAccess chunk, boolean excludeBlocks) {
@@ -443,7 +443,7 @@
              LevelChunkSection[] levelChunkSections = chunk.getSections();
  
              for(int i = 0; i < chunk.getSectionsCount(); ++i) {
-@@ -163,51 +489,45 @@
+@@ -175,51 +501,45 @@
  
          }, () -> {
              return "lightChunk " + chunkPos + " " + excludeBlocks;

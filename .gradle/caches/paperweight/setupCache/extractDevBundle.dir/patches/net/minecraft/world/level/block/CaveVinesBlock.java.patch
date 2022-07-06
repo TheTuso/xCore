@@ -24,16 +24,16 @@
      }
  
      @Override
-     protected BlockState getGrowIntoState(BlockState state, Random random) {
+     protected BlockState getGrowIntoState(BlockState state, RandomSource random) {
 -        return super.getGrowIntoState(state, random).setValue(BERRIES, Boolean.valueOf(random.nextFloat() < 0.11F));
 +        // Paper start
 +        return this.getGrowIntoState(state, random, null);
      }
  
      @Override
-+    protected BlockState getGrowIntoState(BlockState state, Random random, Level level) {
-+        final boolean value = (level == null ? random.nextFloat() : random.nextFloat(100.00F / level.spigotConfig.glowBerryModifier)) < 0.11F;
-+        return super.getGrowIntoState(state, random).setValue(CaveVinesBlock.BERRIES, value);
++    protected BlockState getGrowIntoState(BlockState state, RandomSource random, @javax.annotation.Nullable Level level) {
++        final boolean value = random.nextFloat() < (level != null ? (0.11F * (level.spigotConfig.glowBerryModifier / 100.0F)) : 0.11F);
++        return (BlockState) super.getGrowIntoState(state, random).setValue(CaveVinesBlock.BERRIES, value);
 +    }
 +    // Paper end
 +
@@ -65,7 +65,7 @@
 @@ -77,6 +86,6 @@
  
      @Override
-     public void performBonemeal(ServerLevel world, Random random, BlockPos pos, BlockState state) {
+     public void performBonemeal(ServerLevel world, RandomSource random, BlockPos pos, BlockState state) {
 -        world.setBlock(pos, state.setValue(BERRIES, Boolean.valueOf(true)), 2);
 +        world.setBlock(pos, (BlockState) state.setValue(CaveVinesBlock.BERRIES, true), 2);
      }

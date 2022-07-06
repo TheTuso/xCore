@@ -1,6 +1,6 @@
 --- a/net/minecraft/network/syncher/EntityDataSerializers.java
 +++ b/net/minecraft/network/syncher/EntityDataSerializers.java
-@@ -127,7 +127,7 @@
+@@ -38,7 +38,7 @@
      public static final EntityDataSerializer<ItemStack> ITEM_STACK = new EntityDataSerializer<ItemStack>() {
          @Override
          public void write(FriendlyByteBuf buf, ItemStack value) {

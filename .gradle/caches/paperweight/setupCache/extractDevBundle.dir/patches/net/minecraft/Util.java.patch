@@ -1,6 +1,6 @@
 --- a/net/minecraft/Util.java
 +++ b/net/minecraft/Util.java
-@@ -23,7 +23,6 @@
+@@ -27,7 +27,6 @@
  import java.nio.file.Files;
  import java.nio.file.Path;
  import java.nio.file.spi.FileSystemProvider;
@@ -8,7 +8,7 @@
  import java.security.PrivilegedActionException;
  import java.security.PrivilegedExceptionAction;
  import java.time.Duration;
-@@ -68,8 +67,24 @@
+@@ -78,8 +77,24 @@
      private static final int DEFAULT_MAX_THREADS = 255;
      private static final String MAX_THREADS_SYSTEM_PROPERTY = "max.bg.threads";
      private static final AtomicInteger WORKER_COUNT = new AtomicInteger(1);
@@ -35,7 +35,7 @@
      private static final ExecutorService IO_POOL = makeIoExecutor();
      public static LongSupplier timeSource = System::nanoTime;
      public static final Ticker TICKER = new Ticker() {
-@@ -84,6 +99,7 @@
+@@ -94,6 +109,7 @@
      }).findFirst().orElseThrow(() -> {
          return new IllegalStateException("No jar file system provider found");
      });
@@ -43,7 +43,7 @@
      private static Consumer<String> thePauser = (message) -> {
      };
  
-@@ -104,21 +120,37 @@
+@@ -114,21 +130,37 @@
      }
  
      public static long getNanos() {
@@ -86,7 +86,7 @@
                      @Override
                      protected void onTermination(Throwable throwable) {
                          if (throwable != null) {
-@@ -134,6 +166,7 @@
+@@ -144,6 +176,7 @@
                  return forkJoinWorkerThread;
              }, Util::onThreadException, true);
          }
@@ -94,7 +94,7 @@
  
          return executorService;
      }
-@@ -351,7 +384,7 @@
+@@ -370,7 +403,7 @@
      }
  
      public static <K> Hash.Strategy<K> identityStrategy() {
@@ -103,7 +103,7 @@
      }
  
      public static <V> CompletableFuture<List<V>> sequence(List<? extends CompletableFuture<V>> futures) {
-@@ -729,21 +762,7 @@
+@@ -849,21 +882,7 @@
          }
  
          public void openUrl(URL url) {

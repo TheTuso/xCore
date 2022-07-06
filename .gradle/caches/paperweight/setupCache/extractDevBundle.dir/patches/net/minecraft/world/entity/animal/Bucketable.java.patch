@@ -4,7 +4,7 @@
  import java.util.Optional;
  import net.minecraft.advancements.CriteriaTriggers;
  import net.minecraft.nbt.CompoundTag;
-+import net.minecraft.network.protocol.game.ClientboundAddMobPacket;
++import net.minecraft.network.protocol.game.ClientboundAddEntityPacket;
 +import net.minecraft.network.protocol.game.ClientboundSetEntityDataPacket;
  import net.minecraft.server.level.ServerPlayer;
  import net.minecraft.sounds.SoundEvent;
@@ -13,8 +13,8 @@
  import net.minecraft.world.item.ItemUtils;
  import net.minecraft.world.item.Items;
  import net.minecraft.world.level.Level;
-+import org.bukkit.craftbukkit.v1_18_R2.event.CraftEventFactory;
-+import org.bukkit.craftbukkit.v1_18_R2.inventory.CraftItemStack;
++import org.bukkit.craftbukkit.v1_19_R1.event.CraftEventFactory;
++import org.bukkit.craftbukkit.v1_19_R1.inventory.CraftItemStack;
 +import org.bukkit.event.player.PlayerBucketEntityEvent;
 +// CraftBukkit end
  
@@ -91,7 +91,7 @@
 +            itemstack1 = CraftItemStack.asNMSCopy(playerBucketFishEvent.getEntityBucket());
 +            if (playerBucketFishEvent.isCancelled()) {
 +                ((ServerPlayer) player).containerMenu.sendAllDataToRemote(); // We need to update inventory to resync client's bucket
-+                ((ServerPlayer) player).connection.send(new ClientboundAddMobPacket(entity)); // We need to play out these packets as the client assumes the fish is gone
++                ((ServerPlayer) player).connection.send(new ClientboundAddEntityPacket(entity)); // We need to play out these packets as the client assumes the fish is gone
 +                ((ServerPlayer) player).connection.send(new ClientboundSetEntityDataPacket(entity.getId(), entity.getEntityData(), true)); // Need to send data such as the display name to client
 +                return Optional.of(InteractionResult.FAIL);
 +            }

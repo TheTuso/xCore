@@ -7,8 +7,8 @@
 +import java.util.Iterator;
  import java.util.List;
  import java.util.Optional;
- import java.util.Random;
-@@ -38,6 +39,7 @@
+ import net.minecraft.Util;
+@@ -39,6 +40,7 @@
  import net.minecraft.world.entity.vehicle.Boat;
  import net.minecraft.world.item.ArmorItem;
  import net.minecraft.world.item.BoneMealItem;
@@ -16,7 +16,7 @@
  import net.minecraft.world.item.DispensibleContainerItem;
  import net.minecraft.world.item.DyeColor;
  import net.minecraft.world.item.HoneycombItem;
-@@ -48,7 +50,6 @@
+@@ -49,7 +51,6 @@
  import net.minecraft.world.item.alchemy.PotionUtils;
  import net.minecraft.world.item.alchemy.Potions;
  import net.minecraft.world.level.Level;
@@ -24,7 +24,7 @@
  import net.minecraft.world.level.block.BaseFireBlock;
  import net.minecraft.world.level.block.BeehiveBlock;
  import net.minecraft.world.level.block.Block;
-@@ -59,7 +60,9 @@
+@@ -60,7 +61,9 @@
  import net.minecraft.world.level.block.CandleCakeBlock;
  import net.minecraft.world.level.block.CarvedPumpkinBlock;
  import net.minecraft.world.level.block.DispenserBlock;
@@ -34,7 +34,7 @@
  import net.minecraft.world.level.block.ShulkerBoxBlock;
  import net.minecraft.world.level.block.SkullBlock;
  import net.minecraft.world.level.block.TntBlock;
-@@ -71,14 +74,25 @@
+@@ -72,14 +75,25 @@
  import net.minecraft.world.level.block.state.BlockState;
  import net.minecraft.world.level.block.state.properties.BlockStateProperties;
  import net.minecraft.world.level.gameevent.GameEvent;
@@ -45,8 +45,8 @@
 -import org.slf4j.Logger;
 +import org.bukkit.Location;
 +import org.bukkit.TreeType;
-+import org.bukkit.craftbukkit.v1_18_R2.inventory.CraftItemStack;
-+import org.bukkit.craftbukkit.v1_18_R2.util.DummyGeneratorAccess;
++import org.bukkit.craftbukkit.v1_19_R1.inventory.CraftItemStack;
++import org.bukkit.craftbukkit.v1_19_R1.util.DummyGeneratorAccess;
 +import org.bukkit.event.block.BlockDispenseArmorEvent;
 +import org.bukkit.event.block.BlockDispenseEvent;
 +import org.bukkit.event.block.BlockFertilizeEvent;
@@ -63,7 +63,7 @@
      };
  
      ItemStack dispense(BlockSource pointer, ItemStack stack);
-@@ -87,49 +101,52 @@
+@@ -88,49 +102,52 @@
          DispenserBlock.registerBehavior(Items.ARROW, new AbstractProjectileDispenseBehavior() {
              @Override
              protected Projectile getProjectile(Level world, Position position, ItemStack stack) {
@@ -132,7 +132,7 @@
                  });
              }
  
-@@ -149,8 +166,8 @@
+@@ -150,8 +167,8 @@
                  return (new AbstractProjectileDispenseBehavior() {
                      @Override
                      protected Projectile getProjectile(Level world, Position position, ItemStack stack) {
@@ -143,7 +143,7 @@
                          });
                      }
  
-@@ -172,8 +189,8 @@
+@@ -173,8 +190,8 @@
                  return (new AbstractProjectileDispenseBehavior() {
                      @Override
                      protected Projectile getProjectile(Level world, Position position, ItemStack stack) {
@@ -154,7 +154,7 @@
                          });
                      }
  
-@@ -189,57 +206,147 @@
+@@ -190,57 +207,147 @@
                  }).dispense(pointer, stack);
              }
          });
@@ -205,9 +205,10 @@
                  }
  
 -                stack.shrink(1);
+-                pointer.getLevel().gameEvent((Entity)null, GameEvent.ENTITY_PLACE, pointer.getPos());
 +                // itemstack.shrink(1); // Handled during event processing
 +                // CraftBukkit end
-                 pointer.getLevel().gameEvent(GameEvent.ENTITY_PLACE, pointer.getPos());
++                pointer.getLevel().gameEvent((Entity) null, GameEvent.ENTITY_PLACE, pointer.getPos());
                  return stack;
              }
          };
@@ -299,7 +300,7 @@
 +                    org.bukkit.block.Block block = world.getWorld().getBlockAt(pointer.getPos().getX(), pointer.getPos().getY(), pointer.getPos().getZ());
 +                    CraftItemStack craftItem = CraftItemStack.asCraftMirror(itemstack1);
 +
-+                    BlockDispenseArmorEvent event = new BlockDispenseArmorEvent(block, craftItem.clone(), (org.bukkit.craftbukkit.v1_18_R2.entity.CraftLivingEntity) list.get(0).getBukkitEntity());
++                    BlockDispenseArmorEvent event = new BlockDispenseArmorEvent(block, craftItem.clone(), (org.bukkit.craftbukkit.v1_19_R1.entity.CraftLivingEntity) list.get(0).getBukkitEntity());
 +                    if (!DispenserBlock.eventFired) {
 +                        world.getCraftServer().getPluginManager().callEvent(event);
 +                    }
@@ -325,7 +326,7 @@
                      this.setSuccess(true);
                      return stack;
                  } else {
-@@ -247,71 +354,168 @@
+@@ -248,71 +355,168 @@
                  }
              }
          });
@@ -362,7 +363,7 @@
 +                org.bukkit.block.Block block = world.getWorld().getBlockAt(pointer.getPos().getX(), pointer.getPos().getY(), pointer.getPos().getZ());
 +                CraftItemStack craftItem = CraftItemStack.asCraftMirror(itemstack1);
 +
-+                BlockDispenseArmorEvent event = new BlockDispenseArmorEvent(block, craftItem.clone(), (org.bukkit.craftbukkit.v1_18_R2.entity.CraftLivingEntity) entityhorseabstract.getBukkitEntity());
++                BlockDispenseArmorEvent event = new BlockDispenseArmorEvent(block, craftItem.clone(), (org.bukkit.craftbukkit.v1_19_R1.entity.CraftLivingEntity) entityhorseabstract.getBukkitEntity());
 +                if (!DispenserBlock.eventFired) {
 +                    world.getCraftServer().getPluginManager().callEvent(event);
 +                }
@@ -462,7 +463,7 @@
 +                org.bukkit.block.Block block = world.getWorld().getBlockAt(pointer.getPos().getX(), pointer.getPos().getY(), pointer.getPos().getZ());
 +                CraftItemStack craftItem = CraftItemStack.asCraftMirror(itemstack1);
 +
-+                BlockDispenseArmorEvent event = new BlockDispenseArmorEvent(block, craftItem.clone(), (org.bukkit.craftbukkit.v1_18_R2.entity.CraftLivingEntity) entityhorsechestedabstract.getBukkitEntity());
++                BlockDispenseArmorEvent event = new BlockDispenseArmorEvent(block, craftItem.clone(), (org.bukkit.craftbukkit.v1_19_R1.entity.CraftLivingEntity) entityhorsechestedabstract.getBukkitEntity());
 +                if (!DispenserBlock.eventFired) {
 +                    world.getCraftServer().getPluginManager().callEvent(event);
 +                }
@@ -537,7 +538,7 @@
                  return stack;
              }
  
-@@ -323,21 +527,50 @@
+@@ -324,21 +528,50 @@
          DispenserBlock.registerBehavior(Items.FIRE_CHARGE, new DefaultDispenseItemBehavior() {
              @Override
              public ItemStack execute(BlockSource pointer, ItemStack stack) {
@@ -547,10 +548,10 @@
 -                double e = position.y() + (double)((float)direction.getStepY() * 0.3F);
 -                double f = position.z() + (double)((float)direction.getStepZ() * 0.3F);
 -                Level level = pointer.getLevel();
--                Random random = level.random;
--                double g = random.nextGaussian() * 0.05D + (double)direction.getStepX();
--                double h = random.nextGaussian() * 0.05D + (double)direction.getStepY();
--                double i = random.nextGaussian() * 0.05D + (double)direction.getStepZ();
+-                RandomSource randomSource = level.random;
+-                double g = randomSource.triangle((double)direction.getStepX(), 0.11485000000000001D);
+-                double h = randomSource.triangle((double)direction.getStepY(), 0.11485000000000001D);
+-                double i = randomSource.triangle((double)direction.getStepZ(), 0.11485000000000001D);
 -                SmallFireball smallFireball = new SmallFireball(level, d, e, f, g, h, i);
 -                level.addFreshEntity(Util.make(smallFireball, (entity) -> {
 -                    entity.setItem(stack);
@@ -562,10 +563,10 @@
 +                double d1 = iposition.y() + (double) ((float) enumdirection.getStepY() * 0.3F);
 +                double d2 = iposition.z() + (double) ((float) enumdirection.getStepZ() * 0.3F);
 +                ServerLevel worldserver = pointer.getLevel();
-+                Random random = worldserver.random;
-+                double d3 = random.nextGaussian() * 0.05D + (double) enumdirection.getStepX();
-+                double d4 = random.nextGaussian() * 0.05D + (double) enumdirection.getStepY();
-+                double d5 = random.nextGaussian() * 0.05D + (double) enumdirection.getStepZ();
++                RandomSource randomsource = worldserver.random;
++                double d3 = randomsource.triangle((double) enumdirection.getStepX(), 0.11485000000000001D);
++                double d4 = randomsource.triangle((double) enumdirection.getStepY(), 0.11485000000000001D);
++                double d5 = randomsource.triangle((double) enumdirection.getStepZ(), 0.11485000000000001D);
 +
 +                // CraftBukkit start
 +                ItemStack itemstack1 = stack.split(1);
@@ -595,7 +596,7 @@
 +
 +                SmallFireball entitysmallfireball = new SmallFireball(worldserver, d0, d1, d2, event.getVelocity().getX(), event.getVelocity().getY(), event.getVelocity().getZ());
 +                entitysmallfireball.setItem(itemstack1);
-+                entitysmallfireball.projectileSource = new org.bukkit.craftbukkit.v1_18_R2.projectiles.CraftBlockProjectileSource((DispenserBlockEntity) pointer.getEntity());
++                entitysmallfireball.projectileSource = new org.bukkit.craftbukkit.v1_19_R1.projectiles.CraftBlockProjectileSource((DispenserBlockEntity) pointer.getEntity());
 +
 +                worldserver.addFreshEntity(entitysmallfireball);
 +                // itemstack.shrink(1); // Handled during event processing
@@ -603,10 +604,10 @@
                  return stack;
              }
  
-@@ -352,51 +585,124 @@
-         DispenserBlock.registerBehavior(Items.JUNGLE_BOAT, new BoatDispenseItemBehavior(Boat.Type.JUNGLE));
-         DispenserBlock.registerBehavior(Items.DARK_OAK_BOAT, new BoatDispenseItemBehavior(Boat.Type.DARK_OAK));
-         DispenserBlock.registerBehavior(Items.ACACIA_BOAT, new BoatDispenseItemBehavior(Boat.Type.ACACIA));
+@@ -361,52 +594,125 @@
+         DispenserBlock.registerBehavior(Items.DARK_OAK_CHEST_BOAT, new BoatDispenseItemBehavior(Boat.Type.DARK_OAK, true));
+         DispenserBlock.registerBehavior(Items.ACACIA_CHEST_BOAT, new BoatDispenseItemBehavior(Boat.Type.ACACIA, true));
+         DispenserBlock.registerBehavior(Items.MANGROVE_CHEST_BOAT, new BoatDispenseItemBehavior(Boat.Type.MANGROVE, true));
 -        DispenseItemBehavior dispenseItemBehavior = new DefaultDispenseItemBehavior() {
 +        DefaultDispenseItemBehavior dispensebehavioritem1 = new DefaultDispenseItemBehavior() {
              private final DefaultDispenseItemBehavior defaultDispenseItemBehavior = new DefaultDispenseItemBehavior();
@@ -681,6 +682,7 @@
 -        DispenserBlock.registerBehavior(Items.PUFFERFISH_BUCKET, dispenseItemBehavior);
 -        DispenserBlock.registerBehavior(Items.TROPICAL_FISH_BUCKET, dispenseItemBehavior);
 -        DispenserBlock.registerBehavior(Items.AXOLOTL_BUCKET, dispenseItemBehavior);
+-        DispenserBlock.registerBehavior(Items.TADPOLE_BUCKET, dispenseItemBehavior);
 +
 +        DispenserBlock.registerBehavior(Items.LAVA_BUCKET, dispensebehavioritem1);
 +        DispenserBlock.registerBehavior(Items.WATER_BUCKET, dispensebehavioritem1);
@@ -690,6 +692,7 @@
 +        DispenserBlock.registerBehavior(Items.PUFFERFISH_BUCKET, dispensebehavioritem1);
 +        DispenserBlock.registerBehavior(Items.TROPICAL_FISH_BUCKET, dispensebehavioritem1);
 +        DispenserBlock.registerBehavior(Items.AXOLOTL_BUCKET, dispensebehavioritem1);
++        DispenserBlock.registerBehavior(Items.TADPOLE_BUCKET, dispensebehavioritem1);
          DispenserBlock.registerBehavior(Items.BUCKET, new DefaultDispenseItemBehavior() {
              private final DefaultDispenseItemBehavior defaultDispenseItemBehavior = new DefaultDispenseItemBehavior();
  
@@ -752,7 +755,7 @@
                                  this.defaultDispenseItemBehavior.dispense(pointer, new ItemStack(item));
                              }
  
-@@ -411,27 +717,57 @@
+@@ -421,27 +727,57 @@
          DispenserBlock.registerBehavior(Items.FLINT_AND_STEEL, new OptionalDispenseItemBehavior() {
              @Override
              protected ItemStack execute(BlockSource pointer, ItemStack stack) {
@@ -800,7 +803,7 @@
 +
 +                if (BaseFireBlock.canBePlacedAt(worldserver, blockposition, enumdirection)) {
 +                    // CraftBukkit start - Ignition by dispensing flint and steel
-+                    if (!org.bukkit.craftbukkit.v1_18_R2.event.CraftEventFactory.callBlockIgniteEvent(worldserver, blockposition, pointer.getPos()).isCancelled()) {
++                    if (!org.bukkit.craftbukkit.v1_19_R1.event.CraftEventFactory.callBlockIgniteEvent(worldserver, blockposition, pointer.getPos()).isCancelled()) {
 +                        worldserver.setBlockAndUpdate(blockposition, BaseFireBlock.getState(worldserver, blockposition));
 +                        worldserver.gameEvent((Entity) null, GameEvent.BLOCK_PLACE, blockposition);
 +                    }
@@ -824,7 +827,7 @@
                      stack.setCount(0);
                  }
  
-@@ -442,13 +778,64 @@
+@@ -452,13 +788,64 @@
              @Override
              protected ItemStack execute(BlockSource pointer, ItemStack stack) {
                  this.setSuccess(true);
@@ -865,7 +868,7 @@
 -                    level.levelEvent(1505, blockPos, 0);
 +                } else if (!worldserver.isClientSide) {
 +                    worldserver.levelEvent(1505, blockposition, 0);
-                 }
++                }
 +                // CraftBukkit start
 +                worldserver.captureTreeGeneration = false;
 +                if (worldserver.capturedBlockStates.size() > 0) {
@@ -889,12 +892,12 @@
 +                            blockstate.update(true);
 +                        }
 +                    }
-+                }
+                 }
 +                // CraftBukkit end
  
                  return stack;
              }
-@@ -456,40 +843,97 @@
+@@ -466,40 +853,97 @@
          DispenserBlock.registerBehavior(Blocks.TNT, new DefaultDispenseItemBehavior() {
              @Override
              protected ItemStack execute(BlockSource pointer, ItemStack stack) {
@@ -1014,7 +1017,7 @@
                      }
  
                      stack.shrink(1);
-@@ -504,13 +948,38 @@
+@@ -514,13 +958,38 @@
          DispenserBlock.registerBehavior(Blocks.CARVED_PUMPKIN, new OptionalDispenseItemBehavior() {
              @Override
              protected ItemStack execute(BlockSource pointer, ItemStack stack) {
@@ -1060,7 +1063,7 @@
                      }
  
                      stack.shrink(1);
-@@ -523,9 +992,13 @@
+@@ -533,9 +1002,13 @@
              }
          });
          DispenserBlock.registerBehavior(Blocks.SHULKER_BOX.asItem(), new ShulkerBoxDispenseBehavior());
@@ -1076,7 +1079,7 @@
          }
  
          DispenserBlock.registerBehavior(Items.GLASS_BOTTLE.asItem(), new OptionalDispenseItemBehavior() {
-@@ -534,10 +1007,10 @@
+@@ -544,10 +1017,10 @@
              private ItemStack takeLiquid(BlockSource pointer, ItemStack emptyBottleStack, ItemStack filledBottleStack) {
                  emptyBottleStack.shrink(1);
                  if (emptyBottleStack.isEmpty()) {
@@ -1089,7 +1092,7 @@
                          this.defaultDispenseItemBehavior.dispense(pointer, filledBottleStack.copy());
                      }
  
-@@ -548,16 +1021,41 @@
+@@ -558,16 +1031,41 @@
              @Override
              public ItemStack execute(BlockSource pointer, ItemStack stack) {
                  this.setSuccess(false);
@@ -1139,7 +1142,7 @@
                      this.setSuccess(true);
                      return this.takeLiquid(pointer, stack, PotionUtils.setPotion(new ItemStack(Items.POTION), Potions.WATER));
                  } else {
-@@ -568,14 +1066,15 @@
+@@ -578,14 +1076,15 @@
          DispenserBlock.registerBehavior(Items.GLOWSTONE, new OptionalDispenseItemBehavior() {
              @Override
              public ItemStack execute(BlockSource pointer, ItemStack stack) {
@@ -1162,7 +1165,7 @@
                          stack.shrink(1);
                      } else {
                          this.setSuccess(false);
-@@ -591,13 +1090,14 @@
+@@ -601,13 +1100,14 @@
          DispenserBlock.registerBehavior(Items.HONEYCOMB, new OptionalDispenseItemBehavior() {
              @Override
              public ItemStack execute(BlockSource pointer, ItemStack stack) {
@@ -1183,7 +1186,40 @@
                      stack.shrink(1);
                      this.setSuccess(true);
                      return stack;
-@@ -609,6 +1109,6 @@
+@@ -624,21 +1124,22 @@
+                 if (PotionUtils.getPotion(stack) != Potions.WATER) {
+                     return this.defaultDispenseItemBehavior.dispense(pointer, stack);
+                 } else {
+-                    ServerLevel serverLevel = pointer.getLevel();
+-                    BlockPos blockPos = pointer.getPos();
+-                    BlockPos blockPos2 = pointer.getPos().relative(pointer.getBlockState().getValue(DispenserBlock.FACING));
+-                    if (!serverLevel.getBlockState(blockPos2).is(BlockTags.CONVERTABLE_TO_MUD)) {
++                    ServerLevel worldserver = pointer.getLevel();
++                    BlockPos blockposition = pointer.getPos();
++                    BlockPos blockposition1 = pointer.getPos().relative((Direction) pointer.getBlockState().getValue(DispenserBlock.FACING));
++
++                    if (!worldserver.getBlockState(blockposition1).is(BlockTags.CONVERTABLE_TO_MUD)) {
+                         return this.defaultDispenseItemBehavior.dispense(pointer, stack);
+                     } else {
+-                        if (!serverLevel.isClientSide) {
+-                            for(int i = 0; i < 5; ++i) {
+-                                serverLevel.sendParticles(ParticleTypes.SPLASH, (double)blockPos.getX() + serverLevel.random.nextDouble(), (double)(blockPos.getY() + 1), (double)blockPos.getZ() + serverLevel.random.nextDouble(), 1, 0.0D, 0.0D, 0.0D, 1.0D);
++                        if (!worldserver.isClientSide) {
++                            for (int k = 0; k < 5; ++k) {
++                                worldserver.sendParticles(ParticleTypes.SPLASH, (double) blockposition.getX() + worldserver.random.nextDouble(), (double) (blockposition.getY() + 1), (double) blockposition.getZ() + worldserver.random.nextDouble(), 1, 0.0D, 0.0D, 0.0D, 1.0D);
+                             }
+                         }
+ 
+-                        serverLevel.playSound((Player)null, blockPos, SoundEvents.BOTTLE_EMPTY, SoundSource.BLOCKS, 1.0F, 1.0F);
+-                        serverLevel.gameEvent((Entity)null, GameEvent.FLUID_PLACE, blockPos);
+-                        serverLevel.setBlockAndUpdate(blockPos2, Blocks.MUD.defaultBlockState());
++                        worldserver.playSound((Player) null, blockposition, SoundEvents.BOTTLE_EMPTY, SoundSource.BLOCKS, 1.0F, 1.0F);
++                        worldserver.gameEvent((Entity) null, GameEvent.FLUID_PLACE, blockposition);
++                        worldserver.setBlockAndUpdate(blockposition1, Blocks.MUD.defaultBlockState());
+                         return new ItemStack(Items.GLASS_BOTTLE);
+                     }
+                 }
+@@ -647,6 +1148,6 @@
      }
  
      static void setEntityPokingOutOfBlock(BlockSource pointer, Entity entity, Direction direction) {

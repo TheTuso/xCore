@@ -9,7 +9,7 @@
 +import java.util.List;
 +import org.bukkit.Location;
 +
-+import org.bukkit.craftbukkit.v1_18_R2.entity.CraftHumanEntity;
++import org.bukkit.craftbukkit.v1_19_R1.entity.CraftHumanEntity;
 +import org.bukkit.entity.HumanEntity;
 +// CraftBukkit end
 +

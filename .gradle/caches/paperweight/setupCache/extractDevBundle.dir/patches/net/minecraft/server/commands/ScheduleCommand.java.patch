@@ -9,24 +9,24 @@
  import com.mojang.brigadier.exceptions.CommandSyntaxException;
  import com.mojang.brigadier.exceptions.DynamicCommandExceptionType;
  import com.mojang.brigadier.exceptions.SimpleCommandExceptionType;
-@@ -11,7 +13,6 @@
- import com.mojang.datafixers.util.Pair;
+@@ -12,7 +14,6 @@
+ import java.util.Collection;
  import net.minecraft.commands.CommandFunction;
  import net.minecraft.commands.CommandSourceStack;
 -import net.minecraft.commands.Commands;
  import net.minecraft.commands.SharedSuggestionProvider;
  import net.minecraft.commands.arguments.TimeArgument;
  import net.minecraft.commands.arguments.item.FunctionArgument;
-@@ -24,62 +25,69 @@
+@@ -24,60 +25,67 @@
  import net.minecraft.world.level.timers.TimerQueue;
  
  public class ScheduleCommand {
 +
-     private static final SimpleCommandExceptionType ERROR_SAME_TICK = new SimpleCommandExceptionType(new TranslatableComponent("commands.schedule.same_tick"));
+     private static final SimpleCommandExceptionType ERROR_SAME_TICK = new SimpleCommandExceptionType(Component.translatable("commands.schedule.same_tick"));
 -    private static final DynamicCommandExceptionType ERROR_CANT_REMOVE = new DynamicCommandExceptionType((eventName) -> {
--        return new TranslatableComponent("commands.schedule.cleared.failure", eventName);
+-        return Component.translatable("commands.schedule.cleared.failure", eventName);
 +    private static final DynamicCommandExceptionType ERROR_CANT_REMOVE = new DynamicCommandExceptionType((object) -> {
-+        return new TranslatableComponent("commands.schedule.cleared.failure", new Object[]{object});
++        return Component.translatable("commands.schedule.cleared.failure", object);
      });
 -    private static final SuggestionProvider<CommandSourceStack> SUGGEST_SCHEDULE = (context, builder) -> {
 -        return SharedSuggestionProvider.suggest(context.getSource().getServer().getWorldData().overworldData().getScheduledEvents().getEventsIds(), builder);
@@ -60,7 +60,7 @@
          }))));
      }
  
-     private static int schedule(CommandSourceStack source, Pair<ResourceLocation, Either<CommandFunction, Tag<CommandFunction>>> function, int time, boolean replace) throws CommandSyntaxException {
+     private static int schedule(CommandSourceStack source, Pair<ResourceLocation, Either<CommandFunction, Collection<CommandFunction>>> function, int time, boolean replace) throws CommandSyntaxException {
          if (time == 0) {
 -            throw ERROR_SAME_TICK.create();
 +            throw ScheduleCommand.ERROR_SAME_TICK.create();
@@ -83,10 +83,10 @@
                  }
  
 -                timerQueue.schedule(string, l, new FunctionCallback(resourceLocation));
--                source.sendSuccess(new TranslatableComponent("commands.schedule.created.function", resourceLocation, time, l), true);
+-                source.sendSuccess(Component.translatable("commands.schedule.created.function", resourceLocation, time, l), true);
 +                customfunctioncallbacktimerqueue.schedule(s, j, new FunctionCallback(minecraftkey));
-+                source.sendSuccess(new TranslatableComponent("commands.schedule.created.function", new Object[]{minecraftkey, time, j}), true);
-             }).ifRight((tag) -> {
++                source.sendSuccess(Component.translatable("commands.schedule.created.function", minecraftkey, time, j), true);
+             }).ifRight((collection) -> {
 -                String string = "#" + resourceLocation;
 +                String s = "#" + minecraftkey;
 +
@@ -96,9 +96,9 @@
                  }
  
 -                timerQueue.schedule(string, l, new FunctionTagCallback(resourceLocation));
--                source.sendSuccess(new TranslatableComponent("commands.schedule.created.tag", resourceLocation, time, l), true);
+-                source.sendSuccess(Component.translatable("commands.schedule.created.tag", resourceLocation, time, l), true);
 +                customfunctioncallbacktimerqueue.schedule(s, j, new FunctionTagCallback(minecraftkey));
-+                source.sendSuccess(new TranslatableComponent("commands.schedule.created.tag", new Object[]{minecraftkey, time, j}), true);
++                source.sendSuccess(Component.translatable("commands.schedule.created.tag", minecraftkey, time, j), true);
              });
 -            return Math.floorMod(l, Integer.MAX_VALUE);
 +            return Math.floorMod(j, Integer.MAX_VALUE);
@@ -113,8 +113,5 @@
 -            throw ERROR_CANT_REMOVE.create(eventName);
 +            throw ScheduleCommand.ERROR_CANT_REMOVE.create(eventName);
          } else {
--            source.sendSuccess(new TranslatableComponent("commands.schedule.cleared.success", i, eventName), true);
-+            source.sendSuccess(new TranslatableComponent("commands.schedule.cleared.success", new Object[]{i, eventName}), true);
+             source.sendSuccess(Component.translatable("commands.schedule.cleared.success", i, eventName), true);
              return i;
-         }
-     }

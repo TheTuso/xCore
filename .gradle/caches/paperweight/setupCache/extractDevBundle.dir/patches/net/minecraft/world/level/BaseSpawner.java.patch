@@ -1,14 +1,14 @@
 --- a/net/minecraft/world/level/BaseSpawner.java
 +++ b/net/minecraft/world/level/BaseSpawner.java
-@@ -11,6 +11,7 @@
+@@ -10,6 +10,7 @@
  import net.minecraft.nbt.CompoundTag;
  import net.minecraft.nbt.ListTag;
  import net.minecraft.nbt.NbtOps;
 +import net.minecraft.nbt.Tag;
  import net.minecraft.server.level.ServerLevel;
+ import net.minecraft.util.RandomSource;
  import net.minecraft.util.random.SimpleWeightedRandomList;
- import net.minecraft.world.Difficulty;
-@@ -24,6 +25,7 @@
+@@ -25,6 +26,7 @@
  import org.slf4j.Logger;
  
  public abstract class BaseSpawner {
@@ -16,10 +16,10 @@
      private static final Logger LOGGER = LogUtils.getLogger();
      private static final int EVENT_SPAWN = 1;
      public int spawnDelay = 20;
-@@ -40,115 +42,174 @@
+@@ -40,118 +42,177 @@
+     public int maxNearbyEntities = 6;
      public int requiredPlayerRange = 16;
      public int spawnRange = 4;
-     private final Random random = new Random();
 +    private int tickDelay = 0; // Paper
 +
 +    public BaseSpawner() {}
@@ -38,14 +38,16 @@
          if (!this.isNearPlayer(world, pos)) {
              this.oSpin = this.spin;
          } else {
--            double d = (double)pos.getX() + world.random.nextDouble();
--            double e = (double)pos.getY() + world.random.nextDouble();
--            double f = (double)pos.getZ() + world.random.nextDouble();
+-            RandomSource randomSource = world.getRandom();
+-            double d = (double)pos.getX() + randomSource.nextDouble();
+-            double e = (double)pos.getY() + randomSource.nextDouble();
+-            double f = (double)pos.getZ() + randomSource.nextDouble();
 -            world.addParticle(ParticleTypes.SMOKE, d, e, f, 0.0D, 0.0D, 0.0D);
 -            world.addParticle(ParticleTypes.FLAME, d, e, f, 0.0D, 0.0D, 0.0D);
-+            double d0 = (double) pos.getX() + world.random.nextDouble();
-+            double d1 = (double) pos.getY() + world.random.nextDouble();
-+            double d2 = (double) pos.getZ() + world.random.nextDouble();
++            RandomSource randomsource = world.getRandom();
++            double d0 = (double) pos.getX() + randomsource.nextDouble();
++            double d1 = (double) pos.getY() + randomsource.nextDouble();
++            double d2 = (double) pos.getZ() + randomsource.nextDouble();
 +
 +            world.addParticle(ParticleTypes.SMOKE, d0, d1, d2, 0.0D, 0.0D, 0.0D);
 +            world.addParticle(ParticleTypes.FLAME, d0, d1, d2, 0.0D, 0.0D, 0.0D);
@@ -63,7 +65,7 @@
      public void serverTick(ServerLevel world, BlockPos pos) {
 +        // Paper start - Configurable mob spawner tick rate
 +        if (spawnDelay > 0 && --tickDelay > 0) return;
-+        tickDelay = world.paperConfig.mobSpawnerTickRate;
++        tickDelay = world.paperConfig().tickRates.mobSpawner;
 +        if (tickDelay == -1) { return; } // If disabled
 +        // Paper end
          if (this.isNearPlayer(world, pos)) {
@@ -93,16 +95,18 @@
  
 -                    ListTag listTag = compoundTag.getList("Pos", 6);
 -                    int j = listTag.size();
--                    double d = j >= 1 ? listTag.getDouble(0) : (double)pos.getX() + (world.random.nextDouble() - world.random.nextDouble()) * (double)this.spawnRange + 0.5D;
--                    double e = j >= 2 ? listTag.getDouble(1) : (double)(pos.getY() + world.random.nextInt(3) - 1);
--                    double f = j >= 3 ? listTag.getDouble(2) : (double)pos.getZ() + (world.random.nextDouble() - world.random.nextDouble()) * (double)this.spawnRange + 0.5D;
+-                    RandomSource randomSource = world.getRandom();
+-                    double d = j >= 1 ? listTag.getDouble(0) : (double)pos.getX() + (randomSource.nextDouble() - randomSource.nextDouble()) * (double)this.spawnRange + 0.5D;
+-                    double e = j >= 2 ? listTag.getDouble(1) : (double)(pos.getY() + randomSource.nextInt(3) - 1);
+-                    double f = j >= 3 ? listTag.getDouble(2) : (double)pos.getZ() + (randomSource.nextDouble() - randomSource.nextDouble()) * (double)this.spawnRange + 0.5D;
 -                    if (world.noCollision(optional.get().getAABB(d, e, f))) {
 -                        BlockPos blockPos = new BlockPos(d, e, f);
 +                    ListTag nbttaglist = nbttagcompound.getList("Pos", 6);
 +                    int j = nbttaglist.size();
-+                    double d0 = j >= 1 ? nbttaglist.getDouble(0) : (double) pos.getX() + (world.random.nextDouble() - world.random.nextDouble()) * (double) this.spawnRange + 0.5D;
-+                    double d1 = j >= 2 ? nbttaglist.getDouble(1) : (double) (pos.getY() + world.random.nextInt(3) - 1);
-+                    double d2 = j >= 3 ? nbttaglist.getDouble(2) : (double) pos.getZ() + (world.random.nextDouble() - world.random.nextDouble()) * (double) this.spawnRange + 0.5D;
++                    RandomSource randomsource = world.getRandom();
++                    double d0 = j >= 1 ? nbttaglist.getDouble(0) : (double) pos.getX() + (randomsource.nextDouble() - randomsource.nextDouble()) * (double) this.spawnRange + 0.5D;
++                    double d1 = j >= 2 ? nbttaglist.getDouble(1) : (double) (pos.getY() + randomsource.nextInt(3) - 1);
++                    double d2 = j >= 3 ? nbttaglist.getDouble(2) : (double) pos.getZ() + (randomsource.nextDouble() - randomsource.nextDouble()) * (double) this.spawnRange + 0.5D;
 +
 +                    if (world.noCollision(((EntityType) optional.get()).getAABB(d0, d1, d2))) {
 +                        BlockPos blockposition1 = new BlockPos(d0, d1, d2);
@@ -167,8 +171,9 @@
                              return;
                          }
  
+-                        entity.moveTo(entity.getX(), entity.getY(), entity.getZ(), randomSource.nextFloat() * 360.0F, 0.0F);
 +                        entity.preserveMotion = true; // Paper - preserve entity motion from tag
-                         entity.moveTo(entity.getX(), entity.getY(), entity.getZ(), world.random.nextFloat() * 360.0F, 0.0F);
++                        entity.moveTo(entity.getX(), entity.getY(), entity.getZ(), randomsource.nextFloat() * 360.0F, 0.0F);
                          if (entity instanceof Mob) {
 -                            Mob mob = (Mob)entity;
 -                            if (this.nextSpawnData.getCustomSpawnRules().isEmpty() && !mob.checkSpawnRules(world, MobSpawnType.SPAWNER) || !mob.checkSpawnObstruction(world)) {
@@ -185,23 +190,23 @@
 +                            // Spigot Start
 +                            if (entityinsentient.level.spigotConfig.nerfSpawnerMobs) {
 +                                entityinsentient.aware = false;
-                             }
++                            }
 +                            // Spigot End
-                         }
++                        }
 +                        entity.spawnedViaMobSpawner = true; // Paper
 +                        entity.spawnReason = org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.SPAWNER; // Paper
 +                        flag = true; // Paper
 +                        // Spigot Start
-+                        if (org.bukkit.craftbukkit.v1_18_R2.event.CraftEventFactory.callSpawnerSpawnEvent(entity, pos).isCancelled()) {
++                        if (org.bukkit.craftbukkit.v1_19_R1.event.CraftEventFactory.callSpawnerSpawnEvent(entity, pos).isCancelled()) {
 +                            Entity vehicle = entity.getVehicle();
 +                            if (vehicle != null) {
 +                                vehicle.discard();
-+                            }
+                             }
 +                            for (Entity passenger : entity.getIndirectPassengers()) {
 +                                passenger.discard();
 +                            }
 +                            continue;
-+                        }
+                         }
 +                        // Spigot End
  
 -                        if (!world.tryAddFreshEntityWithPassengers(entity)) {
@@ -211,6 +216,8 @@
                          }
  
                          world.levelEvent(2004, pos, 0);
+-                        world.gameEvent(entity, GameEvent.ENTITY_PLACE, blockPos);
++                        world.gameEvent(entity, GameEvent.ENTITY_PLACE, blockposition1);
                          if (entity instanceof Mob) {
 -                            ((Mob)entity).spawnAnim();
 +                            ((Mob) entity).spawnAnim();
@@ -226,13 +233,23 @@
                      this.delay(world, pos);
                  }
  
-@@ -163,48 +224,64 @@
-             this.spawnDelay = this.minSpawnDelay + this.random.nextInt(this.maxSpawnDelay - this.minSpawnDelay);
+@@ -160,55 +221,72 @@
+     }
+ 
+     public void delay(Level world, BlockPos pos) {
+-        RandomSource randomSource = world.random;
++        RandomSource randomsource = world.random;
++
+         if (this.maxSpawnDelay <= this.minSpawnDelay) {
+             this.spawnDelay = this.minSpawnDelay;
+         } else {
+-            this.spawnDelay = this.minSpawnDelay + randomSource.nextInt(this.maxSpawnDelay - this.minSpawnDelay);
++            this.spawnDelay = this.minSpawnDelay + randomsource.nextInt(this.maxSpawnDelay - this.minSpawnDelay);
          }
  
--        this.spawnPotentials.getRandom(this.random).ifPresent((wrapper) -> {
+-        this.spawnPotentials.getRandom(randomSource).ifPresent((wrapper) -> {
 -            this.setNextSpawnData(world, pos, wrapper.getData());
-+        this.spawnPotentials.getRandom(this.random).ifPresent((weightedentry_b) -> {
++        this.spawnPotentials.getRandom(randomsource).ifPresent((weightedentry_b) -> {
 +            this.setNextSpawnData(world, pos, (SpawnData) weightedentry_b.getData());
          });
          this.broadcastEvent(world, pos, 1);
@@ -292,9 +309,9 @@
 +
 +                this.setNextSpawnData(world, pos, mobspawnerdata1);
              } else {
--                this.spawnPotentials.getRandom(this.random).ifPresent((wrapper) -> {
+-                this.spawnPotentials.getRandom(world.getRandom()).ifPresent((wrapper) -> {
 -                    this.setNextSpawnData(world, pos, wrapper.getData());
-+                this.spawnPotentials.getRandom(this.random).ifPresent((weightedentry_b) -> {
++                this.spawnPotentials.getRandom(world.getRandom()).ifPresent((weightedentry_b) -> {
 +                    this.setNextSpawnData(world, pos, (SpawnData) weightedentry_b.getData());
                  });
              }
@@ -314,7 +331,7 @@
              this.spawnCount = nbt.getShort("SpawnCount");
          }
  
-@@ -221,17 +298,28 @@
+@@ -225,17 +303,28 @@
      }
  
      public CompoundTag save(CompoundTag nbt) {
@@ -352,22 +369,11 @@
          return nbt;
      }
  
-@@ -240,15 +328,16 @@
+@@ -244,6 +333,7 @@
          if (this.displayEntity == null) {
              this.displayEntity = EntityType.loadEntityRecursive(this.nextSpawnData.getEntityToSpawn(), world, Function.identity());
              if (this.nextSpawnData.getEntityToSpawn().size() == 1 && this.nextSpawnData.getEntityToSpawn().contains("id", 8) && this.displayEntity instanceof Mob) {
 +                ;
              }
          }
- 
-         return this.displayEntity;
-     }
- 
--    public boolean onEventTriggered(Level level, int i) {
-+    public boolean onEventTriggered(Level world, int i) {
-         if (i == 1) {
--            if (level.isClientSide) {
-+            if (world.isClientSide) {
-                 this.spawnDelay = this.minSpawnDelay;
-             }
  

@@ -5,8 +5,8 @@
  import net.minecraft.world.item.alchemy.PotionBrewing;
  import net.minecraft.world.item.alchemy.PotionUtils;
 +// CraftBukkit start
-+import org.bukkit.craftbukkit.v1_18_R2.inventory.CraftInventoryBrewer;
-+import org.bukkit.craftbukkit.v1_18_R2.inventory.CraftInventoryView;
++import org.bukkit.craftbukkit.v1_19_R1.inventory.CraftInventoryBrewer;
++import org.bukkit.craftbukkit.v1_19_R1.inventory.CraftInventoryView;
 +// CraftBukkit end
  
  public class BrewingStandMenu extends AbstractContainerMenu {

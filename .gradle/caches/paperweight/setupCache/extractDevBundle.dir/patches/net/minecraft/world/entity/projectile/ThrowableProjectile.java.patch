@@ -81,7 +81,7 @@
 +        if (movingobjectposition.getType() != HitResult.Type.MISS && !flag) {
 +            // Paper start - Call ProjectileCollideEvent
 +            if (movingobjectposition instanceof EntityHitResult) {
-+                com.destroystokyo.paper.event.entity.ProjectileCollideEvent event = org.bukkit.craftbukkit.v1_18_R2.event.CraftEventFactory.callProjectileCollideEvent(this, (EntityHitResult)movingobjectposition);
++                com.destroystokyo.paper.event.entity.ProjectileCollideEvent event = org.bukkit.craftbukkit.v1_19_R1.event.CraftEventFactory.callProjectileCollideEvent(this, (EntityHitResult)movingobjectposition);
 +                if (event.isCancelled()) {
 +                    movingobjectposition = null;
 +                }

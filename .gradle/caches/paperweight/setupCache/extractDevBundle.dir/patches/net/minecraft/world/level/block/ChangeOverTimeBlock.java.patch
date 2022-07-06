@@ -5,8 +5,8 @@
  
 +import java.util.Iterator;
  import java.util.Optional;
- import java.util.Random;
  import net.minecraft.core.BlockPos;
+ import net.minecraft.server.level.ServerLevel;
 @@ -7,6 +8,7 @@
  import net.minecraft.world.level.block.state.BlockState;
  
@@ -17,7 +17,7 @@
      Optional<BlockState> getNext(BlockState state);
 @@ -15,6 +17,7 @@
  
-     default void onRandomTick(BlockState state, ServerLevel world, BlockPos pos, Random random) {
+     default void onRandomTick(BlockState state, ServerLevel world, BlockPos pos, RandomSource random) {
          float f = 0.05688889F;
 +
          if (random.nextFloat() < 0.05688889F) {
@@ -79,7 +79,7 @@
 +
 +        if (random.nextFloat() < f1) {
 +            this.getNext(state).ifPresent((iblockdata2) -> {
-+                org.bukkit.craftbukkit.v1_18_R2.event.CraftEventFactory.handleBlockFormEvent(world, pos, iblockdata2); // CraftBukkit
++                org.bukkit.craftbukkit.v1_19_R1.event.CraftEventFactory.handleBlockFormEvent(world, pos, iblockdata2); // CraftBukkit
              });
          }
  

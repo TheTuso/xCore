@@ -10,7 +10,7 @@
  
 @@ -25,23 +26,25 @@
      @Override
-     public void randomTick(BlockState state, ServerLevel world, BlockPos pos, Random random) {
+     public void randomTick(BlockState state, ServerLevel world, BlockPos pos, RandomSource random) {
          if (random.nextInt(5) == 0) {
 -            Direction direction = DIRECTIONS[random.nextInt(DIRECTIONS.length)];
 -            BlockPos blockPos = pos.relative(direction);
@@ -39,7 +39,7 @@
 -                world.setBlockAndUpdate(blockPos, blockState2);
 +                BlockState iblockdata2 = (BlockState) ((BlockState) block.defaultBlockState().setValue(AmethystClusterBlock.FACING, enumdirection)).setValue(AmethystClusterBlock.WATERLOGGED, iblockdata1.getFluidState().getType() == Fluids.WATER);
 +
-+                org.bukkit.craftbukkit.v1_18_R2.event.CraftEventFactory.handleBlockSpreadEvent(world, pos, blockposition1, iblockdata2); // CraftBukkit
++                org.bukkit.craftbukkit.v1_19_R1.event.CraftEventFactory.handleBlockSpreadEvent(world, pos, blockposition1, iblockdata2); // CraftBukkit
              }
  
          }

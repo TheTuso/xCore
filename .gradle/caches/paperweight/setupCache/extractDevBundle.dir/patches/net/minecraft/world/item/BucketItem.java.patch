@@ -9,13 +9,21 @@
  import net.minecraft.server.level.ServerPlayer;
  import net.minecraft.sounds.SoundEvent;
  import net.minecraft.sounds.SoundEvents;
-@@ -28,8 +30,17 @@
+@@ -13,6 +15,7 @@
+ import net.minecraft.tags.FluidTags;
+ import net.minecraft.world.InteractionHand;
+ import net.minecraft.world.InteractionResultHolder;
++import net.minecraft.world.entity.Entity;
+ import net.minecraft.world.entity.player.Player;
+ import net.minecraft.world.level.ClipContext;
+ import net.minecraft.world.level.Level;
+@@ -28,8 +31,17 @@
  import net.minecraft.world.level.material.Material;
  import net.minecraft.world.phys.BlockHitResult;
  import net.minecraft.world.phys.HitResult;
-+import org.bukkit.craftbukkit.v1_18_R2.event.CraftEventFactory;
-+import org.bukkit.craftbukkit.v1_18_R2.inventory.CraftItemStack;
-+import org.bukkit.craftbukkit.v1_18_R2.util.DummyGeneratorAccess;
++import org.bukkit.craftbukkit.v1_19_R1.event.CraftEventFactory;
++import org.bukkit.craftbukkit.v1_19_R1.inventory.CraftItemStack;
++import org.bukkit.craftbukkit.v1_19_R1.util.DummyGeneratorAccess;
 +import org.bukkit.event.player.PlayerBucketEmptyEvent;
 +import org.bukkit.event.player.PlayerBucketFillEvent;
 +// CraftBukkit end
@@ -27,7 +35,7 @@
      public final Fluid content;
  
      public BucketItem(Fluid fluid, Item.Properties settings) {
-@@ -39,103 +50,147 @@
+@@ -39,103 +51,147 @@
  
      @Override
      public InteractionResultHolder<ItemStack> use(Level world, Player user, InteractionHand hand) {
@@ -87,7 +95,7 @@
                              });
 -                            world.gameEvent(user, GameEvent.FLUID_PICKUP, blockPos);
 -                            ItemStack itemStack3 = ItemUtils.createFilledResult(itemStack, user, itemStack2);
-+                            world.gameEvent(user, GameEvent.FLUID_PICKUP, blockposition);
++                            world.gameEvent((Entity) user, GameEvent.FLUID_PICKUP, blockposition);
 +                            ItemStack itemstack2 = ItemUtils.createFilledResult(itemstack, user, CraftItemStack.asNMSCopy(event.getItemStack())); // CraftBukkit
 +
                              if (!world.isClientSide) {
@@ -226,15 +234,16 @@
                      return true;
                  }
              }
-@@ -143,8 +198,9 @@
+@@ -143,8 +199,9 @@
      }
  
      protected void playEmptySound(@Nullable Player player, LevelAccessor world, BlockPos pos) {
 -        SoundEvent soundEvent = this.content.is(FluidTags.LAVA) ? SoundEvents.BUCKET_EMPTY_LAVA : SoundEvents.BUCKET_EMPTY;
 -        world.playSound(player, pos, soundEvent, SoundSource.BLOCKS, 1.0F, 1.0F);
+-        world.gameEvent(player, GameEvent.FLUID_PLACE, pos);
 +        SoundEvent soundeffect = this.content.is(FluidTags.LAVA) ? SoundEvents.BUCKET_EMPTY_LAVA : SoundEvents.BUCKET_EMPTY;
 +
 +        world.playSound(player, pos, soundeffect, SoundSource.BLOCKS, 1.0F, 1.0F);
-         world.gameEvent(player, GameEvent.FLUID_PLACE, pos);
++        world.gameEvent((Entity) player, GameEvent.FLUID_PLACE, pos);
      }
  }

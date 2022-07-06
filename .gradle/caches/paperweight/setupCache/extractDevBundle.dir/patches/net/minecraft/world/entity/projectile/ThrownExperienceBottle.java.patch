@@ -19,7 +19,7 @@
 -            ExperienceOrb.award((ServerLevel)this.level, this.position(), i);
 +
 +            // CraftBukkit start
-+            org.bukkit.event.entity.ExpBottleEvent event = org.bukkit.craftbukkit.v1_18_R2.event.CraftEventFactory.callExpBottleEvent(this, i);
++            org.bukkit.event.entity.ExpBottleEvent event = org.bukkit.craftbukkit.v1_19_R1.event.CraftEventFactory.callExpBottleEvent(this, i);
 +            i = event.getExperience();
 +            if (event.getShowEffect()) {
 +                this.level.levelEvent(2002, this.blockPosition(), PotionUtils.getColor(Potions.WATER));

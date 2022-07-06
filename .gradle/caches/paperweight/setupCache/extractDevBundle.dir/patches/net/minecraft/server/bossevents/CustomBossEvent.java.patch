@@ -8,13 +8,13 @@
  import java.util.Set;
  import java.util.UUID;
  import net.minecraft.nbt.CompoundTag;
-@@ -16,12 +17,27 @@
+@@ -15,12 +16,27 @@
  import net.minecraft.server.level.ServerPlayer;
  import net.minecraft.util.Mth;
  import net.minecraft.world.BossEvent;
 +// CraftBukkit start
 +import org.bukkit.boss.KeyedBossBar;
-+import org.bukkit.craftbukkit.v1_18_R2.boss.CraftKeyedBossbar;
++import org.bukkit.craftbukkit.v1_19_R1.boss.CraftKeyedBossbar;
 +// CraftBukkit end
  
  public class CustomBossEvent extends ServerBossEvent {
@@ -36,7 +36,7 @@
  
      public CustomBossEvent(ResourceLocation id, Component displayName) {
          super(displayName, BossEvent.BossBarColor.WHITE, BossEvent.BossBarOverlay.PROGRESS);
-@@ -65,110 +81,154 @@
+@@ -64,110 +80,154 @@
  
      public void setValue(int value) {
          this.value = value;
@@ -52,9 +52,9 @@
  
      public final Component getDisplayName() {
 -        return ComponentUtils.wrapInSquareBrackets(this.getName()).withStyle((style) -> {
--            return style.withColor(this.getColor().getFormatting()).withHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, new TextComponent(this.getTextId().toString()))).withInsertion(this.getTextId().toString());
+-            return style.withColor(this.getColor().getFormatting()).withHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, Component.literal(this.getTextId().toString()))).withInsertion(this.getTextId().toString());
 +        return ComponentUtils.wrapInSquareBrackets(this.getName()).withStyle((chatmodifier) -> {
-+            return chatmodifier.withColor(this.getColor().getFormatting()).withHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, new TextComponent(this.getTextId().toString()))).withInsertion(this.getTextId().toString());
++            return chatmodifier.withColor(this.getColor().getFormatting()).withHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, Component.literal(this.getTextId().toString()))).withInsertion(this.getTextId().toString());
          });
      }
  

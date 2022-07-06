@@ -30,10 +30,10 @@
 +import io.papermc.paper.adventure.PaperAdventure; // Paper
 +import java.util.UUID;
 +import org.bukkit.Bukkit;
-+import org.bukkit.craftbukkit.v1_18_R2.CraftServer;
-+import org.bukkit.craftbukkit.v1_18_R2.CraftWorld;
-+import org.bukkit.craftbukkit.v1_18_R2.map.CraftMapView;
-+import org.bukkit.craftbukkit.v1_18_R2.util.CraftChatMessage;
++import org.bukkit.craftbukkit.v1_19_R1.CraftServer;
++import org.bukkit.craftbukkit.v1_19_R1.CraftWorld;
++import org.bukkit.craftbukkit.v1_19_R1.map.CraftMapView;
++import org.bukkit.craftbukkit.v1_19_R1.util.CraftChatMessage;
 +// CraftBukkit end
 +
  public class MapItemSavedData extends SavedData {
@@ -45,7 +45,7 @@
      public final Map<String, MapDecoration> decorations = Maps.newLinkedHashMap();
      private final Map<String, MapFrame> frameMarkers = Maps.newHashMap();
      private int trackedDecorationCount;
-+    private org.bukkit.craftbukkit.v1_18_R2.map.RenderData vanillaRender = new org.bukkit.craftbukkit.v1_18_R2.map.RenderData(); // Paper
++    private org.bukkit.craftbukkit.v1_19_R1.map.RenderData vanillaRender = new org.bukkit.craftbukkit.v1_19_R1.map.RenderData(); // Paper
 +
 +    // CraftBukkit start
 +    public final CraftMapView mapView;
@@ -336,7 +336,7 @@
 +            MapFrame worldmapframe1 = new MapFrame(blockposition, entityitemframe.getDirection().get2DDataValue() * 90, entityitemframe.getId());
 +
 +            // Paper start
-+            if (this.decorations.size() < player.level.paperConfig.mapItemFrameCursorLimit) {
++            if (this.decorations.size() < player.level.paperConfig().maps.itemFrameCursorLimit) {
 +            this.addDecoration(MapDecoration.Type.FRAME, player.level, "frame-" + entityitemframe.getId(), (double) blockposition.getX(), (double) blockposition.getZ(), (double) (entityitemframe.getDirection().get2DDataValue() * 90), (Component) null);
 +            this.frameMarkers.put(worldmapframe1.getId(), worldmapframe1);
 +            }
@@ -676,7 +676,7 @@
 +            });
 +        }
 +        private boolean shouldUseVanillaMap() {
-+            return mapView.getRenderers().size() == 1 && mapView.getRenderers().get(0).getClass() == org.bukkit.craftbukkit.v1_18_R2.map.CraftMapRenderer.class;
++            return mapView.getRenderers().size() == 1 && mapView.getRenderers().get(0).getClass() == org.bukkit.craftbukkit.v1_19_R1.map.CraftMapRenderer.class;
 +        }
 +        // Paper end
          public final Player player;
@@ -720,7 +720,7 @@
 +            MapItemSavedData.MapPatch worldmap_b;
 +            if (!this.dirtyData && this.tick % 5 != 0) { this.tick++; return null; } // Paper - this won't end up sending, so don't render it!
 +            boolean vanillaMaps = shouldUseVanillaMap(); // Paper
-+            org.bukkit.craftbukkit.v1_18_R2.map.RenderData render = !vanillaMaps ? MapItemSavedData.this.mapView.render((org.bukkit.craftbukkit.v1_18_R2.entity.CraftPlayer) this.player.getBukkitEntity()) : MapItemSavedData.this.vanillaRender; // CraftBukkit // Paper
++            org.bukkit.craftbukkit.v1_19_R1.map.RenderData render = !vanillaMaps ? MapItemSavedData.this.mapView.render((org.bukkit.craftbukkit.v1_19_R1.entity.CraftPlayer) this.player.getBukkitEntity()) : MapItemSavedData.this.vanillaRender; // CraftBukkit // Paper
 +
              if (this.dirtyData) {
                  this.dirtyData = false;

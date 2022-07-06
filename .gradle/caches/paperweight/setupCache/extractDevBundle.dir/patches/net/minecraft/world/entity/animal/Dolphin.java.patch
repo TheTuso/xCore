@@ -149,7 +149,7 @@
 +
 +            if (this.canHoldItem(itemstack)) {
 +                // CraftBukkit start - call EntityPickupItemEvent
-+                if (org.bukkit.craftbukkit.v1_18_R2.event.CraftEventFactory.callEntityPickupItemEvent(this, item, 0, false).isCancelled()) {
++                if (org.bukkit.craftbukkit.v1_19_R1.event.CraftEventFactory.callEntityPickupItemEvent(this, item, 0, false).isCancelled()) {
 +                    return;
 +                }
 +                itemstack = item.getItem(); // update ItemStack from event
@@ -157,7 +157,7 @@
                  this.onItemPickup(item);
 -                this.setItemSlot(EquipmentSlot.MAINHAND, itemStack);
 +                this.setItemSlot(EquipmentSlot.MAINHAND, itemstack);
-                 this.handDropChances[EquipmentSlot.MAINHAND.getIndex()] = 2.0F;
+                 this.setGuaranteedDrop(EquipmentSlot.MAINHAND);
 -                this.take(item, itemStack.getCount());
 +                this.take(item, itemstack.getCount());
                  item.discard();
@@ -279,12 +279,12 @@
                  this.stuck = false;
                  this.dolphin.getNavigation().stop();
 -                BlockPos blockPos = this.dolphin.blockPosition();
--                BlockPos blockPos2 = serverLevel.findNearestMapFeature(ConfiguredStructureTags.DOLPHIN_LOCATED, blockPos, 50, false);
+-                BlockPos blockPos2 = serverLevel.findNearestMapStructure(StructureTags.DOLPHIN_LOCATED, blockPos, 50, false);
 -                if (blockPos2 != null) {
 -                    this.dolphin.setTreasurePos(blockPos2);
 -                    serverLevel.broadcastEntityEvent(this.dolphin, (byte)38);
 +                BlockPos blockposition = this.dolphin.blockPosition();
-+                BlockPos blockposition1 = worldserver.findNearestMapFeature(ConfiguredStructureTags.DOLPHIN_LOCATED, blockposition, 50, false);
++                BlockPos blockposition1 = worldserver.findNearestMapStructure(StructureTags.DOLPHIN_LOCATED, blockposition, 50, false);
 +
 +                if (blockposition1 != null) {
 +                    this.dolphin.setTreasurePos(blockposition1);
@@ -489,7 +489,7 @@
 +                float f2 = 0.02F * Dolphin.this.random.nextFloat();
 +
 +                entityitem.setDeltaMovement((double) (0.3F * -Mth.sin(Dolphin.this.getYRot() * 0.017453292F) * Mth.cos(Dolphin.this.getXRot() * 0.017453292F) + Mth.cos(f1) * f2), (double) (0.3F * Mth.sin(Dolphin.this.getXRot() * 0.017453292F) * 1.5F), (double) (0.3F * Mth.cos(Dolphin.this.getYRot() * 0.017453292F) * Mth.cos(Dolphin.this.getXRot() * 0.017453292F) + Mth.sin(f1) * f2));
-+                Dolphin.this.level.addFreshEntity(entityitem);
++                Dolphin.this.spawnAtLocation(entityitem); // Paper - call EntityDropItemEvent
              }
          }
      }

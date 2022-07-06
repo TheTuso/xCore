@@ -4,7 +4,7 @@
  import net.minecraft.world.level.block.state.properties.IntegerProperty;
  import net.minecraft.world.phys.shapes.CollisionContext;
  import net.minecraft.world.phys.shapes.VoxelShape;
-+import org.bukkit.craftbukkit.v1_18_R2.event.CraftEventFactory; // CraftBukkit
++import org.bukkit.craftbukkit.v1_19_R1.event.CraftEventFactory; // CraftBukkit
  
  public class CropBlock extends BushBlock implements BonemealableBlock {
 +
@@ -54,7 +54,7 @@
  
      @Override
 @@ -70,10 +72,25 @@
-     public void randomTick(BlockState state, ServerLevel world, BlockPos pos, Random random) {
+     public void randomTick(BlockState state, ServerLevel world, BlockPos pos, RandomSource random) {
          if (world.getRawBrightness(pos, 0) >= 9) {
              int i = this.getAge(state);
 +
@@ -163,7 +163,7 @@
      @Override
      public void entityInside(BlockState state, Level world, BlockPos pos, Entity entity) {
 -        if (entity instanceof Ravager && world.getGameRules().getBoolean(GameRules.RULE_MOBGRIEFING)) {
-+        if (!new io.papermc.paper.event.entity.EntityInsideBlockEvent(entity.getBukkitEntity(), org.bukkit.craftbukkit.v1_18_R2.block.CraftBlock.at(world, pos)).callEvent()) { return; } // Paper
++        if (!new io.papermc.paper.event.entity.EntityInsideBlockEvent(entity.getBukkitEntity(), org.bukkit.craftbukkit.v1_19_R1.block.CraftBlock.at(world, pos)).callEvent()) { return; } // Paper
 +        if (entity instanceof Ravager && !CraftEventFactory.callEntityChangeBlockEvent(entity, pos, Blocks.AIR.defaultBlockState(), !world.getGameRules().getBoolean(GameRules.RULE_MOBGRIEFING)).isCancelled()) { // CraftBukkit
              world.destroyBlock(pos, true, entity);
          }

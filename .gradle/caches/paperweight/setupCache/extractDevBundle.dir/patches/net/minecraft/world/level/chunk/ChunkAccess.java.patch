@@ -6,12 +6,12 @@
  import java.util.Map;
 +import java.util.Map.Entry;
  import java.util.Set;
+ import java.util.function.Function;
  import java.util.function.Supplier;
- import java.util.stream.Stream;
-@@ -54,12 +55,13 @@
+@@ -51,12 +52,13 @@
  import org.slf4j.Logger;
  
- public abstract class ChunkAccess implements BlockGetter, BiomeManager.NoiseBiomeSource, FeatureAccess {
+ public abstract class ChunkAccess implements BlockGetter, BiomeManager.NoiseBiomeSource, StructureAccess {
 +
      private static final Logger LOGGER = LogUtils.getLogger();
      private static final LongSet EMPTY_REFERENCE_SET = new LongOpenHashSet();
@@ -23,13 +23,13 @@
      private long inhabitedTime;
      /** @deprecated */
      @Nullable
-@@ -78,8 +80,55 @@
+@@ -75,8 +77,55 @@
      protected final LevelHeightAccessor levelHeightAccessor;
      protected final LevelChunkSection[] sections;
  
 +    // CraftBukkit start - SPIGOT-6814: move to IChunkAccess to account for 1.17 to 1.18 chunk upgrading.
-+    private static final org.bukkit.craftbukkit.v1_18_R2.persistence.CraftPersistentDataTypeRegistry DATA_TYPE_REGISTRY = new org.bukkit.craftbukkit.v1_18_R2.persistence.CraftPersistentDataTypeRegistry();
-+    public org.bukkit.craftbukkit.v1_18_R2.persistence.DirtyCraftPersistentDataContainer persistentDataContainer = new org.bukkit.craftbukkit.v1_18_R2.persistence.DirtyCraftPersistentDataContainer(ChunkAccess.DATA_TYPE_REGISTRY);
++    private static final org.bukkit.craftbukkit.v1_19_R1.persistence.CraftPersistentDataTypeRegistry DATA_TYPE_REGISTRY = new org.bukkit.craftbukkit.v1_19_R1.persistence.CraftPersistentDataTypeRegistry();
++    public org.bukkit.craftbukkit.v1_19_R1.persistence.DirtyCraftPersistentDataContainer persistentDataContainer = new org.bukkit.craftbukkit.v1_19_R1.persistence.DirtyCraftPersistentDataContainer(ChunkAccess.DATA_TYPE_REGISTRY);
 +    // CraftBukkit end
 +    // Paper start - rewrite light engine
 +    private volatile ca.spottedleaf.starlight.common.light.SWMRNibbleArray[] blockNibbles;
@@ -80,7 +80,7 @@
          this.upgradeData = upgradeData;
          this.levelHeightAccessor = heightLimitView;
          this.sections = new LevelChunkSection[heightLimitView.getSectionsCount()];
-@@ -90,17 +139,21 @@
+@@ -87,17 +136,21 @@
              if (this.sections.length == sectionArrayInitializer.length) {
                  System.arraycopy(sectionArrayInitializer, 0, this.sections, 0, this.sections.length);
              } else {
@@ -106,7 +106,7 @@
              }
          }
  
-@@ -110,6 +163,7 @@
+@@ -107,6 +160,7 @@
          return GameEventDispatcher.NOOP;
      }
  
@@ -114,7 +114,7 @@
      @Nullable
      public abstract BlockState setBlockState(BlockPos pos, BlockState state, boolean moved);
  
-@@ -119,12 +173,13 @@
+@@ -116,12 +170,13 @@
  
      @Nullable
      public LevelChunkSection getHighestSection() {
@@ -133,7 +133,7 @@
              }
          }
  
-@@ -132,12 +187,14 @@
+@@ -129,12 +184,14 @@
      }
  
      public int getHighestSectionPosition() {
@@ -150,7 +150,7 @@
          set.addAll(this.blockEntities.keySet());
          return set;
      }
-@@ -150,7 +207,7 @@
+@@ -147,7 +204,7 @@
          return this.getSections()[yIndex];
      }
  
@@ -159,18 +159,18 @@
          return Collections.unmodifiableSet(this.heightmaps.entrySet());
      }
  
-@@ -159,8 +216,8 @@
+@@ -156,8 +213,8 @@
      }
  
      public Heightmap getOrCreateHeightmapUnprimed(Heightmap.Types type) {
--        return this.heightmaps.computeIfAbsent(type, (types) -> {
--            return new Heightmap(this, types);
+-        return this.heightmaps.computeIfAbsent(type, (type2) -> {
+-            return new Heightmap(this, type2);
 +        return (Heightmap) this.heightmaps.computeIfAbsent(type, (heightmap_type1) -> {
 +            return new Heightmap(this, heightmap_type1);
          });
      }
  
-@@ -169,14 +226,15 @@
+@@ -166,14 +223,15 @@
      }
  
      public int getHeight(Heightmap.Types type, int x, int z) {
@@ -189,46 +189,34 @@
          }
  
          return heightmap.getFirstAvailable(x & 15, z & 15) - 1;
-@@ -188,13 +246,13 @@
- 
+@@ -186,7 +244,7 @@
      @Nullable
      @Override
--    public StructureStart getStartForFeature(ConfiguredStructureFeature<?, ?> configuredStructureFeature) {
--        return this.structureStarts.get(configuredStructureFeature);
-+    public StructureStart getStartForFeature(ConfiguredStructureFeature<?, ?> structurefeature) {
-+        return (StructureStart) this.structureStarts.get(structurefeature);
+     public StructureStart getStartForStructure(Structure structure) {
+-        return this.structureStarts.get(structure);
++        return (StructureStart) this.structureStarts.get(structure);
      }
  
      @Override
--    public void setStartForFeature(ConfiguredStructureFeature<?, ?> configuredStructureFeature, StructureStart start) {
--        this.structureStarts.put(configuredStructureFeature, start);
-+    public void setStartForFeature(ConfiguredStructureFeature<?, ?> structurefeature, StructureStart start) {
-+        this.structureStarts.put(structurefeature, start);
-         this.unsaved = true;
-     }
+@@ -207,14 +265,14 @@
  
-@@ -209,15 +267,15 @@
+     @Override
+     public LongSet getReferencesForStructure(Structure structure) {
+-        return this.structuresRefences.getOrDefault(structure, EMPTY_REFERENCE_SET);
++        return (LongSet) this.structuresRefences.getOrDefault(structure, ChunkAccess.EMPTY_REFERENCE_SET);
      }
  
      @Override
--    public LongSet getReferencesForFeature(ConfiguredStructureFeature<?, ?> configuredStructureFeature) {
--        return this.structuresRefences.getOrDefault(configuredStructureFeature, EMPTY_REFERENCE_SET);
-+    public LongSet getReferencesForFeature(ConfiguredStructureFeature<?, ?> structurefeature) {
-+        return (LongSet) this.structuresRefences.getOrDefault(structurefeature, ChunkAccess.EMPTY_REFERENCE_SET);
-     }
- 
-     @Override
--    public void addReferenceForFeature(ConfiguredStructureFeature<?, ?> configuredStructureFeature, long reference) {
--        this.structuresRefences.computeIfAbsent(configuredStructureFeature, (configuredStructureFeaturex) -> {
-+    public void addReferenceForFeature(ConfiguredStructureFeature<?, ?> structurefeature, long reference) {
-+        ((LongSet) this.structuresRefences.computeIfAbsent(structurefeature, (structurefeature1) -> {
+     public void addReferenceForStructure(Structure structure, long reference) {
+-        this.structuresRefences.computeIfAbsent(structure, (type2) -> {
++        ((LongSet) this.structuresRefences.computeIfAbsent(structure, (structure1) -> {
              return new LongOpenHashSet();
 -        }).add(reference);
 +        })).add(reference);
          this.unsaved = true;
      }
  
-@@ -242,8 +300,8 @@
+@@ -239,8 +297,8 @@
              upperHeight = this.getMaxBuildHeight() - 1;
          }
  
@@ -239,7 +227,7 @@
                  return false;
              }
          }
-@@ -253,10 +311,11 @@
+@@ -250,10 +308,11 @@
  
      public void setUnsaved(boolean needsSaving) {
          this.unsaved = needsSaving;
@@ -252,7 +240,7 @@
      }
  
      public abstract ChunkStatus getStatus();
-@@ -264,7 +323,7 @@
+@@ -261,7 +320,7 @@
      public abstract void removeBlockEntity(BlockPos pos);
  
      public void markPosForPostprocessing(BlockPos pos) {
@@ -261,7 +249,7 @@
      }
  
      public ShortList[] getPostProcessing() {
-@@ -272,7 +331,7 @@
+@@ -269,7 +328,7 @@
      }
  
      public void addPackedPostProcess(short packedPos, int index) {
@@ -270,7 +258,7 @@
      }
  
      public void setBlockEntityNbt(CompoundTag nbt) {
-@@ -281,7 +340,7 @@
+@@ -278,7 +337,7 @@
  
      @Nullable
      public CompoundTag getBlockEntityNbt(BlockPos pos) {
@@ -279,16 +267,25 @@
      }
  
      @Nullable
-@@ -363,7 +422,7 @@
-     @Deprecated
-     public Holder<Biome> carverBiome(Supplier<Holder<Biome>> biomeSupplier) {
-         if (this.carverBiome == null) {
--            this.carverBiome = biomeSupplier.get();
-+            this.carverBiome = (Holder) biomeSupplier.get();
+@@ -350,7 +409,7 @@
+ 
+     public NoiseChunk getOrCreateNoiseChunk(Function<ChunkAccess, NoiseChunk> chunkNoiseSamplerGetter) {
+         if (this.noiseChunk == null) {
+-            this.noiseChunk = chunkNoiseSamplerGetter.apply(this);
++            this.noiseChunk = (NoiseChunk) chunkNoiseSamplerGetter.apply(this);
          }
  
-         return this.carverBiome;
-@@ -372,30 +431,54 @@
+         return this.noiseChunk;
+@@ -360,7 +419,7 @@
+     @Deprecated
+     public BiomeGenerationSettings carverBiome(Supplier<BiomeGenerationSettings> generationSettingsSupplier) {
+         if (this.carverBiomeSettings == null) {
+-            this.carverBiomeSettings = generationSettingsSupplier.get();
++            this.carverBiomeSettings = (BiomeGenerationSettings) generationSettingsSupplier.get();
+         }
+ 
+         return this.carverBiomeSettings;
+@@ -369,30 +428,54 @@
      @Override
      public Holder<Biome> getNoiseBiome(int biomeX, int biomeY, int biomeZ) {
          try {
@@ -316,9 +313,9 @@
              });
 -            throw new ReportedException(crashReport);
 +            throw new ReportedException(crashreport);
-+        }
-+    }
-+
+         }
+     }
+ 
 +    // CraftBukkit start
 +    public void setBiome(int i, int j, int k, Holder<Biome> biome) {
 +        try {
@@ -336,10 +333,10 @@
 +                return CrashReportCategory.formatLocation(this, i, j, k);
 +            });
 +            throw new ReportedException(crashreport);
-         }
-     }
++        }
++    }
 +    // CraftBukkit end
- 
++
      public void fillBiomesFromNoise(BiomeResolver biomeSupplier, Climate.Sampler sampler) {
 -        ChunkPos chunkPos = this.getPos();
 -        int i = QuartPos.fromBlock(chunkPos.getMinBlockX());
@@ -360,32 +357,13 @@
          }
  
      }
-@@ -416,7 +499,28 @@
+@@ -413,7 +496,9 @@
      public LevelHeightAccessor getHeightAccessorForGeneration() {
          return this;
      }
 +    public void setLastSaved(long ticks) {} // Paper
  
-+    // CraftBukkit start - decompile error
      public static record TicksToSave(SerializableTickContainer<Block> blocks, SerializableTickContainer<Fluid> fluids) {
 +
-+        /*
-+        private final SerializableTickContainer<Block> blocks;
-+        private final SerializableTickContainer<FluidType> fluids;
-+
-+        public a(SerializableTickContainer<Block> serializabletickcontainer, SerializableTickContainer<FluidType> serializabletickcontainer1) {
-+            this.blocks = serializabletickcontainer;
-+            this.fluids = serializabletickcontainer1;
-+        }
-+
-+        public SerializableTickContainer<Block> blocks() {
-+            return this.blocks;
-+        }
-+
-+        public SerializableTickContainer<FluidType> fluids() {
-+            return this.fluids;
-+        }
-+         */
-+        // CraftBukkit end
      }
  }

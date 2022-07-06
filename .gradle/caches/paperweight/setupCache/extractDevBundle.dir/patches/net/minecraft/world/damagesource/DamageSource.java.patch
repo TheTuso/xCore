@@ -1,6 +1,6 @@
 --- a/net/minecraft/world/damagesource/DamageSource.java
 +++ b/net/minecraft/world/damagesource/DamageSource.java
-@@ -14,6 +14,7 @@
+@@ -13,6 +13,7 @@
  import net.minecraft.world.phys.Vec3;
  
  public class DamageSource {
@@ -49,7 +49,7 @@
      }
  
      public static DamageSource explosion(@Nullable LivingEntity attacker) {
-@@ -112,7 +138,6 @@
+@@ -116,7 +142,6 @@
          return new BadRespawnPointDamage();
      }
  
@@ -57,23 +57,23 @@
      public String toString() {
          return "DamageSource (" + this.msgId + ")";
      }
-@@ -202,10 +227,11 @@
+@@ -215,10 +240,11 @@
      }
  
      public Component getLocalizedDeathMessage(LivingEntity entity) {
 -        LivingEntity livingEntity = entity.getKillCredit();
 -        String string = "death.attack." + this.msgId;
 -        String string2 = string + ".player";
--        return livingEntity != null ? new TranslatableComponent(string2, entity.getDisplayName(), livingEntity.getDisplayName()) : new TranslatableComponent(string, entity.getDisplayName());
+-        return livingEntity != null ? Component.translatable(string2, entity.getDisplayName(), livingEntity.getDisplayName()) : Component.translatable(string, entity.getDisplayName());
 +        LivingEntity entityliving1 = entity.getKillCredit();
 +        String s = "death.attack." + this.msgId;
 +        String s1 = s + ".player";
 +
-+        return entityliving1 != null ? new TranslatableComponent(s1, new Object[]{entity.getDisplayName(), entityliving1.getDisplayName()}) : new TranslatableComponent(s, new Object[]{entity.getDisplayName()});
++        return entityliving1 != null ? Component.translatable(s1, entity.getDisplayName(), entityliving1.getDisplayName()) : Component.translatable(s, entity.getDisplayName());
      }
  
      public boolean isFire() {
-@@ -249,7 +275,8 @@
+@@ -262,7 +288,8 @@
  
      public boolean isCreativePlayer() {
          Entity entity = this.getEntity();

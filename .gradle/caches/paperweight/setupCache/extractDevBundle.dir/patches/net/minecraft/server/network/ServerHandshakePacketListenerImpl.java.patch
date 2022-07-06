@@ -1,6 +1,12 @@
 --- a/net/minecraft/server/network/ServerHandshakePacketListenerImpl.java
 +++ b/net/minecraft/server/network/ServerHandshakePacketListenerImpl.java
-@@ -11,10 +11,26 @@
+@@ -4,15 +4,32 @@
+ import net.minecraft.network.Connection;
+ import net.minecraft.network.ConnectionProtocol;
+ import net.minecraft.network.chat.Component;
++import net.minecraft.network.chat.MutableComponent;
+ import net.minecraft.network.protocol.handshake.ClientIntentionPacket;
+ import net.minecraft.network.protocol.handshake.ServerHandshakePacketListener;
  import net.minecraft.network.protocol.login.ClientboundLoginDisconnectPacket;
  import net.minecraft.server.MinecraftServer;
  
@@ -20,14 +26,14 @@
 +    private static final HashMap<InetAddress, Long> throttleTracker = new HashMap<InetAddress, Long>();
 +    private static int throttleCounter = 0;
 +    // CraftBukkit end
-     private static final Component IGNORE_STATUS_REASON = new TextComponent("Ignoring status request");
+     private static final Component IGNORE_STATUS_REASON = Component.literal("Ignoring status request");
      private final MinecraftServer server;
      private final Connection connection;
 +    private static final boolean BYPASS_HOSTCHECK = Boolean.getBoolean("Paper.bypassHostCheck"); // Paper
  
      public ServerHandshakePacketListenerImpl(MinecraftServer server, Connection connection) {
          this.server = server;
-@@ -26,18 +42,111 @@
+@@ -24,18 +41,111 @@
          switch (packet.getIntention()) {
              case LOGIN:
                  this.connection.setProtocol(ConnectionProtocol.LOGIN);
@@ -41,7 +47,7 @@
 +                    synchronized (ServerHandshakePacketListenerImpl.throttleTracker) {
 +                        if (ServerHandshakePacketListenerImpl.throttleTracker.containsKey(address) && !"127.0.0.1".equals(address.getHostAddress()) && currentTime - ServerHandshakePacketListenerImpl.throttleTracker.get(address) < connectionThrottle) {
 +                            ServerHandshakePacketListenerImpl.throttleTracker.put(address, currentTime);
-+                            Component chatmessage = org.bukkit.craftbukkit.v1_18_R2.util.CraftChatMessage.fromString(com.destroystokyo.paper.PaperConfig.connectionThrottleKickMessage, true)[0]; // Paper - Configurable connection throttle kick message // Paper - Fix hex colors not working in some kick messages
++                            Component chatmessage = io.papermc.paper.adventure.PaperAdventure.asVanilla(io.papermc.paper.configuration.GlobalConfiguration.get().messages.kick.connectionThrottle); // Paper - Configurable connection throttle kick message
 +                            this.connection.send(new ClientboundLoginDisconnectPacket(chatmessage));
 +                            this.connection.disconnect(chatmessage);
 +                            return;
@@ -70,20 +76,20 @@
                  if (packet.getProtocolVersion() != SharedConstants.getCurrentVersion().getProtocolVersion()) {
 -                    Component component;
 -                    if (packet.getProtocolVersion() < 754) {
--                        component = new TranslatableComponent("multiplayer.disconnect.outdated_client", SharedConstants.getCurrentVersion().getName());
-+                    Component chatmessage; // Paper - Fix hex colors not working in some kick messages
+-                        component = Component.translatable("multiplayer.disconnect.outdated_client", SharedConstants.getCurrentVersion().getName());
++                    Component ichatmutablecomponent; // Paper - Fix hex colors not working in some kick messages
 +
 +                    if (packet.getProtocolVersion() < SharedConstants.getCurrentVersion().getProtocolVersion()) { // Paper - Fix incorrect message for outdated clients
-+                        chatmessage = org.bukkit.craftbukkit.v1_18_R2.util.CraftChatMessage.fromString( java.text.MessageFormat.format( org.spigotmc.SpigotConfig.outdatedClientMessage.replaceAll("'", "''"), SharedConstants.getCurrentVersion().getName() ) , true )[0]; // Spigot // Paper - Fix hex colors not working in some kick messages
++                        ichatmutablecomponent = org.bukkit.craftbukkit.v1_19_R1.util.CraftChatMessage.fromString( java.text.MessageFormat.format( org.spigotmc.SpigotConfig.outdatedClientMessage.replaceAll("'", "''"), SharedConstants.getCurrentVersion().getName() ) , true )[0]; // Spigot // Paper - Fix hex colors not working in some kick messages
                      } else {
--                        component = new TranslatableComponent("multiplayer.disconnect.incompatible", SharedConstants.getCurrentVersion().getName());
-+                        chatmessage = org.bukkit.craftbukkit.v1_18_R2.util.CraftChatMessage.fromString( java.text.MessageFormat.format( org.spigotmc.SpigotConfig.outdatedServerMessage.replaceAll("'", "''"), SharedConstants.getCurrentVersion().getName() ) , true )[0]; // Spigot // Paper - Fix hex colors not working in some kick messages
+-                        component = Component.translatable("multiplayer.disconnect.incompatible", SharedConstants.getCurrentVersion().getName());
++                        ichatmutablecomponent = org.bukkit.craftbukkit.v1_19_R1.util.CraftChatMessage.fromString( java.text.MessageFormat.format( org.spigotmc.SpigotConfig.outdatedServerMessage.replaceAll("'", "''"), SharedConstants.getCurrentVersion().getName() ) , true )[0]; // Spigot // Paper - Fix hex colors not working in some kick messages
                      }
  
 -                    this.connection.send(new ClientboundLoginDisconnectPacket(component));
 -                    this.connection.disconnect(component);
-+                    this.connection.send(new ClientboundLoginDisconnectPacket(chatmessage));
-+                    this.connection.disconnect(chatmessage);
++                    this.connection.send(new ClientboundLoginDisconnectPacket(ichatmutablecomponent));
++                    this.connection.disconnect(ichatmutablecomponent);
                  } else {
                      this.connection.setListener(new ServerLoginPacketListenerImpl(this.server, this.connection));
 +                // Paper start - handshake event
@@ -125,7 +131,7 @@
 +                            connection.spoofedUUID = com.mojang.util.UUIDTypeAdapter.fromString( split[2] );
 +                        } else
 +                        {
-+                            TranslatableComponent chatmessage = new TranslatableComponent("If you wish to use IP forwarding, please enable it in your BungeeCord config as well!");
++                            Component chatmessage = Component.literal("If you wish to use IP forwarding, please enable it in your BungeeCord config as well!");
 +                            this.connection.send(new ClientboundLoginDisconnectPacket(chatmessage));
 +                            this.connection.disconnect(chatmessage);
 +                            return;
@@ -135,7 +141,7 @@
 +                            connection.spoofedProfile = ServerHandshakePacketListenerImpl.gson.fromJson(split[3], com.mojang.authlib.properties.Property[].class);
 +                        }
 +                    } else if ( ( split.length == 3 || split.length == 4 ) && ( ServerHandshakePacketListenerImpl.HOST_PATTERN.matcher( split[1] ).matches() ) ) {
-+                        TranslatableComponent chatmessage = new TranslatableComponent("Unknown data in login hostname, did you forget to enable BungeeCord in spigot.yml?");
++                        Component chatmessage = Component.literal("Unknown data in login hostname, did you forget to enable BungeeCord in spigot.yml?");
 +                        this.connection.send(new ClientboundLoginDisconnectPacket(chatmessage));
 +                        this.connection.disconnect(chatmessage);
 +                        return;
@@ -145,7 +151,7 @@
                  }
                  break;
              case STATUS:
-@@ -45,18 +154,21 @@
+@@ -43,18 +153,21 @@
                      this.connection.setProtocol(ConnectionProtocol.STATUS);
                      this.connection.setListener(new ServerStatusPacketListenerImpl(this.server, this.connection));
                  } else {

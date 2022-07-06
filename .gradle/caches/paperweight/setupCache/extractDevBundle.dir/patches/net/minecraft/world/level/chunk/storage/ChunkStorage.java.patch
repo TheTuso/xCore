@@ -1,6 +1,6 @@
 --- a/net/minecraft/world/level/chunk/storage/ChunkStorage.java
 +++ b/net/minecraft/world/level/chunk/storage/ChunkStorage.java
-@@ -11,55 +11,131 @@
+@@ -12,70 +12,151 @@
  import net.minecraft.nbt.CompoundTag;
  import net.minecraft.nbt.NbtUtils;
  import net.minecraft.resources.ResourceKey;
@@ -11,6 +11,8 @@
 -import net.minecraft.world.level.Level;
 +import net.minecraft.world.level.LevelAccessor;
  import net.minecraft.world.level.chunk.ChunkGenerator;
++// CraftBukkit start
++import java.util.concurrent.ExecutionException;
 +import net.minecraft.world.level.chunk.ChunkStatus;
 +import net.minecraft.world.level.dimension.LevelStem;
  import net.minecraft.world.level.levelgen.structure.LegacyStructureDataHandler;
@@ -23,9 +25,8 @@
 +    // Paper - nuke IO worker
      protected final DataFixer fixerUpper;
      @Nullable
--    private LegacyStructureDataHandler legacyStructureHandler;
+     private volatile LegacyStructureDataHandler legacyStructureHandler;
 +    // Paper start - async chunk loading
-+    private volatile LegacyStructureDataHandler legacyStructureHandler;
 +    private final Object persistentDataLock = new Object(); // Paper
 +    public final RegionFileStorage regionFileCache;
 +    // Paper end - async chunk loading
@@ -39,10 +40,15 @@
 +        // Paper end - async chunk io
      }
  
+     public boolean isOldChunkAround(ChunkPos chunkPos, int checkRadius) {
+-        return this.worker.isOldChunkAround(chunkPos, checkRadius);
++        return true; // Paper - (for now, old unoptimised behavior) TODO implement later? the chunk status that blender uses SHOULD already have this radius loaded, no need to go back for it...
+     }
+ 
 -    public CompoundTag upgradeChunkTag(ResourceKey<Level> worldKey, Supplier<DimensionDataStorage> persistentStateManagerFactory, CompoundTag nbt, Optional<ResourceKey<Codec<? extends ChunkGenerator>>> generatorCodecKey) {
 -        int i = getVersion(nbt);
 +    // CraftBukkit start
-+    private boolean check(ServerChunkCache cps, int x, int z) throws IOException {
++    private boolean check(ServerChunkCache cps, int x, int z) {
 +        if (true) return true; // Paper - this isn't even needed anymore, light is purged updating to 1.14+, why are we holding up the conversion process reading chunk data off disk - return true, we need to set light populated to true so the converter recognizes the chunk as being "full"
 +        ChunkPos pos = new ChunkPos(x, z);
 +        if (cps != null) {
@@ -52,11 +58,12 @@
 +            }
 +        }
 +
-+        // Paper start - prioritize
-+        CompoundTag nbt = cps == null ? read(pos) :
-+            com.destroystokyo.paper.io.PaperFileIOThread.Holder.INSTANCE.loadChunkData((ServerLevel)cps.getLevel(), x, z,
-+                com.destroystokyo.paper.io.PrioritizedTaskQueue.HIGHER_PRIORITY, false, true).chunkData;
-+        // Paper end
++        CompoundTag nbt;
++        try {
++            nbt = this.read(pos).get().orElse(null);
++        } catch (InterruptedException | ExecutionException ex) {
++            throw new RuntimeException(ex);
++        }
 +        if (nbt != null) {
 +            CompoundTag level = nbt.getCompound("Level");
 +            if (level.getBoolean("TerrainPopulated")) {
@@ -72,7 +79,7 @@
 +        return false;
 +    }
 +
-+    public CompoundTag upgradeChunkTag(ResourceKey<LevelStem> resourcekey, Supplier<DimensionDataStorage> supplier, CompoundTag nbttagcompound, Optional<ResourceKey<Codec<? extends ChunkGenerator>>> optional, ChunkPos pos, @Nullable LevelAccessor generatoraccess) throws IOException {
++    public CompoundTag upgradeChunkTag(ResourceKey<LevelStem> resourcekey, Supplier<DimensionDataStorage> supplier, CompoundTag nbttagcompound, Optional<ResourceKey<Codec<? extends ChunkGenerator>>> optional, ChunkPos pos, @Nullable LevelAccessor generatoraccess) {
 +        // CraftBukkit end
 +        nbttagcompound = nbttagcompound.copy(); // Paper - defensive copy, another thread might modify this
 +        int i = ChunkStorage.getVersion(nbttagcompound);
@@ -92,16 +99,14 @@
          if (i < 1493) {
 -            nbt = NbtUtils.update(this.fixerUpper, DataFixTypes.CHUNK, nbt, i, 1493);
 -            if (nbt.getCompound("Level").getBoolean("hasLegacyStructureData")) {
+-                LegacyStructureDataHandler legacyStructureDataHandler = this.getLegacyStructureHandler(worldKey, persistentStateManagerFactory);
+-                nbt = legacyStructureDataHandler.updateFromLegacy(nbt);
 +            ca.spottedleaf.dataconverter.minecraft.MCDataConverter.convertTag(ca.spottedleaf.dataconverter.minecraft.datatypes.MCTypeRegistry.CHUNK, nbttagcompound, i, 1493); // Paper - replace chunk converter
 +            if (nbttagcompound.getCompound("Level").getBoolean("hasLegacyStructureData")) {
 +                synchronized (this.persistentDataLock) { // Paper - Async chunk loading
-                 if (this.legacyStructureHandler == null) {
--                    this.legacyStructureHandler = LegacyStructureDataHandler.getLegacyStructureHandler(worldKey, persistentStateManagerFactory.get());
-+                    this.legacyStructureHandler = LegacyStructureDataHandler.getLegacyStructureHandler(resourcekey, (DimensionDataStorage) supplier.get());
-                 }
- 
--                nbt = this.legacyStructureHandler.updateFromLegacy(nbt);
-+                nbttagcompound = this.legacyStructureHandler.updateFromLegacy(nbttagcompound);
++                LegacyStructureDataHandler persistentstructurelegacy = this.getLegacyStructureHandler(resourcekey, supplier);
++
++                nbttagcompound = persistentstructurelegacy.updateFromLegacy(nbttagcompound);
 +                } // Paper - Async chunk loading
              }
          }
@@ -136,6 +141,29 @@
 +        return nbttagcompound;
      }
  
+-    private LegacyStructureDataHandler getLegacyStructureHandler(ResourceKey<Level> resourceKey, Supplier<DimensionDataStorage> supplier) {
+-        LegacyStructureDataHandler legacyStructureDataHandler = this.legacyStructureHandler;
+-        if (legacyStructureDataHandler == null) {
+-            synchronized(this) {
+-                legacyStructureDataHandler = this.legacyStructureHandler;
+-                if (legacyStructureDataHandler == null) {
+-                    this.legacyStructureHandler = legacyStructureDataHandler = LegacyStructureDataHandler.getLegacyStructureHandler(resourceKey, supplier.get());
++    private LegacyStructureDataHandler getLegacyStructureHandler(ResourceKey<LevelStem> resourcekey, Supplier<DimensionDataStorage> supplier) { // CraftBukkit
++        LegacyStructureDataHandler persistentstructurelegacy = this.legacyStructureHandler;
++
++        if (persistentstructurelegacy == null) {
++            synchronized (this.persistentDataLock) { // Paper - async chunk loading
++                persistentstructurelegacy = this.legacyStructureHandler;
++                if (persistentstructurelegacy == null) {
++                    this.legacyStructureHandler = persistentstructurelegacy = LegacyStructureDataHandler.getLegacyStructureHandler(resourcekey, (DimensionDataStorage) supplier.get());
+                 }
+             }
+         }
+ 
+-        return legacyStructureDataHandler;
++        return persistentstructurelegacy;
+     }
+ 
 -    public static void injectDatafixingContext(CompoundTag nbt, ResourceKey<Level> worldKey, Optional<ResourceKey<Codec<? extends ChunkGenerator>>> generatorCodecKey) {
 -        CompoundTag compoundTag = new CompoundTag();
 -        compoundTag.putString("dimension", worldKey.location().toString());
@@ -153,13 +181,23 @@
      }
  
      public static int getVersion(CompoundTag nbt) {
-@@ -68,27 +144,46 @@
- 
-     @Nullable
-     public CompoundTag read(ChunkPos chunkPos) throws IOException {
--        return this.worker.load(chunkPos);
-+        return this.regionFileCache.read(chunkPos); // Paper - async chunk io
+@@ -83,27 +164,56 @@
      }
+ 
+     public CompletableFuture<Optional<CompoundTag>> read(ChunkPos chunkPos) {
+-        return this.worker.loadAsync(chunkPos);
++        // Paper start - async chunk io
++        try {
++            return CompletableFuture.completedFuture(Optional.ofNullable(this.readSync(chunkPos)));
++        } catch (Throwable thr) {
++            return CompletableFuture.failedFuture(thr);
++        }
+     }
++    @Nullable
++    public CompoundTag readSync(ChunkPos chunkPos) throws IOException {
++        return this.regionFileCache.read(chunkPos);
++    }
++    // Paper end - async chunk io
  
 -    public void write(ChunkPos chunkPos, CompoundTag nbt) {
 -        this.worker.store(chunkPos, nbt);

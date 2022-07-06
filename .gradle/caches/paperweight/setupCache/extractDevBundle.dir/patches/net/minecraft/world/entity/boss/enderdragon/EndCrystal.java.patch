@@ -5,7 +5,7 @@
  import net.minecraft.world.level.block.BaseFireBlock;
  import net.minecraft.world.level.dimension.end.EndDragonFight;
 +// CraftBukkit start
-+import org.bukkit.craftbukkit.v1_18_R2.event.CraftEventFactory;
++import org.bukkit.craftbukkit.v1_19_R1.event.CraftEventFactory;
 +import org.bukkit.event.entity.ExplosionPrimeEvent;
 +// CraftBukkit end
  
@@ -45,7 +45,7 @@
 +                // CraftBukkit end
 +            }
 +            // Paper start - Fix invulnerable end crystals
-+            if (this.level.paperConfig.fixInvulnerableEndCrystalExploit && this.generatedByDragonFight && this.isInvulnerable()) {
++            if (this.level.paperConfig().unsupportedSettings.fixInvulnerableEndCrystalExploit && this.generatedByDragonFight && this.isInvulnerable()) {
 +                if (!java.util.Objects.equals(((ServerLevel) this.level).uuid, this.getOriginWorld())
 +                    || ((ServerLevel) this.level).dragonFight() == null
 +                    || ((ServerLevel) this.level).dragonFight().respawnStage == null

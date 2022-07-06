@@ -2,7 +2,7 @@ package com.destroystokyo.paper.entity;
 
 import org.apache.commons.lang.Validate;
 import org.bukkit.Location;
-import org.bukkit.craftbukkit.v1_18_R2.entity.CraftLivingEntity;
+import org.bukkit.craftbukkit.v1_19_R1.entity.CraftLivingEntity;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Mob;
 import javax.annotation.Nonnull;

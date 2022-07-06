@@ -36,7 +36,7 @@
      }
  
      @Override
-     public void randomTick(BlockState state, ServerLevel world, BlockPos pos, Random random) {
+     public void randomTick(BlockState state, ServerLevel world, BlockPos pos, RandomSource random) {
 -        if (world.dimensionType().natural() && world.getGameRules().getBoolean(GameRules.RULE_DOMOBSPAWNING) && random.nextInt(2000) < world.getDifficulty().getId()) {
 -            while(world.getBlockState(pos).is(this)) {
 +        if (world.spigotConfig.enableZombiePigmenPortalSpawns && world.dimensionType().natural() && world.getGameRules().getBoolean(GameRules.RULE_DOMOBSPAWNING) && random.nextInt(2000) < world.getDifficulty().getId()) { // Spigot
@@ -52,7 +52,7 @@
                  if (entity != null) {
                      entity.setPortalCooldown();
 +                    entity.fromNetherPortal = true; // Paper
-+                    if (world.paperConfig.nerfNetherPortalPigmen) ((net.minecraft.world.entity.Mob) entity).aware = false; // Paper
++                    if (world.paperConfig().entities.behavior.nerfPigmenFromNetherPortals) ((net.minecraft.world.entity.Mob) entity).aware = false; // Paper
                  }
              }
          }
@@ -73,7 +73,7 @@
  
      @Override
      public void entityInside(BlockState state, Level world, BlockPos pos, Entity entity) {
-+        if (!new io.papermc.paper.event.entity.EntityInsideBlockEvent(entity.getBukkitEntity(), org.bukkit.craftbukkit.v1_18_R2.block.CraftBlock.at(world, pos)).callEvent()) { return; } // Paper
++        if (!new io.papermc.paper.event.entity.EntityInsideBlockEvent(entity.getBukkitEntity(), org.bukkit.craftbukkit.v1_19_R1.block.CraftBlock.at(world, pos)).callEvent()) { return; } // Paper
          if (!entity.isPassenger() && !entity.isVehicle() && entity.canChangeDimensions()) {
 +            // CraftBukkit start - Entity in portal
 +            EntityPortalEnterEvent event = new EntityPortalEnterEvent(entity.getBukkitEntity(), new org.bukkit.Location(world.getWorld(), pos.getX(), pos.getY(), pos.getZ()));
@@ -84,7 +84,7 @@
  
 @@ -85,26 +99,27 @@
      @Override
-     public void animateTick(BlockState state, Level world, BlockPos pos, Random random) {
+     public void animateTick(BlockState state, Level world, BlockPos pos, RandomSource random) {
          if (random.nextInt(100) == 0) {
 -            world.playLocalSound((double)pos.getX() + 0.5D, (double)pos.getY() + 0.5D, (double)pos.getZ() + 0.5D, SoundEvents.PORTAL_AMBIENT, SoundSource.BLOCKS, 0.5F, random.nextFloat() * 0.4F + 0.8F, false);
 +            world.playLocalSound((double) pos.getX() + 0.5D, (double) pos.getY() + 0.5D, (double) pos.getZ() + 0.5D, SoundEvents.PORTAL_AMBIENT, SoundSource.BLOCKS, 0.5F, random.nextFloat() * 0.4F + 0.8F, false);

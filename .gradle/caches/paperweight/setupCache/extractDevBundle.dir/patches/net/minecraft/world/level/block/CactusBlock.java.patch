@@ -4,14 +4,14 @@
  package net.minecraft.world.level.block;
  
 +import java.util.Iterator;
- import java.util.Random;
  import net.minecraft.core.BlockPos;
  import net.minecraft.core.Direction;
+ import net.minecraft.server.level.ServerLevel;
 @@ -20,8 +21,10 @@
  import net.minecraft.world.level.pathfinder.PathComputationType;
  import net.minecraft.world.phys.shapes.CollisionContext;
  import net.minecraft.world.phys.shapes.VoxelShape;
-+import org.bukkit.craftbukkit.v1_18_R2.event.CraftEventFactory; // CraftBukkit
++import org.bukkit.craftbukkit.v1_19_R1.event.CraftEventFactory; // CraftBukkit
  
  public class CactusBlock extends Block {
 +
@@ -30,7 +30,7 @@
 @@ -43,21 +46,26 @@
  
      @Override
-     public void randomTick(BlockState state, ServerLevel world, BlockPos pos, Random random) {
+     public void randomTick(BlockState state, ServerLevel world, BlockPos pos, RandomSource random) {
 -        BlockPos blockPos = pos.above();
 -        if (world.isEmptyBlock(blockPos)) {
 +        BlockPos blockposition1 = pos.above();
@@ -49,8 +49,8 @@
 -                    world.setBlockAndUpdate(blockPos, this.defaultBlockState());
 -                    BlockState blockState = state.setValue(AGE, Integer.valueOf(0));
 -                    world.setBlock(pos, blockState, 4);
--                    blockState.neighborChanged(world, blockPos, this, pos, false);
-+            if (i < world.paperConfig.cactusMaxHeight) { // Paper - Configurable growth height
+-                    world.neighborChanged(blockState, blockPos, this, pos, false);
++            if (i < world.paperConfig().maxGrowthHeight.cactus) { // Paper - Configurable growth height
 +                int j = (Integer) state.getValue(CactusBlock.AGE);
 +
 +                if (j >= (byte) range(3, ((100.0F / world.spigotConfig.cactusModifier) * 15) + 0.5F, 15)) { // Spigot
@@ -58,7 +58,7 @@
 +                    BlockState iblockdata1 = (BlockState) state.setValue(CactusBlock.AGE, 0);
 +
 +                    world.setBlock(pos, iblockdata1, 4);
-+                    iblockdata1.neighborChanged(world, blockposition1, this, pos, false);
++                    world.neighborChanged(iblockdata1, blockposition1, this, pos, false);
                  } else {
 -                    world.setBlock(pos, state.setValue(AGE, Integer.valueOf(j + 1)), 4);
 +                    world.setBlock(pos, (BlockState) state.setValue(CactusBlock.AGE, j + 1), 4);
@@ -122,7 +122,7 @@
  
      @Override
      public void entityInside(BlockState state, Level world, BlockPos pos, Entity entity) {
-+        if (!new io.papermc.paper.event.entity.EntityInsideBlockEvent(entity.getBukkitEntity(), org.bukkit.craftbukkit.v1_18_R2.block.CraftBlock.at(world, pos)).callEvent()) { return; } // Paper
++        if (!new io.papermc.paper.event.entity.EntityInsideBlockEvent(entity.getBukkitEntity(), org.bukkit.craftbukkit.v1_19_R1.block.CraftBlock.at(world, pos)).callEvent()) { return; } // Paper
 +        CraftEventFactory.blockDamage = world.getWorld().getBlockAt(pos.getX(), pos.getY(), pos.getZ()); // CraftBukkit
          entity.hurt(DamageSource.CACTUS, 1.0F);
 +        CraftEventFactory.blockDamage = null; // CraftBukkit

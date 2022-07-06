@@ -49,7 +49,15 @@
      }
  
      public static AttributeSupplier.Builder createAttributes() {
-@@ -150,24 +154,28 @@
+@@ -136,6 +140,7 @@
+     @Override
+     public Entity getControllingPassenger() {
+         Entity entity = this.getFirstPassenger();
++
+         return entity != null && this.canBeControlledBy(entity) ? entity : null;
+     }
+ 
+@@ -150,24 +155,28 @@
              if (this.isImmobile()) {
                  this.getAttribute(Attributes.MOVEMENT_SPEED).setBaseValue(0.0D);
              } else {
@@ -79,7 +87,7 @@
 +                    BlockState iblockdata = this.level.getBlockState(blockposition);
 +                    Block block = iblockdata.getBlock();
 +
-+                    if (block instanceof LeavesBlock && !org.bukkit.craftbukkit.v1_18_R2.event.CraftEventFactory.callEntityChangeBlockEvent(this, blockposition, net.minecraft.world.level.block.Blocks.AIR.defaultBlockState()).isCancelled()) { // CraftBukkit
++                    if (block instanceof LeavesBlock && !org.bukkit.craftbukkit.v1_19_R1.event.CraftEventFactory.callEntityChangeBlockEvent(this, blockposition, net.minecraft.world.level.block.Blocks.AIR.defaultBlockState()).isCancelled()) { // CraftBukkit
 +                        flag = this.level.destroyBlock(blockposition, true, this) || flag;
                      }
                  }
@@ -89,7 +97,7 @@
                      this.jumpFromGround();
                  }
              }
-@@ -197,10 +205,11 @@
+@@ -197,10 +206,11 @@
  
      private void stunEffect() {
          if (this.random.nextInt(6) == 0) {
@@ -105,7 +113,7 @@
          }
  
      }
-@@ -221,7 +230,7 @@
+@@ -221,7 +231,7 @@
              if (this.random.nextDouble() < 0.5D) {
                  this.stunnedTick = 40;
                  this.playSound(SoundEvents.RAVAGER_STUNNED, 1.0F, 1.0F);
@@ -114,7 +122,7 @@
                  target.push(this);
              } else {
                  this.strongKnockback(target);
-@@ -234,21 +243,25 @@
+@@ -234,21 +244,25 @@
  
      private void roar() {
          if (this.isAlive()) {
@@ -150,8 +158,8 @@
 +                this.level.addParticle(ParticleTypes.POOF, vec3d.x, vec3d.y, vec3d.z, d0, d1, d2);
              }
  
-             this.level.gameEvent(this, GameEvent.RAVAGER_ROAR, this.eyeBlockPosition());
-@@ -257,10 +270,11 @@
+             this.gameEvent(GameEvent.ENTITY_ROAR);
+@@ -257,10 +271,11 @@
      }
  
      private void strongKnockback(Entity entity) {
@@ -167,7 +175,7 @@
      }
  
      @Override
-@@ -290,7 +304,7 @@
+@@ -290,7 +305,7 @@
      @Override
      public boolean doHurtTarget(Entity target) {
          this.attackTick = 10;
@@ -176,7 +184,7 @@
          this.playSound(SoundEvents.RAVAGER_ATTACK, 1.0F, 1.0F);
          return super.doHurtTarget(target);
      }
-@@ -322,15 +336,15 @@
+@@ -322,15 +337,15 @@
      }
  
      @Override
@@ -195,7 +203,7 @@
          public RavagerMeleeAttackGoal() {
              super(Ravager.this, 1.0D, true);
          }
-@@ -338,11 +352,13 @@
+@@ -338,11 +353,13 @@
          @Override
          protected double getAttackReachSqr(LivingEntity entity) {
              float f = Ravager.this.getBbWidth() - 0.1F;
@@ -208,10 +216,10 @@
 -    static class RavagerNavigation extends GroundPathNavigation {
 +    private static class RavagerNavigation extends GroundPathNavigation {
 +
-         public RavagerNavigation(Mob mob, Level world) {
-             super(mob, world);
+         public RavagerNavigation(Mob entity, Level world) {
+             super(entity, world);
          }
-@@ -354,7 +370,10 @@
+@@ -354,7 +371,10 @@
          }
      }
  

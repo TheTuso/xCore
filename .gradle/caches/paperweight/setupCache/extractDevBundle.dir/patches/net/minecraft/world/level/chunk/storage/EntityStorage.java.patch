@@ -8,7 +8,7 @@
              dataList.getEntities().forEach((entity) -> {
 +                // Paper start
 +                final EntityType<?> entityType = entity.getType();
-+                final int saveLimit = this.level.paperConfig.entityPerChunkSaveLimits.getOrDefault(entityType, -1);
++                final int saveLimit = this.level.paperConfig().chunks.entityPerChunkSaveLimit.getOrDefault(entityType, -1);
 +                if (saveLimit > -1) {
 +                    if (savedEntityCounts.getOrDefault(entityType, 0) >= saveLimit) {
 +                        return;

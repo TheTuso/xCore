@@ -26,8 +26,8 @@
 +import net.minecraft.world.InteractionResult;
 +import net.minecraft.world.entity.Entity;
 +import net.minecraft.world.entity.player.Player;
-+import org.bukkit.craftbukkit.v1_18_R2.event.CraftEventFactory;
-+import org.bukkit.craftbukkit.v1_18_R2.inventory.CraftItemStack;
++import org.bukkit.craftbukkit.v1_19_R1.event.CraftEventFactory;
++import org.bukkit.craftbukkit.v1_19_R1.inventory.CraftItemStack;
 +import org.bukkit.event.player.PlayerHarvestBlockEvent;
 +// CraftBukkit end
 +
@@ -42,7 +42,7 @@
 +    static InteractionResult use(BlockState iblockdata, Level world, BlockPos blockposition, Entity entity) {
 +        if ((Boolean) iblockdata.getValue(CaveVines.BERRIES)) {
 +            // CraftBukkit start
-+            if (org.bukkit.craftbukkit.v1_18_R2.event.CraftEventFactory.callEntityChangeBlockEvent(entity, blockposition, (BlockState) iblockdata.setValue(CaveVines.BERRIES, false)).isCancelled()) {
++            if (org.bukkit.craftbukkit.v1_19_R1.event.CraftEventFactory.callEntityChangeBlockEvent(entity, blockposition, (BlockState) iblockdata.setValue(CaveVines.BERRIES, false)).isCancelled()) {
 +                return InteractionResult.SUCCESS;
 +            }
 +

@@ -17,14 +17,14 @@
  import java.util.Set;
  import java.util.function.Predicate;
 @@ -31,6 +31,7 @@
- import net.minecraft.network.chat.TextComponent;
- import net.minecraft.network.chat.TranslatableComponent;
+ import net.minecraft.network.chat.HoverEvent;
+ import net.minecraft.network.chat.MutableComponent;
  import net.minecraft.network.protocol.game.ClientboundCommandsPacket;
 +import net.minecraft.server.MinecraftServer;
  import net.minecraft.server.commands.AdvancementCommands;
  import net.minecraft.server.commands.AttributeCommand;
  import net.minecraft.server.commands.BanIpCommands;
-@@ -107,16 +108,26 @@
+@@ -106,16 +107,26 @@
  import net.minecraft.util.profiling.jfr.JvmProfiler;
  import org.slf4j.Logger;
  
@@ -47,32 +47,27 @@
 -    private final CommandDispatcher<CommandSourceStack> dispatcher = new CommandDispatcher<>();
 +    private final com.mojang.brigadier.CommandDispatcher<CommandSourceStack> dispatcher = new com.mojang.brigadier.CommandDispatcher();
  
-     public Commands(Commands.CommandSelection environment) {
+     public Commands(Commands.CommandSelection environment, CommandBuildContext commandRegistryAccess) {
 +        this(); // CraftBukkit
          AdvancementCommands.register(this.dispatcher);
          AttributeCommand.register(this.dispatcher);
-         ExecuteCommand.register(this.dispatcher);
-@@ -202,113 +213,243 @@
+         ExecuteCommand.register(this.dispatcher, commandRegistryAccess);
+@@ -199,113 +210,248 @@
+         if (environment.includeIntegrated) {
              PublishCommand.register(this.dispatcher);
          }
- 
--        this.dispatcher.findAmbiguities((parent, child, sibling, inputs) -> {
--            LOGGER.warn("Ambiguity between arguments {} and {} with inputs: {}", this.dispatcher.getPath(child), this.dispatcher.getPath(sibling), inputs);
 +        // Paper start
 +        for (final CommandNode<CommandSourceStack> node : this.dispatcher.getRoot().getChildren()) {
 +            if (node.getRequirement() == com.mojang.brigadier.builder.ArgumentBuilder.<CommandSourceStack>defaultRequirement()) {
-+                node.requirement = stack -> stack.source == CommandSource.NULL || stack.getBukkitSender().hasPermission(org.bukkit.craftbukkit.v1_18_R2.command.VanillaCommandWrapper.getPermission(node));
++                node.requirement = stack -> stack.source == CommandSource.NULL || stack.getBukkitSender().hasPermission(org.bukkit.craftbukkit.v1_19_R1.command.VanillaCommandWrapper.getPermission(node));
 +            }
 +        }
 +        // Paper end
-+        this.dispatcher.findAmbiguities((commandnode, commandnode1, commandnode2, collection) -> {
-+            // CommandDispatcher.LOGGER.warn("Ambiguity between arguments {} and {} with inputs: {}", new Object[]{this.dispatcher.getPath(commandnode1), this.dispatcher.getPath(commandnode2), collection}); // CraftBukkit
-         });
--        this.dispatcher.setConsumer((context, success, result) -> {
--            context.getSource().onCommandComplete(context, success, result);
 +        // CraftBukkit start
 +    }
-+
+ 
+-        this.dispatcher.setConsumer((context, success, result) -> {
+-            context.getSource().onCommandComplete(context, success, result);
 +    public Commands() {
 +        // CraftBukkkit end
 +        this.dispatcher.setConsumer((commandcontext, flag, i) -> {
@@ -114,29 +109,37 @@
 +        }
 +
 +        String newCommand = joiner.join(args);
-+        return this.performCommand(sender, newCommand, newCommand, false);
++        return this.performCommand(sender, newCommand, newCommand);
++    }
++    // CraftBukkit end
++
+     public int performPrefixedCommand(CommandSourceStack source, String command) {
+-        return this.performCommand(source, command.startsWith("/") ? command.substring(1) : command);
++        // CraftBukkit start
++        return this.performPrefixedCommand(source, command, command);
 +    }
 +
++    public int performPrefixedCommand(CommandSourceStack commandlistenerwrapper, String s, String label) {
++        return this.performCommand(commandlistenerwrapper, s.startsWith("/") ? s.substring(1) : s, label);
++        // CraftBukkit end
+     }
+ 
      public int performCommand(CommandSourceStack commandSource, String command) {
 -        StringReader stringReader = new StringReader(command);
--        if (stringReader.canRead() && stringReader.peek() == '/') {
--            stringReader.skip();
-+        return this.performCommand(commandSource, command, command, true);
+-        commandSource.getServer().getProfiler().push(() -> {
+-            return "/" + command;
++        return this.performCommand(commandSource, command, command);
 +    }
 +
-+    public int performCommand(CommandSourceStack commandlistenerwrapper, String s, String label, boolean stripSlash) {
++    public int performCommand(CommandSourceStack commandlistenerwrapper, String s, String label) { // CraftBukkit
 +        StringReader stringreader = new StringReader(s);
 +
-+        if (stripSlash && stringreader.canRead() && stringreader.peek() == '/') {
-+            // CraftBukkit end
-+            stringreader.skip();
-         }
++        commandlistenerwrapper.getServer().getProfiler().push(() -> {
++            return "/" + s;
+         });
  
--        commandSource.getServer().getProfiler().push(command);
-+        commandlistenerwrapper.getServer().getProfiler().push(s);
-+
 +        byte b0;
- 
++
          try {
 +            byte b1;
 +
@@ -149,8 +152,8 @@
 -                commandSource.sendFailure(ComponentUtils.fromMessage(var14.getRawMessage()));
 -                if (var14.getInput() != null && var14.getCursor() >= 0) {
 -                    int i = Math.min(var14.getInput().length(), var14.getCursor());
--                    MutableComponent mutableComponent = (new TextComponent("")).withStyle(ChatFormatting.GRAY).withStyle((style) -> {
--                        return style.withClickEvent(new ClickEvent(ClickEvent.Action.SUGGEST_COMMAND, command));
+-                    MutableComponent mutableComponent = Component.empty().withStyle(ChatFormatting.GRAY).withStyle((style) -> {
+-                        return style.withClickEvent(new ClickEvent(ClickEvent.Action.SUGGEST_COMMAND, "/" + command));
 +                int i = this.dispatcher.execute(stringreader, commandlistenerwrapper);
 +
 +                return i;
@@ -162,7 +165,7 @@
 +                commandlistenerwrapper.sendFailure(ComponentUtils.fromMessage(commandsyntaxexception.getRawMessage()));
 +                if (commandsyntaxexception.getInput() != null && commandsyntaxexception.getCursor() >= 0) {
 +                    int j = Math.min(commandsyntaxexception.getInput().length(), commandsyntaxexception.getCursor());
-+                    MutableComponent ichatmutablecomponent = (new TextComponent("")).withStyle(ChatFormatting.GRAY).withStyle((chatmodifier) -> {
++                    MutableComponent ichatmutablecomponent = Component.empty().withStyle(ChatFormatting.GRAY).withStyle((chatmodifier) -> {
 +                        return chatmodifier.withClickEvent(new ClickEvent(ClickEvent.Action.SUGGEST_COMMAND, label)); // CraftBukkit
                      });
 -                    if (i > 10) {
@@ -174,24 +177,24 @@
  
 -                    mutableComponent.append(var14.getInput().substring(Math.max(0, i - 10), i));
 -                    if (i < var14.getInput().length()) {
--                        Component component = (new TextComponent(var14.getInput().substring(i))).withStyle(new ChatFormatting[]{ChatFormatting.RED, ChatFormatting.UNDERLINE});
+-                        Component component = Component.literal(var14.getInput().substring(i)).withStyle(ChatFormatting.RED, ChatFormatting.UNDERLINE);
 -                        mutableComponent.append(component);
 +                    ichatmutablecomponent.append(commandsyntaxexception.getInput().substring(Math.max(0, j - 10), j));
 +                    if (j < commandsyntaxexception.getInput().length()) {
-+                        MutableComponent ichatmutablecomponent1 = (new TextComponent(commandsyntaxexception.getInput().substring(j))).withStyle(new ChatFormatting[]{ChatFormatting.RED, ChatFormatting.UNDERLINE});
++                        MutableComponent ichatmutablecomponent1 = Component.literal(commandsyntaxexception.getInput().substring(j)).withStyle(ChatFormatting.RED, ChatFormatting.UNDERLINE);
 +
 +                        ichatmutablecomponent.append((Component) ichatmutablecomponent1);
                      }
  
--                    mutableComponent.append((new TranslatableComponent("command.context.here")).withStyle(new ChatFormatting[]{ChatFormatting.RED, ChatFormatting.ITALIC}));
+-                    mutableComponent.append(Component.translatable("command.context.here").withStyle(ChatFormatting.RED, ChatFormatting.ITALIC));
 -                    commandSource.sendFailure(mutableComponent);
-+                    ichatmutablecomponent.append((Component) (new TranslatableComponent("command.context.here")).withStyle(new ChatFormatting[]{ChatFormatting.RED, ChatFormatting.ITALIC}));
++                    ichatmutablecomponent.append((Component) Component.translatable("command.context.here").withStyle(ChatFormatting.RED, ChatFormatting.ITALIC));
 +                    commandlistenerwrapper.sendFailure(ichatmutablecomponent);
                  }
 -            } catch (Exception var15) {
--                MutableComponent mutableComponent2 = new TextComponent(var15.getMessage() == null ? var15.getClass().getName() : var15.getMessage());
+-                MutableComponent mutableComponent2 = Component.literal(var15.getMessage() == null ? var15.getClass().getName() : var15.getMessage());
 -                if (LOGGER.isDebugEnabled()) {
--                    LOGGER.error("Command exception: {}", command, var15);
+-                    LOGGER.error("Command exception: /{}", command, var15);
 -                    StackTraceElement[] stackTraceElements = var15.getStackTrace();
  
 -                    for(int j = 0; j < Math.min(stackTraceElements.length, 3); ++j) {
@@ -199,27 +202,27 @@
 +                b1 = 0;
 +                return b1;
 +            } catch (Exception exception) {
-+                TextComponent chatcomponenttext = new TextComponent(exception.getMessage() == null ? exception.getClass().getName() : exception.getMessage());
++                MutableComponent ichatmutablecomponent2 = Component.literal(exception.getMessage() == null ? exception.getClass().getName() : exception.getMessage());
 +
 +                if (Commands.LOGGER.isDebugEnabled()) {
-+                    Commands.LOGGER.error("Command exception: {}", s, exception);
++                    Commands.LOGGER.error("Command exception: /{}", s, exception);
 +                    StackTraceElement[] astacktraceelement = exception.getStackTrace();
 +
 +                    for (int k = 0; k < Math.min(astacktraceelement.length, 3); ++k) {
-+                        chatcomponenttext.append("\n\n").append(astacktraceelement[k].getMethodName()).append("\n ").append(astacktraceelement[k].getFileName()).append(":").append(String.valueOf(astacktraceelement[k].getLineNumber()));
++                        ichatmutablecomponent2.append("\n\n").append(astacktraceelement[k].getMethodName()).append("\n ").append(astacktraceelement[k].getFileName()).append(":").append(String.valueOf(astacktraceelement[k].getLineNumber()));
                      }
                  }
  
--                commandSource.sendFailure((new TranslatableComponent("command.failed")).withStyle((style) -> {
+-                commandSource.sendFailure(Component.translatable("command.failed").withStyle((style) -> {
 -                    return style.withHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, mutableComponent2));
-+                commandlistenerwrapper.sendFailure((new TranslatableComponent("command.failed")).withStyle((chatmodifier) -> {
-+                    return chatmodifier.withHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, chatcomponenttext));
++                commandlistenerwrapper.sendFailure(Component.translatable("command.failed").withStyle((chatmodifier) -> {
++                    return chatmodifier.withHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, ichatmutablecomponent2));
                  }));
                  if (SharedConstants.IS_RUNNING_IN_IDE) {
--                    commandSource.sendFailure(new TextComponent(Util.describeError(var15)));
--                    LOGGER.error("'{}' threw an exception", command, var15);
-+                    commandlistenerwrapper.sendFailure(new TextComponent(Util.describeError(exception)));
-+                    Commands.LOGGER.error("'{}' threw an exception", s, exception);
+-                    commandSource.sendFailure(Component.literal(Util.describeError(var15)));
+-                    LOGGER.error("'/{}' threw an exception", command, var15);
++                    commandlistenerwrapper.sendFailure(Component.literal(Util.describeError(exception)));
++                    Commands.LOGGER.error("'/{}' threw an exception", s, exception);
                  }
  
 -                return 0;
@@ -332,7 +335,7 @@
 +                        requiredargumentbuilder.suggests(SuggestionProviders.safelySwap(requiredargumentbuilder.getSuggestionsProvider()));
 +                        // Paper start - tell clients to ask server for suggestions for EntityArguments
 +                        registeredAskServerSuggestionsForTree = requiredargumentbuilder.getSuggestionsProvider() == net.minecraft.commands.synchronization.SuggestionProviders.ASK_SERVER;
-+                    } else if (com.destroystokyo.paper.PaperConfig.fixTargetSelectorTagCompletion && !registeredAskServerSuggestionsForTree && requiredargumentbuilder.getType() instanceof net.minecraft.commands.arguments.EntityArgument) {
++                    } else if (io.papermc.paper.configuration.GlobalConfiguration.get().commands.fixTargetSelectorTagCompletion && !registeredAskServerSuggestionsForTree && requiredargumentbuilder.getType() instanceof net.minecraft.commands.arguments.EntityArgument) {
 +                        requiredargumentbuilder.suggests(requiredargumentbuilder.getType()::listSuggestions);
 +                        registeredAskServerSuggestionsForTree = true; // You can only
 +                        // Paper end - tell clients to ask server for suggestions for EntityArguments
@@ -359,7 +362,7 @@
                  }
              }
          }
-@@ -324,61 +465,56 @@
+@@ -321,67 +467,64 @@
      }
  
      public static Predicate<String> createValidator(Commands.ParseFunction parser) {
@@ -394,14 +397,27 @@
      }
  
      public static void validate() {
--        RootCommandNode<CommandSourceStack> rootCommandNode = (new Commands(Commands.CommandSelection.ALL)).getDispatcher().getRoot();
--        Set<ArgumentType<?>> set = ArgumentTypes.findUsedArgumentTypes(rootCommandNode);
+-        CommandBuildContext commandBuildContext = new CommandBuildContext(RegistryAccess.BUILTIN.get());
+-        commandBuildContext.missingTagAccessPolicy(CommandBuildContext.MissingTagAccessPolicy.RETURN_EMPTY);
+-        CommandDispatcher<CommandSourceStack> commandDispatcher = (new Commands(Commands.CommandSelection.ALL, commandBuildContext)).getDispatcher();
+-        RootCommandNode<CommandSourceStack> rootCommandNode = commandDispatcher.getRoot();
+-        commandDispatcher.findAmbiguities((parent, child, sibling, inputs) -> {
+-            LOGGER.warn("Ambiguity between arguments {} and {} with inputs: {}", commandDispatcher.getPath(child), commandDispatcher.getPath(sibling), inputs);
++        CommandBuildContext commandbuildcontext = new CommandBuildContext((RegistryAccess) RegistryAccess.BUILTIN.get());
++
++        commandbuildcontext.missingTagAccessPolicy(CommandBuildContext.MissingTagAccessPolicy.RETURN_EMPTY);
++        com.mojang.brigadier.CommandDispatcher<CommandSourceStack> com_mojang_brigadier_commanddispatcher = (new Commands(Commands.CommandSelection.ALL, commandbuildcontext)).getDispatcher();
++        RootCommandNode<CommandSourceStack> rootcommandnode = com_mojang_brigadier_commanddispatcher.getRoot();
++
++        com_mojang_brigadier_commanddispatcher.findAmbiguities((commandnode, commandnode1, commandnode2, collection) -> {
++            Commands.LOGGER.warn("Ambiguity between arguments {} and {} with inputs: {}", new Object[]{com_mojang_brigadier_commanddispatcher.getPath(commandnode1), com_mojang_brigadier_commanddispatcher.getPath(commandnode2), collection});
+         });
+-        Set<ArgumentType<?>> set = ArgumentUtils.findUsedArgumentTypes(rootCommandNode);
 -        Set<ArgumentType<?>> set2 = set.stream().filter((type) -> {
--            return !ArgumentTypes.isTypeRegistered(type);
-+        RootCommandNode<CommandSourceStack> rootcommandnode = (new Commands(Commands.CommandSelection.ALL)).getDispatcher().getRoot();
-+        Set<ArgumentType<?>> set = ArgumentTypes.findUsedArgumentTypes(rootcommandnode);
+-            return !ArgumentTypeInfos.isClassRecognized(type.getClass());
++        Set<ArgumentType<?>> set = ArgumentUtils.findUsedArgumentTypes(rootcommandnode);
 +        Set<ArgumentType<?>> set1 = (Set) set.stream().filter((argumenttype) -> {
-+            return !ArgumentTypes.isTypeRegistered(argumenttype);
++            return !ArgumentTypeInfos.isClassRecognized(argumenttype.getClass());
          }).collect(Collectors.toSet());
 -        if (!set2.isEmpty()) {
 -            LOGGER.warn("Missing type registration for following arguments:\n {}", set2.stream().map((type) -> {

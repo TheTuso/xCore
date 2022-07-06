@@ -8,10 +8,10 @@
  import com.google.gson.Gson;
  import com.google.gson.GsonBuilder;
  import com.google.gson.JsonArray;
-@@ -18,8 +19,9 @@
- import java.io.StringReader;
+@@ -19,8 +20,9 @@
  import java.lang.reflect.Field;
  import java.lang.reflect.Type;
+ import java.util.ArrayList;
 +import java.util.Iterator;
  import java.util.List;
 -import java.util.Map;
@@ -19,7 +19,7 @@
  import java.util.Optional;
  import javax.annotation.Nullable;
  import net.minecraft.Util;
-@@ -27,8 +29,24 @@
+@@ -38,8 +40,24 @@
  import net.minecraft.util.FormattedCharSequence;
  import net.minecraft.util.GsonHelper;
  import net.minecraft.util.LowerCaseEnumTypeAdapterFactory;
@@ -44,8 +44,8 @@
 -public interface Component extends Message, FormattedText {
      Style getStyle();
  
-     String getContents();
-@@ -39,17 +57,19 @@
+     ComponentContents getContents();
+@@ -50,17 +68,19 @@
      }
  
      default String getString(int length) {
@@ -71,14 +71,22 @@
      }
  
      List<Component> getSiblings();
-@@ -62,36 +82,52 @@
+@@ -70,51 +90,68 @@
+     }
+ 
+     default MutableComponent copy() {
+-        return new MutableComponent(this.getContents(), new ArrayList<>(this.getSiblings()), this.getStyle());
++        return new MutableComponent(this.getContents(), new ArrayList(this.getSiblings()), this.getStyle());
+     }
+ 
+     FormattedCharSequence getVisualOrderText();
  
      @Override
      default <T> Optional<T> visit(FormattedText.StyledContentConsumer<T> styledVisitor, Style style) {
 -        Style style2 = this.getStyle().applyTo(style);
--        Optional<T> optional = this.visitSelf(styledVisitor, style2);
+-        Optional<T> optional = this.getContents().visit(styledVisitor, style2);
 +        Style chatmodifier1 = this.getStyle().applyTo(style);
-+        Optional<T> optional = this.visitSelf(styledVisitor, chatmodifier1);
++        Optional<T> optional = this.getContents().visit(styledVisitor, chatmodifier1);
 +
          if (optional.isPresent()) {
              return optional;
@@ -109,7 +117,7 @@
  
      @Override
      default <T> Optional<T> visit(FormattedText.ContentConsumer<T> visitor) {
-         Optional<T> optional = this.visitSelf(visitor);
+         Optional<T> optional = this.getContents().visit(visitor);
 +
          if (optional.isPresent()) {
              return optional;
@@ -138,26 +146,28 @@
          }
      }
  
-@@ -105,9 +141,10 @@
- 
      default List<Component> toFlatList(Style style) {
          List<Component> list = Lists.newArrayList();
 -        this.visit((styleOverride, text) -> {
 -            if (!text.isEmpty()) {
--                list.add((new TextComponent(text)).withStyle(styleOverride));
+-                list.add(literal(text).withStyle(styleOverride));
 +
 +        this.visit((chatmodifier1, s) -> {
 +            if (!s.isEmpty()) {
-+                list.add((new TextComponent(s)).withStyle(chatmodifier1));
++                list.add(Component.literal(s).withStyle(chatmodifier1));
              }
  
              return Optional.empty();
-@@ -116,132 +153,151 @@
+@@ -123,7 +160,7 @@
      }
  
      static Component nullToEmpty(@Nullable String string) {
--        return (Component)(string != null ? new TextComponent(string) : TextComponent.EMPTY);
-+        return (Component) (string != null ? new TextComponent(string) : TextComponent.EMPTY);
+-        return (Component)(string != null ? literal(string) : CommonComponents.EMPTY);
++        return (Component) (string != null ? Component.literal(string) : CommonComponents.EMPTY);
+     }
+ 
+     static MutableComponent literal(String string) {
+@@ -159,136 +196,159 @@
      }
  
      public static class Serializer implements JsonDeserializer<MutableComponent>, JsonSerializer<Component> {
@@ -211,129 +221,126 @@
 -        @Override
 -        public MutableComponent deserialize(JsonElement jsonElement, Type type, JsonDeserializationContext jsonDeserializationContext) throws JsonParseException {
 -            if (jsonElement.isJsonPrimitive()) {
--                return new TextComponent(jsonElement.getAsString());
+-                return Component.literal(jsonElement.getAsString());
 -            } else if (!jsonElement.isJsonObject()) {
 -                if (jsonElement.isJsonArray()) {
 -                    JsonArray jsonArray3 = jsonElement.getAsJsonArray();
--                    MutableComponent mutableComponent13 = null;
+-                    MutableComponent mutableComponent10 = null;
+-
+-                    for(JsonElement jsonElement2 : jsonArray3) {
+-                        MutableComponent mutableComponent11 = this.deserialize(jsonElement2, jsonElement2.getClass(), jsonDeserializationContext);
+-                        if (mutableComponent10 == null) {
+-                            mutableComponent10 = mutableComponent11;
+-                        } else {
+-                            mutableComponent10.append(mutableComponent11);
+-                        }
+-                    }
 +        public Serializer() {}
  
--                    for(JsonElement jsonElement2 : jsonArray3) {
--                        MutableComponent mutableComponent14 = this.deserialize(jsonElement2, jsonElement2.getClass(), jsonDeserializationContext);
--                        if (mutableComponent13 == null) {
--                            mutableComponent13 = mutableComponent14;
+-                    return mutableComponent10;
+-                } else {
+-                    throw new JsonParseException("Don't know how to turn " + jsonElement + " into a Component");
+-                }
 +        public MutableComponent deserialize(JsonElement jsonelement, Type type, JsonDeserializationContext jsondeserializationcontext) throws JsonParseException {
 +            if (jsonelement.isJsonPrimitive()) {
-+                return new TextComponent(jsonelement.getAsString());
-+            } else if (!jsonelement.isJsonObject()) {
-+                if (jsonelement.isJsonArray()) {
-+                    JsonArray jsonarray = jsonelement.getAsJsonArray();
-+                    MutableComponent ichatmutablecomponent = null;
-+                    Iterator iterator = jsonarray.iterator();
-+
-+                    while (iterator.hasNext()) {
-+                        JsonElement jsonelement1 = (JsonElement) iterator.next();
-+                        MutableComponent ichatmutablecomponent1 = this.deserialize(jsonelement1, jsonelement1.getClass(), jsondeserializationcontext);
-+
-+                        if (ichatmutablecomponent == null) {
-+                            ichatmutablecomponent = ichatmutablecomponent1;
-                         } else {
--                            mutableComponent13.append(mutableComponent14);
-+                            ichatmutablecomponent.append((Component) ichatmutablecomponent1);
-                         }
-                     }
- 
--                    return mutableComponent13;
-+                    return ichatmutablecomponent;
-                 } else {
--                    throw new JsonParseException("Don't know how to turn " + jsonElement + " into a Component");
-+                    throw new JsonParseException("Don't know how to turn " + jsonelement + " into a Component");
-                 }
++                return Component.literal(jsonelement.getAsString());
              } else {
 -                JsonObject jsonObject = jsonElement.getAsJsonObject();
 -                MutableComponent mutableComponent;
 -                if (jsonObject.has("text")) {
--                    mutableComponent = new TextComponent(GsonHelper.getAsString(jsonObject, "text"));
+-                    String string = GsonHelper.getAsString(jsonObject, "text");
+-                    mutableComponent = string.isEmpty() ? Component.empty() : Component.literal(string);
 -                } else if (jsonObject.has("translate")) {
--                    String string = GsonHelper.getAsString(jsonObject, "translate");
+-                    String string2 = GsonHelper.getAsString(jsonObject, "translate");
 -                    if (jsonObject.has("with")) {
 -                        JsonArray jsonArray = GsonHelper.getAsJsonArray(jsonObject, "with");
 -                        Object[] objects = new Object[jsonArray.size()];
-+                JsonObject jsonobject = jsonelement.getAsJsonObject();
-+                Object object;
++                MutableComponent ichatmutablecomponent;
  
 -                        for(int i = 0; i < objects.length; ++i) {
--                            objects[i] = this.deserialize(jsonArray.get(i), type, jsonDeserializationContext);
--                            if (objects[i] instanceof TextComponent) {
--                                TextComponent textComponent = (TextComponent)objects[i];
--                                if (textComponent.getStyle().isEmpty() && textComponent.getSiblings().isEmpty()) {
--                                    objects[i] = textComponent.getText();
-+                if (jsonobject.has("text")) {
-+                    object = new TextComponent(GsonHelper.getAsString(jsonobject, "text"));
-+                } else {
-+                    String s;
+-                            objects[i] = unwrapTextArgument(this.deserialize(jsonArray.get(i), type, jsonDeserializationContext));
++                if (!jsonelement.isJsonObject()) {
++                    if (jsonelement.isJsonArray()) {
++                        JsonArray jsonarray = jsonelement.getAsJsonArray();
 +
-+                    if (jsonobject.has("translate")) {
++                        ichatmutablecomponent = null;
++                        Iterator iterator = jsonarray.iterator();
++
++                        while (iterator.hasNext()) {
++                            JsonElement jsonelement1 = (JsonElement) iterator.next();
++                            MutableComponent ichatmutablecomponent1 = this.deserialize(jsonelement1, jsonelement1.getClass(), jsondeserializationcontext);
++
++                            if (ichatmutablecomponent == null) {
++                                ichatmutablecomponent = ichatmutablecomponent1;
++                            } else {
++                                ichatmutablecomponent.append((Component) ichatmutablecomponent1);
++                            }
+                         }
+ 
+-                        mutableComponent = Component.translatable(string2, objects);
++                        return ichatmutablecomponent;
+                     } else {
+-                        mutableComponent = Component.translatable(string2);
+-                    }
+-                } else if (jsonObject.has("score")) {
+-                    JsonObject jsonObject2 = GsonHelper.getAsJsonObject(jsonObject, "score");
+-                    if (!jsonObject2.has("name") || !jsonObject2.has("objective")) {
+-                        throw new JsonParseException("A score component needs a least a name and an objective");
++                        throw new JsonParseException("Don't know how to turn " + jsonelement + " into a Component");
+                     }
+-
+-                    mutableComponent = Component.score(GsonHelper.getAsString(jsonObject2, "name"), GsonHelper.getAsString(jsonObject2, "objective"));
+-                } else if (jsonObject.has("selector")) {
+-                    Optional<Component> optional = this.parseSeparator(type, jsonDeserializationContext, jsonObject);
+-                    mutableComponent = Component.selector(GsonHelper.getAsString(jsonObject, "selector"), optional);
+-                } else if (jsonObject.has("keybind")) {
+-                    mutableComponent = Component.keybind(GsonHelper.getAsString(jsonObject, "keybind"));
+                 } else {
+-                    if (!jsonObject.has("nbt")) {
+-                        throw new JsonParseException("Don't know how to turn " + jsonElement + " into a Component");
+-                    }
++                    JsonObject jsonobject = jsonelement.getAsJsonObject();
++                    String s;
+ 
+-                    String string3 = GsonHelper.getAsString(jsonObject, "nbt");
+-                    Optional<Component> optional2 = this.parseSeparator(type, jsonDeserializationContext, jsonObject);
+-                    boolean bl = GsonHelper.getAsBoolean(jsonObject, "interpret", false);
+-                    DataSource dataSource;
+-                    if (jsonObject.has("block")) {
+-                        dataSource = new BlockDataSource(GsonHelper.getAsString(jsonObject, "block"));
+-                    } else if (jsonObject.has("entity")) {
+-                        dataSource = new EntityDataSource(GsonHelper.getAsString(jsonObject, "entity"));
++                    if (jsonobject.has("text")) {
++                        s = GsonHelper.getAsString(jsonobject, "text");
++                        ichatmutablecomponent = s.isEmpty() ? Component.empty() : Component.literal(s);
++                    } else if (jsonobject.has("translate")) {
 +                        s = GsonHelper.getAsString(jsonobject, "translate");
 +                        if (jsonobject.has("with")) {
 +                            JsonArray jsonarray1 = GsonHelper.getAsJsonArray(jsonobject, "with");
 +                            Object[] aobject = new Object[jsonarray1.size()];
 +
 +                            for (int i = 0; i < aobject.length; ++i) {
-+                                aobject[i] = this.deserialize(jsonarray1.get(i), type, jsondeserializationcontext);
-+                                if (aobject[i] instanceof TextComponent) {
-+                                    TextComponent chatcomponenttext = (TextComponent) aobject[i];
++                                aobject[i] = Serializer.unwrapTextArgument(this.deserialize(jsonarray1.get(i), type, jsondeserializationcontext));
++                            }
 +
-+                                    if (chatcomponenttext.getStyle().isEmpty() && chatcomponenttext.getSiblings().isEmpty()) {
-+                                        aobject[i] = chatcomponenttext.getText();
-+                                    }
-                                 }
-                             }
-+
-+                            object = new TranslatableComponent(s, aobject);
++                            ichatmutablecomponent = Component.translatable(s, aobject);
 +                        } else {
-+                            object = new TranslatableComponent(s);
-                         }
++                            ichatmutablecomponent = Component.translatable(s);
++                        }
 +                    } else if (jsonobject.has("score")) {
 +                        JsonObject jsonobject1 = GsonHelper.getAsJsonObject(jsonobject, "score");
- 
--                        mutableComponent = new TranslatableComponent(string, objects);
--                    } else {
--                        mutableComponent = new TranslatableComponent(string);
--                    }
--                } else if (jsonObject.has("score")) {
--                    JsonObject jsonObject2 = GsonHelper.getAsJsonObject(jsonObject, "score");
--                    if (!jsonObject2.has("name") || !jsonObject2.has("objective")) {
--                        throw new JsonParseException("A score component needs a least a name and an objective");
--                    }
++
 +                        if (!jsonobject1.has("name") || !jsonobject1.has("objective")) {
 +                            throw new JsonParseException("A score component needs a least a name and an objective");
 +                        }
- 
--                    mutableComponent = new ScoreComponent(GsonHelper.getAsString(jsonObject2, "name"), GsonHelper.getAsString(jsonObject2, "objective"));
--                } else if (jsonObject.has("selector")) {
--                    Optional<Component> optional = this.parseSeparator(type, jsonDeserializationContext, jsonObject);
--                    mutableComponent = new SelectorComponent(GsonHelper.getAsString(jsonObject, "selector"), optional);
--                } else if (jsonObject.has("keybind")) {
--                    mutableComponent = new KeybindComponent(GsonHelper.getAsString(jsonObject, "keybind"));
--                } else {
--                    if (!jsonObject.has("nbt")) {
--                        throw new JsonParseException("Don't know how to turn " + jsonElement + " into a Component");
--                    }
-+                        object = new ScoreComponent(GsonHelper.getAsString(jsonobject1, "name"), GsonHelper.getAsString(jsonobject1, "objective"));
++
++                        ichatmutablecomponent = Component.score(GsonHelper.getAsString(jsonobject1, "name"), GsonHelper.getAsString(jsonobject1, "objective"));
 +                    } else if (jsonobject.has("selector")) {
 +                        Optional<Component> optional = this.parseSeparator(type, jsondeserializationcontext, jsonobject);
- 
--                    String string2 = GsonHelper.getAsString(jsonObject, "nbt");
--                    Optional<Component> optional2 = this.parseSeparator(type, jsonDeserializationContext, jsonObject);
--                    boolean bl = GsonHelper.getAsBoolean(jsonObject, "interpret", false);
--                    if (jsonObject.has("block")) {
--                        mutableComponent = new NbtComponent.BlockNbtComponent(string2, bl, GsonHelper.getAsString(jsonObject, "block"), optional2);
--                    } else if (jsonObject.has("entity")) {
--                        mutableComponent = new NbtComponent.EntityNbtComponent(string2, bl, GsonHelper.getAsString(jsonObject, "entity"), optional2);
-+                        object = new SelectorComponent(GsonHelper.getAsString(jsonobject, "selector"), optional);
++
++                        ichatmutablecomponent = Component.selector(GsonHelper.getAsString(jsonobject, "selector"), optional);
 +                    } else if (jsonobject.has("keybind")) {
-+                        object = new KeybindComponent(GsonHelper.getAsString(jsonobject, "keybind"));
++                        ichatmutablecomponent = Component.keybind(GsonHelper.getAsString(jsonobject, "keybind"));
                      } else {
 -                        if (!jsonObject.has("storage")) {
 -                            throw new JsonParseException("Don't know how to turn " + jsonElement + " into a Component");
@@ -341,50 +348,78 @@
 +                            throw new JsonParseException("Don't know how to turn " + jsonelement + " into a Component");
                          }
  
--                        mutableComponent = new NbtComponent.StorageNbtComponent(string2, bl, new ResourceLocation(GsonHelper.getAsString(jsonObject, "storage")), optional2);
+-                        dataSource = new StorageDataSource(new ResourceLocation(GsonHelper.getAsString(jsonObject, "storage")));
+-                    }
 +                        s = GsonHelper.getAsString(jsonobject, "nbt");
 +                        Optional<Component> optional1 = this.parseSeparator(type, jsondeserializationcontext, jsonobject);
 +                        boolean flag = GsonHelper.getAsBoolean(jsonobject, "interpret", false);
-+
++                        Object object;
+ 
+-                    mutableComponent = Component.nbt(string3, bl, optional2, dataSource);
+-                }
 +                        if (jsonobject.has("block")) {
-+                            object = new NbtComponent.BlockNbtComponent(s, flag, GsonHelper.getAsString(jsonobject, "block"), optional1);
++                            object = new BlockDataSource(GsonHelper.getAsString(jsonobject, "block"));
 +                        } else if (jsonobject.has("entity")) {
-+                            object = new NbtComponent.EntityNbtComponent(s, flag, GsonHelper.getAsString(jsonobject, "entity"), optional1);
++                            object = new EntityDataSource(GsonHelper.getAsString(jsonobject, "entity"));
 +                        } else {
 +                            if (!jsonobject.has("storage")) {
 +                                throw new JsonParseException("Don't know how to turn " + jsonelement + " into a Component");
 +                            }
-+
-+                            object = new NbtComponent.StorageNbtComponent(s, flag, new ResourceLocation(GsonHelper.getAsString(jsonobject, "storage")), optional1);
-+                        }
-                     }
-                 }
  
 -                if (jsonObject.has("extra")) {
 -                    JsonArray jsonArray2 = GsonHelper.getAsJsonArray(jsonObject, "extra");
 -                    if (jsonArray2.size() <= 0) {
-+                if (jsonobject.has("extra")) {
-+                    JsonArray jsonarray2 = GsonHelper.getAsJsonArray(jsonobject, "extra");
+-                        throw new JsonParseException("Unexpected empty array of components");
++                            object = new StorageDataSource(new ResourceLocation(GsonHelper.getAsString(jsonobject, "storage")));
++                        }
 +
-+                    if (jsonarray2.size() <= 0) {
-                         throw new JsonParseException("Unexpected empty array of components");
++                        ichatmutablecomponent = Component.nbt(s, flag, optional1, (DataSource) object);
                      }
  
 -                    for(int j = 0; j < jsonArray2.size(); ++j) {
 -                        mutableComponent.append(this.deserialize(jsonArray2.get(j), type, jsonDeserializationContext));
-+                    for (int j = 0; j < jsonarray2.size(); ++j) {
-+                        ((MutableComponent) object).append((Component) this.deserialize(jsonarray2.get(j), type, jsondeserializationcontext));
++                    if (jsonobject.has("extra")) {
++                        JsonArray jsonarray2 = GsonHelper.getAsJsonArray(jsonobject, "extra");
++
++                        if (jsonarray2.size() <= 0) {
++                            throw new JsonParseException("Unexpected empty array of components");
++                        }
++
++                        for (int j = 0; j < jsonarray2.size(); ++j) {
++                            ichatmutablecomponent.append((Component) this.deserialize(jsonarray2.get(j), type, jsondeserializationcontext));
++                        }
                      }
-                 }
+-                }
  
 -                mutableComponent.setStyle(jsonDeserializationContext.deserialize(jsonElement, Style.class));
 -                return mutableComponent;
-+                ((MutableComponent) object).setStyle((Style) jsondeserializationcontext.deserialize(jsonelement, Style.class));
-+                return (MutableComponent) object;
++                    ichatmutablecomponent.setStyle((Style) jsondeserializationcontext.deserialize(jsonelement, Style.class));
++                    return ichatmutablecomponent;
++                }
              }
          }
  
-@@ -250,139 +306,161 @@
+         private static Object unwrapTextArgument(Object text) {
+-            if (text instanceof Component component) {
+-                if (component.getStyle().isEmpty() && component.getSiblings().isEmpty()) {
+-                    ComponentContents componentContents = component.getContents();
+-                    if (componentContents instanceof LiteralContents) {
+-                        LiteralContents literalContents = (LiteralContents)componentContents;
+-                        return literalContents.text();
++            if (text instanceof Component) {
++                Component ichatbasecomponent = (Component) text;
++
++                if (ichatbasecomponent.getStyle().isEmpty() && ichatbasecomponent.getSiblings().isEmpty()) {
++                    ComponentContents componentcontents = ichatbasecomponent.getContents();
++
++                    if (componentcontents instanceof LiteralContents) {
++                        LiteralContents literalcontents = (LiteralContents) componentcontents;
++
++                        return literalcontents.text();
+                     }
+                 }
+             }
+@@ -301,148 +361,173 @@
          }
  
          private void serializeStyle(Style style, JsonObject json, JsonSerializationContext context) {
@@ -428,39 +463,49 @@
 +                Iterator iterator = ichatbasecomponent.getSiblings().iterator();
  
 -                for(Component component2 : component.getSiblings()) {
--                    jsonArray.add(this.serialize(component2, component2.getClass(), jsonSerializationContext));
+-                    jsonArray.add(this.serialize(component2, Component.class, jsonSerializationContext));
 +                while (iterator.hasNext()) {
 +                    Component ichatbasecomponent1 = (Component) iterator.next();
 +
-+                    jsonarray.add(this.serialize(ichatbasecomponent1, ichatbasecomponent1.getClass(), jsonserializationcontext));
++                    jsonarray.add(this.serialize(ichatbasecomponent1, Component.class, jsonserializationcontext));
                  }
  
 -                jsonObject.add("extra", jsonArray);
 +                jsonobject.add("extra", jsonarray);
              }
  
--            if (component instanceof TextComponent) {
--                jsonObject.addProperty("text", ((TextComponent)component).getText());
--            } else if (component instanceof TranslatableComponent) {
--                TranslatableComponent translatableComponent = (TranslatableComponent)component;
--                jsonObject.addProperty("translate", translatableComponent.getKey());
--                if (translatableComponent.getArgs() != null && translatableComponent.getArgs().length > 0) {
+-            ComponentContents componentContents = component.getContents();
+-            if (componentContents == ComponentContents.EMPTY) {
+-                jsonObject.addProperty("text", "");
+-            } else if (componentContents instanceof LiteralContents) {
+-                LiteralContents literalContents = (LiteralContents)componentContents;
+-                jsonObject.addProperty("text", literalContents.text());
+-            } else if (componentContents instanceof TranslatableContents) {
+-                TranslatableContents translatableContents = (TranslatableContents)componentContents;
+-                jsonObject.addProperty("translate", translatableContents.getKey());
+-                if (translatableContents.getArgs().length > 0) {
 -                    JsonArray jsonArray2 = new JsonArray();
-+            if (ichatbasecomponent instanceof TextComponent) {
-+                jsonobject.addProperty("text", ((TextComponent) ichatbasecomponent).getText());
-+            } else if (ichatbasecomponent instanceof TranslatableComponent) {
-+                TranslatableComponent chatmessage = (TranslatableComponent) ichatbasecomponent;
++            ComponentContents componentcontents = ichatbasecomponent.getContents();
 +
-+                jsonobject.addProperty("translate", chatmessage.getKey());
-+                if (chatmessage.getArgs() != null && chatmessage.getArgs().length > 0) {
++            if (componentcontents == ComponentContents.EMPTY) {
++                jsonobject.addProperty("text", "");
++            } else if (componentcontents instanceof LiteralContents) {
++                LiteralContents literalcontents = (LiteralContents) componentcontents;
++
++                jsonobject.addProperty("text", literalcontents.text());
++            } else if (componentcontents instanceof TranslatableContents) {
++                TranslatableContents translatablecontents = (TranslatableContents) componentcontents;
++
++                jsonobject.addProperty("translate", translatablecontents.getKey());
++                if (translatablecontents.getArgs().length > 0) {
 +                    JsonArray jsonarray1 = new JsonArray();
-+                    Object[] aobject = chatmessage.getArgs();
++                    Object[] aobject = translatablecontents.getArgs();
 +                    int i = aobject.length;
 +
 +                    for (int j = 0; j < i; ++j) {
 +                        Object object = aobject[j];
  
--                    for(Object object : translatableComponent.getArgs()) {
+-                    for(Object object : translatableContents.getArgs()) {
                          if (object instanceof Component) {
 -                            jsonArray2.add(this.serialize((Component)object, object.getClass(), jsonSerializationContext));
 +                            jsonarray1.add(this.serialize((Component) object, object.getClass(), jsonserializationcontext));
@@ -473,77 +518,80 @@
 -                    jsonObject.add("with", jsonArray2);
 +                    jsonobject.add("with", jsonarray1);
                  }
--            } else if (component instanceof ScoreComponent) {
--                ScoreComponent scoreComponent = (ScoreComponent)component;
+-            } else if (componentContents instanceof ScoreContents) {
+-                ScoreContents scoreContents = (ScoreContents)componentContents;
 -                JsonObject jsonObject2 = new JsonObject();
--                jsonObject2.addProperty("name", scoreComponent.getName());
--                jsonObject2.addProperty("objective", scoreComponent.getObjective());
+-                jsonObject2.addProperty("name", scoreContents.getName());
+-                jsonObject2.addProperty("objective", scoreContents.getObjective());
 -                jsonObject.add("score", jsonObject2);
--            } else if (component instanceof SelectorComponent) {
--                SelectorComponent selectorComponent = (SelectorComponent)component;
--                jsonObject.addProperty("selector", selectorComponent.getPattern());
--                this.serializeSeparator(jsonSerializationContext, jsonObject, selectorComponent.getSeparator());
--            } else if (component instanceof KeybindComponent) {
--                KeybindComponent keybindComponent = (KeybindComponent)component;
--                jsonObject.addProperty("keybind", keybindComponent.getName());
-+            } else if (ichatbasecomponent instanceof ScoreComponent) {
-+                ScoreComponent chatcomponentscore = (ScoreComponent) ichatbasecomponent;
+-            } else if (componentContents instanceof SelectorContents) {
+-                SelectorContents selectorContents = (SelectorContents)componentContents;
+-                jsonObject.addProperty("selector", selectorContents.getPattern());
+-                this.serializeSeparator(jsonSerializationContext, jsonObject, selectorContents.getSeparator());
+-            } else if (componentContents instanceof KeybindContents) {
+-                KeybindContents keybindContents = (KeybindContents)componentContents;
+-                jsonObject.addProperty("keybind", keybindContents.getName());
++            } else if (componentcontents instanceof ScoreContents) {
++                ScoreContents scorecontents = (ScoreContents) componentcontents;
 +                JsonObject jsonobject1 = new JsonObject();
 +
-+                jsonobject1.addProperty("name", chatcomponentscore.getName());
-+                jsonobject1.addProperty("objective", chatcomponentscore.getObjective());
++                jsonobject1.addProperty("name", scorecontents.getName());
++                jsonobject1.addProperty("objective", scorecontents.getObjective());
 +                jsonobject.add("score", jsonobject1);
-+            } else if (ichatbasecomponent instanceof SelectorComponent) {
-+                SelectorComponent chatcomponentselector = (SelectorComponent) ichatbasecomponent;
++            } else if (componentcontents instanceof SelectorContents) {
++                SelectorContents selectorcontents = (SelectorContents) componentcontents;
 +
-+                jsonobject.addProperty("selector", chatcomponentselector.getPattern());
-+                this.serializeSeparator(jsonserializationcontext, jsonobject, chatcomponentselector.getSeparator());
-+            } else if (ichatbasecomponent instanceof KeybindComponent) {
-+                KeybindComponent chatcomponentkeybind = (KeybindComponent) ichatbasecomponent;
++                jsonobject.addProperty("selector", selectorcontents.getPattern());
++                this.serializeSeparator(jsonserializationcontext, jsonobject, selectorcontents.getSeparator());
++            } else if (componentcontents instanceof KeybindContents) {
++                KeybindContents keybindcontents = (KeybindContents) componentcontents;
 +
-+                jsonobject.addProperty("keybind", chatcomponentkeybind.getName());
++                jsonobject.addProperty("keybind", keybindcontents.getName());
              } else {
--                if (!(component instanceof NbtComponent)) {
--                    throw new IllegalArgumentException("Don't know how to serialize " + component + " as a Component");
-+                if (!(ichatbasecomponent instanceof NbtComponent)) {
-+                    throw new IllegalArgumentException("Don't know how to serialize " + ichatbasecomponent + " as a Component");
+-                if (!(componentContents instanceof NbtContents)) {
+-                    throw new IllegalArgumentException("Don't know how to serialize " + componentContents + " as a Component");
++                if (!(componentcontents instanceof NbtContents)) {
++                    throw new IllegalArgumentException("Don't know how to serialize " + componentcontents + " as a Component");
                  }
  
--                NbtComponent nbtComponent = (NbtComponent)component;
--                jsonObject.addProperty("nbt", nbtComponent.getNbtPath());
--                jsonObject.addProperty("interpret", nbtComponent.isInterpreting());
--                this.serializeSeparator(jsonSerializationContext, jsonObject, nbtComponent.separator);
--                if (component instanceof NbtComponent.BlockNbtComponent) {
--                    NbtComponent.BlockNbtComponent blockNbtComponent = (NbtComponent.BlockNbtComponent)component;
--                    jsonObject.addProperty("block", blockNbtComponent.getPos());
--                } else if (component instanceof NbtComponent.EntityNbtComponent) {
--                    NbtComponent.EntityNbtComponent entityNbtComponent = (NbtComponent.EntityNbtComponent)component;
--                    jsonObject.addProperty("entity", entityNbtComponent.getSelector());
-+                NbtComponent chatcomponentnbt = (NbtComponent) ichatbasecomponent;
+-                NbtContents nbtContents = (NbtContents)componentContents;
+-                jsonObject.addProperty("nbt", nbtContents.getNbtPath());
+-                jsonObject.addProperty("interpret", nbtContents.isInterpreting());
+-                this.serializeSeparator(jsonSerializationContext, jsonObject, nbtContents.getSeparator());
+-                DataSource dataSource = nbtContents.getDataSource();
+-                if (dataSource instanceof BlockDataSource) {
+-                    BlockDataSource blockDataSource = (BlockDataSource)dataSource;
+-                    jsonObject.addProperty("block", blockDataSource.posPattern());
+-                } else if (dataSource instanceof EntityDataSource) {
+-                    EntityDataSource entityDataSource = (EntityDataSource)dataSource;
+-                    jsonObject.addProperty("entity", entityDataSource.selectorPattern());
++                NbtContents nbtcontents = (NbtContents) componentcontents;
 +
-+                jsonobject.addProperty("nbt", chatcomponentnbt.getNbtPath());
-+                jsonobject.addProperty("interpret", chatcomponentnbt.isInterpreting());
-+                this.serializeSeparator(jsonserializationcontext, jsonobject, chatcomponentnbt.separator);
-+                if (ichatbasecomponent instanceof NbtComponent.BlockNbtComponent) {
-+                    NbtComponent.BlockNbtComponent chatcomponentnbt_a = (NbtComponent.BlockNbtComponent) ichatbasecomponent;
++                jsonobject.addProperty("nbt", nbtcontents.getNbtPath());
++                jsonobject.addProperty("interpret", nbtcontents.isInterpreting());
++                this.serializeSeparator(jsonserializationcontext, jsonobject, nbtcontents.getSeparator());
++                DataSource datasource = nbtcontents.getDataSource();
 +
-+                    jsonobject.addProperty("block", chatcomponentnbt_a.getPos());
-+                } else if (ichatbasecomponent instanceof NbtComponent.EntityNbtComponent) {
-+                    NbtComponent.EntityNbtComponent chatcomponentnbt_b = (NbtComponent.EntityNbtComponent) ichatbasecomponent;
++                if (datasource instanceof BlockDataSource) {
++                    BlockDataSource blockdatasource = (BlockDataSource) datasource;
 +
-+                    jsonobject.addProperty("entity", chatcomponentnbt_b.getSelector());
++                    jsonobject.addProperty("block", blockdatasource.posPattern());
++                } else if (datasource instanceof EntityDataSource) {
++                    EntityDataSource entitydatasource = (EntityDataSource) datasource;
++
++                    jsonobject.addProperty("entity", entitydatasource.selectorPattern());
                  } else {
--                    if (!(component instanceof NbtComponent.StorageNbtComponent)) {
--                        throw new IllegalArgumentException("Don't know how to serialize " + component + " as a Component");
-+                    if (!(ichatbasecomponent instanceof NbtComponent.StorageNbtComponent)) {
-+                        throw new IllegalArgumentException("Don't know how to serialize " + ichatbasecomponent + " as a Component");
+-                    if (!(dataSource instanceof StorageDataSource)) {
+-                        throw new IllegalArgumentException("Don't know how to serialize " + componentContents + " as a Component");
++                    if (!(datasource instanceof StorageDataSource)) {
++                        throw new IllegalArgumentException("Don't know how to serialize " + componentcontents + " as a Component");
                      }
  
--                    NbtComponent.StorageNbtComponent storageNbtComponent = (NbtComponent.StorageNbtComponent)component;
--                    jsonObject.addProperty("storage", storageNbtComponent.getId().toString());
-+                    NbtComponent.StorageNbtComponent chatcomponentnbt_c = (NbtComponent.StorageNbtComponent) ichatbasecomponent;
+-                    StorageDataSource storageDataSource = (StorageDataSource)dataSource;
+-                    jsonObject.addProperty("storage", storageDataSource.id().toString());
++                    StorageDataSource storagedatasource = (StorageDataSource) datasource;
 +
-+                    jsonobject.addProperty("storage", chatcomponentnbt_c.getId().toString());
++                    jsonobject.addProperty("storage", storagedatasource.id().toString());
                  }
              }
  
@@ -562,6 +610,11 @@
          public static String toJson(Component text) {
 -            return GSON.toJson(text);
 +            return Component.Serializer.GSON.toJson(text);
+         }
+ 
+         public static String toStableJson(Component text) {
+-            return GsonHelper.toStableString(toJsonTree(text));
++            return GsonHelper.toStableString(Serializer.toJsonTree(text));
          }
  
          public static JsonElement toJsonTree(Component text) {

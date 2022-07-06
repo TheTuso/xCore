@@ -1,21 +1,22 @@
 --- a/net/minecraft/world/level/pathfinder/PathFinder.java
 +++ b/net/minecraft/world/level/pathfinder/PathFinder.java
-@@ -35,27 +35,31 @@
-         this.openSet.clear();
-         this.nodeEvaluator.prepare(world, mob);
-         Node node = this.nodeEvaluator.getStart();
--        Map<Target, BlockPos> map = positions.stream().collect(Collectors.toMap((pos) -> {
--            return this.nodeEvaluator.getGoal((double)pos.getX(), (double)pos.getY(), (double)pos.getZ());
--        }, Function.identity()));
-+        // Paper start - remove streams - and optimize collection
-+        List<Map.Entry<Target, BlockPos>> map = Lists.newArrayList();
-+        for (BlockPos blockPos : positions) {
-+            map.add(new java.util.AbstractMap.SimpleEntry<>(this.nodeEvaluator.getGoal(blockPos.getX(), blockPos.getY(), blockPos.getZ()), blockPos));
-+        }
-+        // Paper end
-         Path path = this.findPath(world.getProfiler(), node, map, followRange, distance, rangeMultiplier);
-         this.nodeEvaluator.done();
-         return path;
+@@ -38,9 +38,12 @@
+         if (node == null) {
+             return null;
+         } else {
+-            Map<Target, BlockPos> map = positions.stream().collect(Collectors.toMap((pos) -> {
+-                return this.nodeEvaluator.getGoal((double)pos.getX(), (double)pos.getY(), (double)pos.getZ());
+-            }, Function.identity()));
++            // Paper start - remove streams - and optimize collection
++            List<Map.Entry<Target, BlockPos>> map = Lists.newArrayList();
++            for (BlockPos pos : positions) {
++                map.add(new java.util.AbstractMap.SimpleEntry<>(this.nodeEvaluator.getGoal(pos.getX(), pos.getY(), pos.getZ()), pos));
++            }
++            // Paper end
+             Path path = this.findPath(world.getProfiler(), node, map, followRange, distance, rangeMultiplier);
+             this.nodeEvaluator.done();
+             return path;
+@@ -48,18 +51,19 @@
      }
  
      @Nullable
@@ -25,7 +26,7 @@
          profiler.push("find_path");
          profiler.markForCharting(MetricCategory.PATH_FINDING);
 -        Set<Target> set = positions.keySet();
-+        //Set<Target> set = positions.keySet();
++        // Set<Target> set = positions.keySet();
          startNode.g = 0.0F;
 -        startNode.h = this.getBestH(startNode, set);
 +        startNode.h = this.getBestH(startNode, positions); // Paper - optimize collection
@@ -33,14 +34,14 @@
          this.openSet.clear();
          this.openSet.insert(startNode);
 -        Set<Node> set2 = ImmutableSet.of();
-+        //Set<Node> set2 = ImmutableSet.of(); // Paper - unused - diff on change
++        // Set<Node> set2 = ImmutableSet.of(); // Paper - unused - diff on change
          int i = 0;
 -        Set<Target> set3 = Sets.newHashSetWithExpectedSize(set.size());
 +        List<Map.Entry<Target, BlockPos>> entryList = Lists.newArrayListWithExpectedSize(positions.size()); // Paper - optimize collection
          int j = (int)((float)this.maxVisitedNodes * rangeMultiplier);
  
          while(!this.openSet.isEmpty()) {
-@@ -67,14 +71,18 @@
+@@ -71,14 +75,18 @@
              Node node = this.openSet.pop();
              node.closed = true;
  
@@ -62,7 +63,7 @@
                  break;
              }
  
-@@ -89,7 +97,7 @@
+@@ -93,7 +101,7 @@
                      if (node2.walkedDistance < followRange && (!node2.inOpenSet() || g < node2.g)) {
                          node2.cameFrom = node;
                          node2.g = g;
@@ -71,12 +72,12 @@
                          if (node2.inOpenSet()) {
                              this.openSet.changeCost(node2, node2.g + node2.h);
                          } else {
-@@ -101,19 +109,27 @@
+@@ -105,23 +113,31 @@
              }
          }
  
--        Optional<Path> optional = !set3.isEmpty() ? set3.stream().map((target) -> {
--            return this.reconstructPath(target.getBestNode(), positions.get(target), true);
+-        Optional<Path> optional = !set3.isEmpty() ? set3.stream().map((node) -> {
+-            return this.reconstructPath(node.getBestNode(), positions.get(node), true);
 -        }).min(Comparator.comparingInt(Path::getNodeCount)) : set.stream().map((target) -> {
 -            return this.reconstructPath(target.getBestNode(), positions.get(target), false);
 -        }).min(Comparator.comparingDouble(Path::getDistToTarget).thenComparingInt(Path::getNodeCount));
@@ -94,6 +95,10 @@
 +        }
 +        return best;
 +        // Paper end
+     }
+ 
+     protected float distance(Node a, Node b) {
+         return a.distanceTo(b);
      }
  
 -    private float getBestH(Node node, Set<Target> targets) {

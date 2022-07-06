@@ -98,7 +98,7 @@ public class SpigotConfig
         */ // Paper end
     }
 
-    static void readConfig(Class<?> clazz, Object instance)
+    public static void readConfig(Class<?> clazz, Object instance) // Paper - package-private -> public
     {
         for ( Method method : clazz.getDeclaredMethods() )
         {
@@ -229,7 +229,7 @@ public class SpigotConfig
         SpigotConfig.restartScript = SpigotConfig.getString( "settings.restart-script", SpigotConfig.restartScript );
         SpigotConfig.restartMessage = SpigotConfig.transform( SpigotConfig.getString( "messages.restart", "Server is restarting" ) );
         SpigotConfig.commands.put( "restart", new RestartCommand( "restart" ) );
-        //WatchdogThread.doStart( timeoutTime, restartOnCrash ); // Paper - moved to PaperConfig
+        // WatchdogThread.doStart( timeoutTime, restartOnCrash ); // Paper - moved to after paper config initialization
     }
 
     public static boolean bungee;

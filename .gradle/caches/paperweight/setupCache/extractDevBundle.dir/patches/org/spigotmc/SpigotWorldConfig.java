@@ -288,6 +288,7 @@ public class SpigotWorldConfig
     public int hopperTransfer;
     public int hopperCheck;
     public int hopperAmount;
+    public boolean hopperCanLoadChunks;
     private void hoppers()
     {
         // Set the tick delay between hopper item movements
@@ -298,7 +299,8 @@ public class SpigotWorldConfig
         }
         this.hopperCheck = this.getInt( "ticks-per.hopper-check", 1 );
         this.hopperAmount = this.getInt( "hopper-amount", 1 );
-        this.log( "Hopper Transfer: " + this.hopperTransfer + " Hopper Check: " + this.hopperCheck + " Hopper Amount: " + this.hopperAmount );
+        this.hopperCanLoadChunks = this.getBoolean( "hopper-can-load-chunks", false );
+        this.log( "Hopper Transfer: " + this.hopperTransfer + " Hopper Check: " + this.hopperCheck + " Hopper Amount: " + this.hopperAmount + " Hopper Can Load Chunks: " + this.hopperCanLoadChunks );
     }
 
     public int arrowDespawnRate;

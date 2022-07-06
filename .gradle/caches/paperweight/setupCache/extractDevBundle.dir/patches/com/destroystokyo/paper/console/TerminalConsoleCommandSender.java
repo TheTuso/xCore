@@ -6,7 +6,7 @@ import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.logger.slf4j.ComponentLogger;
 import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 import org.apache.logging.log4j.LogManager;
-import org.bukkit.craftbukkit.v1_18_R2.command.CraftConsoleCommandSender;
+import org.bukkit.craftbukkit.v1_19_R1.command.CraftConsoleCommandSender;
 
 public class TerminalConsoleCommandSender extends CraftConsoleCommandSender {
 

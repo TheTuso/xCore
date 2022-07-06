@@ -16,7 +16,7 @@
          super(type, world);
      }
  
-+    public org.bukkit.craftbukkit.v1_18_R2.entity.CraftCreature getBukkitCreature() { return (org.bukkit.craftbukkit.v1_18_R2.entity.CraftCreature) super.getBukkitEntity(); } // Paper
++    public org.bukkit.craftbukkit.v1_19_R1.entity.CraftCreature getBukkitCreature() { return (org.bukkit.craftbukkit.v1_19_R1.entity.CraftCreature) super.getBukkitEntity(); } // Paper
 +    public BlockPos movingTarget = null; public BlockPos getMovingTarget() { return movingTarget; } // Paper
 +
      public float getWalkTargetValue(BlockPos pos) {
@@ -35,7 +35,7 @@
 -                    this.dropLeash(true, true);
 +
 +            if (this instanceof TamableAnimal && ((TamableAnimal) this).isInSittingPose()) {
-+                if (f > entity.level.paperConfig.maxLeashDistance) { // Paper
++                if (f > entity.level.paperConfig().misc.maxLeashDistance) { // Paper
 +                    // Paper start - drop leash variable
 +                    EntityUnleashEvent event = new EntityUnleashEvent(this.getBukkitEntity(), EntityUnleashEvent.UnleashReason.DISTANCE, true);
 +                    if (!event.callEvent()) { return; }
@@ -49,7 +49,7 @@
              this.onLeashDistance(f);
 -            if (f > 10.0F) {
 -                this.dropLeash(true, true);
-+            if (f > entity.level.paperConfig.maxLeashDistance) { // Paper
++            if (f > entity.level.paperConfig().misc.maxLeashDistance) { // Paper
 +                // Paper start - drop leash variable
 +                EntityUnleashEvent event = new EntityUnleashEvent(this.getBukkitEntity(), EntityUnleashEvent.UnleashReason.DISTANCE, true);
 +                if (!event.callEvent()) return;
@@ -66,7 +66,7 @@
 +                double d2 = (entity.getZ() - this.getZ()) / (double) f;
 +
 +                this.setDeltaMovement(this.getDeltaMovement().add(Math.copySign(d0 * d0 * 0.4D, d0), Math.copySign(d1 * d1 * 0.4D, d1), Math.copySign(d2 * d2 * 0.4D, d2)));
-             } else {
+             } else if (this.shouldStayCloseToLeashHolder()) {
                  this.goalSelector.enableControlFlag(Goal.Flag.MOVE);
 -                float h = 2.0F;
 -                Vec3 vec3 = (new Vec3(entity.getX() - this.getX(), entity.getY() - this.getY(), entity.getZ() - this.getZ())).normalize().scale((double)Math.max(f - 2.0F, 0.0F));
@@ -78,7 +78,7 @@
              }
          }
  
-@@ -69,6 +88,5 @@
+@@ -73,6 +92,5 @@
          return 1.0D;
      }
  

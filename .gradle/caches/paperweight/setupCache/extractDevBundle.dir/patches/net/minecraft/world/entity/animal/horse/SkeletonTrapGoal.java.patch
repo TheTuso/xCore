@@ -42,7 +42,7 @@
 -            AbstractHorse abstractHorse = this.createHorse(difficultyInstance);
 -            Skeleton skeleton2 = this.createSkeleton(difficultyInstance, abstractHorse);
 -            skeleton2.startRiding(abstractHorse);
--            abstractHorse.push(this.horse.getRandom().nextGaussian() * 0.5D, 0.0D, this.horse.getRandom().nextGaussian() * 0.5D);
+-            abstractHorse.push(this.horse.getRandom().triangle(0.0D, 1.1485D), 0.0D, this.horse.getRandom().triangle(0.0D, 1.1485D));
 -            serverLevel.addFreshEntityWithPassengers(abstractHorse);
 +        entitylightning.moveTo(this.horse.getX(), this.horse.getY(), this.horse.getZ());
 +        entitylightning.setVisualOnly(true);
@@ -58,7 +58,7 @@
 +            Skeleton entityskeleton1 = this.createSkeleton(difficultydamagescaler, entityhorseabstract);
 +
 +            if (entityskeleton1 != null) entityskeleton1.startRiding(entityhorseabstract); // CraftBukkit
-+            entityhorseabstract.push(this.horse.getRandom().nextGaussian() * 0.5D, 0.0D, this.horse.getRandom().nextGaussian() * 0.5D);
++            entityhorseabstract.push(this.horse.getRandom().triangle(0.0D, 1.1485D), 0.0D, this.horse.getRandom().triangle(0.0D, 1.1485D));
 +            worldserver.addFreshEntityWithPassengers(entityhorseabstract, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.JOCKEY); // CraftBukkit
          }
  

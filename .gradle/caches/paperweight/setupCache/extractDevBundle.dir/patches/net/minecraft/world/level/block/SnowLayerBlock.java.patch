@@ -1,6 +1,6 @@
 --- a/net/minecraft/world/level/block/SnowLayerBlock.java
 +++ b/net/minecraft/world/level/block/SnowLayerBlock.java
-@@ -21,6 +21,7 @@
+@@ -22,6 +22,7 @@
  import net.minecraft.world.phys.shapes.VoxelShape;
  
  public class SnowLayerBlock extends Block {
@@ -8,7 +8,7 @@
      public static final int MAX_HEIGHT = 8;
      public static final IntegerProperty LAYERS = BlockStateProperties.LAYERS;
      protected static final VoxelShape[] SHAPE_BY_LAYER = new VoxelShape[]{Shapes.empty(), Block.box(0.0D, 0.0D, 0.0D, 16.0D, 2.0D, 16.0D), Block.box(0.0D, 0.0D, 0.0D, 16.0D, 4.0D, 16.0D), Block.box(0.0D, 0.0D, 0.0D, 16.0D, 6.0D, 16.0D), Block.box(0.0D, 0.0D, 0.0D, 16.0D, 8.0D, 16.0D), Block.box(0.0D, 0.0D, 0.0D, 16.0D, 10.0D, 16.0D), Block.box(0.0D, 0.0D, 0.0D, 16.0D, 12.0D, 16.0D), Block.box(0.0D, 0.0D, 0.0D, 16.0D, 14.0D, 16.0D), Block.box(0.0D, 0.0D, 0.0D, 16.0D, 16.0D, 16.0D)};
-@@ -28,14 +29,14 @@
+@@ -29,14 +30,14 @@
  
      protected SnowLayerBlock(BlockBehaviour.Properties settings) {
          super(settings);
@@ -25,7 +25,7 @@
              case WATER:
                  return false;
              case AIR:
-@@ -47,22 +48,22 @@
+@@ -48,22 +49,22 @@
  
      @Override
      public VoxelShape getShape(BlockState state, BlockGetter world, BlockPos pos, CollisionContext context) {
@@ -52,39 +52,43 @@
      }
  
      @Override
-@@ -72,16 +73,9 @@
+@@ -73,19 +74,14 @@
+ 
+     @Override
+     public float getShadeBrightness(BlockState state, BlockGetter world, BlockPos pos) {
+-        return state.getValue(LAYERS) == 8 ? 0.2F : 1.0F;
++        return (Integer) state.getValue(SnowLayerBlock.LAYERS) == 8 ? 0.2F : 1.0F;
+     }
  
      @Override
      public boolean canSurvive(BlockState state, LevelReader world, BlockPos pos) {
 -        BlockState blockState = world.getBlockState(pos.below());
--        if (!blockState.is(Blocks.ICE) && !blockState.is(Blocks.PACKED_ICE) && !blockState.is(Blocks.BARRIER)) {
--            if (!blockState.is(Blocks.HONEY_BLOCK) && !blockState.is(Blocks.SOUL_SAND)) {
--                return Block.isFaceFull(blockState.getCollisionShape(world, pos.below()), Direction.UP) || blockState.is(this) && blockState.getValue(LAYERS) == 8;
--            } else {
--                return true;
--            }
--        } else {
+-        if (blockState.is(BlockTags.SNOW_LAYER_CANNOT_SURVIVE_ON)) {
 -            return false;
+-        } else if (blockState.is(BlockTags.SNOW_LAYER_CAN_SURVIVE_ON)) {
+-            return true;
+-        } else {
+-            return Block.isFaceFull(blockState.getCollisionShape(world, pos.below()), Direction.UP) || blockState.is(this) && blockState.getValue(LAYERS) == 8;
 -        }
 +        BlockState iblockdata1 = world.getBlockState(pos.below());
 +
-+        return !iblockdata1.is(Blocks.ICE) && !iblockdata1.is(Blocks.PACKED_ICE) && !iblockdata1.is(Blocks.BARRIER) ? (!iblockdata1.is(Blocks.HONEY_BLOCK) && !iblockdata1.is(Blocks.SOUL_SAND) ? Block.isFaceFull(iblockdata1.getCollisionShape(world, pos.below()), Direction.UP) || iblockdata1.is((Block) this) && (Integer) iblockdata1.getValue(SnowLayerBlock.LAYERS) == 8 : true) : false;
++        return iblockdata1.is(BlockTags.SNOW_LAYER_CANNOT_SURVIVE_ON) ? false : (iblockdata1.is(BlockTags.SNOW_LAYER_CAN_SURVIVE_ON) ? true : Block.isFaceFull(iblockdata1.getCollisionShape(world, pos.below()), Direction.UP) || iblockdata1.is((Block) this) && (Integer) iblockdata1.getValue(SnowLayerBlock.LAYERS) == 8);
      }
  
      @Override
-@@ -92,6 +86,11 @@
+@@ -96,6 +92,11 @@
      @Override
-     public void randomTick(BlockState state, ServerLevel world, BlockPos pos, Random random) {
+     public void randomTick(BlockState state, ServerLevel world, BlockPos pos, RandomSource random) {
          if (world.getBrightness(LightLayer.BLOCK, pos) > 11) {
 +            // CraftBukkit start
-+            if (org.bukkit.craftbukkit.v1_18_R2.event.CraftEventFactory.callBlockFadeEvent(world, pos, Blocks.AIR.defaultBlockState()).isCancelled()) {
++            if (org.bukkit.craftbukkit.v1_19_R1.event.CraftEventFactory.callBlockFadeEvent(world, pos, Blocks.AIR.defaultBlockState()).isCancelled()) {
 +                return;
 +            }
 +            // CraftBukkit end
              dropResources(state, world, pos);
              world.removeBlock(pos, false);
          }
-@@ -100,25 +99,20 @@
+@@ -104,25 +105,20 @@
  
      @Override
      public boolean canBeReplaced(BlockState state, BlockPlaceContext context) {
@@ -119,7 +123,7 @@
          } else {
              return super.getStateForPlacement(ctx);
          }
-@@ -126,6 +120,6 @@
+@@ -130,6 +126,6 @@
  
      @Override
      protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {

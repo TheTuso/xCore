@@ -144,14 +144,14 @@
  
      }
  
-     public static void writeCompressed(CompoundTag compound, File file) throws IOException {
+     public static void writeCompressed(CompoundTag nbt, File file) throws IOException {
 -        OutputStream outputStream = new FileOutputStream(file);
 +        FileOutputStream fileoutputstream = new FileOutputStream(file);
  
          try {
--            writeCompressed(compound, outputStream);
+-            writeCompressed(nbt, outputStream);
 -        } catch (Throwable var6) {
-+            NbtIo.writeCompressed(compound, (OutputStream) fileoutputstream);
++            NbtIo.writeCompressed(nbt, (OutputStream) fileoutputstream);
 +        } catch (Throwable throwable) {
              try {
 -                outputStream.close();
@@ -170,14 +170,14 @@
 +        fileoutputstream.close();
      }
  
-     public static void writeCompressed(CompoundTag compound, OutputStream stream) throws IOException {
+     public static void writeCompressed(CompoundTag nbt, OutputStream stream) throws IOException {
 -        DataOutputStream dataOutputStream = new DataOutputStream(new BufferedOutputStream(new GZIPOutputStream(stream)));
 +        DataOutputStream dataoutputstream = new DataOutputStream(new BufferedOutputStream(new GZIPOutputStream(stream)));
  
          try {
--            write(compound, dataOutputStream);
+-            write(nbt, dataOutputStream);
 -        } catch (Throwable var6) {
-+            NbtIo.write(compound, (DataOutput) dataoutputstream);
++            NbtIo.write(nbt, (DataOutput) dataoutputstream);
 +        } catch (Throwable throwable) {
              try {
 -                dataOutputStream.close();
@@ -196,7 +196,7 @@
 +        dataoutputstream.close();
      }
  
-     public static void write(CompoundTag compound, File file) throws IOException {
+     public static void write(CompoundTag nbt, File file) throws IOException {
 -        FileOutputStream fileOutputStream = new FileOutputStream(file);
 +        FileOutputStream fileoutputstream = new FileOutputStream(file);
  
@@ -205,9 +205,9 @@
 +            DataOutputStream dataoutputstream = new DataOutputStream(fileoutputstream);
  
              try {
--                write(compound, dataOutputStream);
+-                write(nbt, dataOutputStream);
 -            } catch (Throwable var8) {
-+                NbtIo.write(compound, (DataOutput) dataoutputstream);
++                NbtIo.write(nbt, (DataOutput) dataoutputstream);
 +            } catch (Throwable throwable) {
                  try {
 -                    dataOutputStream.close();
@@ -324,9 +324,9 @@
          }
      }
  
-     public static void write(CompoundTag compound, DataOutput output) throws IOException {
--        writeUnnamedTag(compound, output);
-+        NbtIo.writeUnnamedTag(compound, output);
+     public static void write(CompoundTag nbt, DataOutput output) throws IOException {
+-        writeUnnamedTag(nbt, output);
++        NbtIo.writeUnnamedTag(nbt, output);
      }
  
      public static void parse(DataInput input, StreamTagVisitor scanner) throws IOException {

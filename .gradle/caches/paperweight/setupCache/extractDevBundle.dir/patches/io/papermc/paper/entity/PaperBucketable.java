@@ -1,8 +1,8 @@
 package io.papermc.paper.entity;
 
 import org.bukkit.Sound;
-import org.bukkit.craftbukkit.v1_18_R2.CraftSound;
-import org.bukkit.craftbukkit.v1_18_R2.inventory.CraftItemStack;
+import org.bukkit.craftbukkit.v1_19_R1.CraftSound;
+import org.bukkit.craftbukkit.v1_19_R1.inventory.CraftItemStack;
 import org.bukkit.inventory.ItemStack;
 
 public interface PaperBucketable extends Bucketable {

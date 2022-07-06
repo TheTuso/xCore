@@ -3,7 +3,7 @@ package io.papermc.paper.attribute;
 import net.minecraft.world.entity.ai.attributes.AttributeInstance;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.attribute.AttributeModifier;
-import org.bukkit.craftbukkit.v1_18_R2.attribute.CraftAttributeInstance;
+import org.bukkit.craftbukkit.v1_19_R1.attribute.CraftAttributeInstance;
 
 import java.util.Collection;
 

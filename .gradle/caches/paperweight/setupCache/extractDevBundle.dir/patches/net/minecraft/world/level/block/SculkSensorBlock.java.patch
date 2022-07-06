@@ -1,6 +1,6 @@
 --- a/net/minecraft/world/level/block/SculkSensorBlock.java
 +++ b/net/minecraft/world/level/block/SculkSensorBlock.java
-@@ -31,61 +31,67 @@
+@@ -35,58 +35,64 @@
  import net.minecraft.world.level.block.state.properties.SculkSensorPhase;
  import net.minecraft.world.level.gameevent.GameEvent;
  import net.minecraft.world.level.gameevent.GameEventListener;
@@ -11,7 +11,7 @@
  import net.minecraft.world.phys.shapes.CollisionContext;
  import net.minecraft.world.phys.shapes.VoxelShape;
 +// CraftBukkit start
-+import org.bukkit.craftbukkit.v1_18_R2.block.CraftBlock;
++import org.bukkit.craftbukkit.v1_19_R1.block.CraftBlock;
 +import org.bukkit.event.block.BlockRedstoneEvent;
 +// CraftBukkit end
  
@@ -19,102 +19,96 @@
 +
      public static final int ACTIVE_TICKS = 40;
      public static final int COOLDOWN_TICKS = 1;
--    public static final Object2IntMap<GameEvent> VIBRATION_STRENGTH_FOR_EVENT = Object2IntMaps.unmodifiable(Util.make(new Object2IntOpenHashMap<>(), (map) -> {
+-    public static final Object2IntMap<GameEvent> VIBRATION_FREQUENCY_FOR_EVENT = Object2IntMaps.unmodifiable(Util.make(new Object2IntOpenHashMap<>(), (map) -> {
 -        map.put(GameEvent.STEP, 1);
 -        map.put(GameEvent.FLAP, 2);
 -        map.put(GameEvent.SWIM, 3);
--        map.put(GameEvent.ELYTRA_FREE_FALL, 4);
+-        map.put(GameEvent.ELYTRA_GLIDE, 4);
 -        map.put(GameEvent.HIT_GROUND, 5);
+-        map.put(GameEvent.TELEPORT, 5);
 -        map.put(GameEvent.SPLASH, 6);
--        map.put(GameEvent.WOLF_SHAKING, 6);
--        map.put(GameEvent.MINECART_MOVING, 6);
--        map.put(GameEvent.RING_BELL, 6);
+-        map.put(GameEvent.ENTITY_SHAKE, 6);
 -        map.put(GameEvent.BLOCK_CHANGE, 6);
+-        map.put(GameEvent.NOTE_BLOCK_PLAY, 6);
 -        map.put(GameEvent.PROJECTILE_SHOOT, 7);
--        map.put(GameEvent.DRINKING_FINISH, 7);
+-        map.put(GameEvent.DRINK, 7);
 -        map.put(GameEvent.PRIME_FUSE, 7);
 -        map.put(GameEvent.PROJECTILE_LAND, 8);
 -        map.put(GameEvent.EAT, 8);
--        map.put(GameEvent.MOB_INTERACT, 8);
--        map.put(GameEvent.ENTITY_DAMAGED, 8);
+-        map.put(GameEvent.ENTITY_INTERACT, 8);
+-        map.put(GameEvent.ENTITY_DAMAGE, 8);
 -        map.put(GameEvent.EQUIP, 9);
 -        map.put(GameEvent.SHEAR, 9);
--        map.put(GameEvent.RAVAGER_ROAR, 9);
+-        map.put(GameEvent.ENTITY_ROAR, 9);
 -        map.put(GameEvent.BLOCK_CLOSE, 10);
--        map.put(GameEvent.BLOCK_UNSWITCH, 10);
--        map.put(GameEvent.BLOCK_UNPRESS, 10);
+-        map.put(GameEvent.BLOCK_DEACTIVATE, 10);
 -        map.put(GameEvent.BLOCK_DETACH, 10);
 -        map.put(GameEvent.DISPENSE_FAIL, 10);
 -        map.put(GameEvent.BLOCK_OPEN, 11);
--        map.put(GameEvent.BLOCK_SWITCH, 11);
--        map.put(GameEvent.BLOCK_PRESS, 11);
+-        map.put(GameEvent.BLOCK_ACTIVATE, 11);
 -        map.put(GameEvent.BLOCK_ATTACH, 11);
 -        map.put(GameEvent.ENTITY_PLACE, 12);
 -        map.put(GameEvent.BLOCK_PLACE, 12);
 -        map.put(GameEvent.FLUID_PLACE, 12);
--        map.put(GameEvent.ENTITY_KILLED, 13);
+-        map.put(GameEvent.ENTITY_DIE, 13);
 -        map.put(GameEvent.BLOCK_DESTROY, 13);
 -        map.put(GameEvent.FLUID_PICKUP, 13);
--        map.put(GameEvent.FISHING_ROD_REEL_IN, 14);
+-        map.put(GameEvent.ITEM_INTERACT_FINISH, 14);
 -        map.put(GameEvent.CONTAINER_CLOSE, 14);
 -        map.put(GameEvent.PISTON_CONTRACT, 14);
--        map.put(GameEvent.SHULKER_CLOSE, 14);
 -        map.put(GameEvent.PISTON_EXTEND, 15);
 -        map.put(GameEvent.CONTAINER_OPEN, 15);
--        map.put(GameEvent.FISHING_ROD_CAST, 15);
+-        map.put(GameEvent.ITEM_INTERACT_START, 15);
 -        map.put(GameEvent.EXPLODE, 15);
 -        map.put(GameEvent.LIGHTNING_STRIKE, 15);
--        map.put(GameEvent.SHULKER_OPEN, 15);
-+    public static final Object2IntMap<GameEvent> VIBRATION_STRENGTH_FOR_EVENT = Object2IntMaps.unmodifiable((Object2IntMap) Util.make(new Object2IntOpenHashMap(), (object2intopenhashmap) -> {
+-        map.put(GameEvent.INSTRUMENT_PLAY, 15);
++    public static final Object2IntMap<GameEvent> VIBRATION_FREQUENCY_FOR_EVENT = Object2IntMaps.unmodifiable((Object2IntMap) Util.make(new Object2IntOpenHashMap(), (object2intopenhashmap) -> {
 +        object2intopenhashmap.put(GameEvent.STEP, 1);
 +        object2intopenhashmap.put(GameEvent.FLAP, 2);
 +        object2intopenhashmap.put(GameEvent.SWIM, 3);
-+        object2intopenhashmap.put(GameEvent.ELYTRA_FREE_FALL, 4);
++        object2intopenhashmap.put(GameEvent.ELYTRA_GLIDE, 4);
 +        object2intopenhashmap.put(GameEvent.HIT_GROUND, 5);
++        object2intopenhashmap.put(GameEvent.TELEPORT, 5);
 +        object2intopenhashmap.put(GameEvent.SPLASH, 6);
-+        object2intopenhashmap.put(GameEvent.WOLF_SHAKING, 6);
-+        object2intopenhashmap.put(GameEvent.MINECART_MOVING, 6);
-+        object2intopenhashmap.put(GameEvent.RING_BELL, 6);
++        object2intopenhashmap.put(GameEvent.ENTITY_SHAKE, 6);
 +        object2intopenhashmap.put(GameEvent.BLOCK_CHANGE, 6);
++        object2intopenhashmap.put(GameEvent.NOTE_BLOCK_PLAY, 6);
 +        object2intopenhashmap.put(GameEvent.PROJECTILE_SHOOT, 7);
-+        object2intopenhashmap.put(GameEvent.DRINKING_FINISH, 7);
++        object2intopenhashmap.put(GameEvent.DRINK, 7);
 +        object2intopenhashmap.put(GameEvent.PRIME_FUSE, 7);
 +        object2intopenhashmap.put(GameEvent.PROJECTILE_LAND, 8);
 +        object2intopenhashmap.put(GameEvent.EAT, 8);
-+        object2intopenhashmap.put(GameEvent.MOB_INTERACT, 8);
-+        object2intopenhashmap.put(GameEvent.ENTITY_DAMAGED, 8);
++        object2intopenhashmap.put(GameEvent.ENTITY_INTERACT, 8);
++        object2intopenhashmap.put(GameEvent.ENTITY_DAMAGE, 8);
 +        object2intopenhashmap.put(GameEvent.EQUIP, 9);
 +        object2intopenhashmap.put(GameEvent.SHEAR, 9);
-+        object2intopenhashmap.put(GameEvent.RAVAGER_ROAR, 9);
++        object2intopenhashmap.put(GameEvent.ENTITY_ROAR, 9);
 +        object2intopenhashmap.put(GameEvent.BLOCK_CLOSE, 10);
-+        object2intopenhashmap.put(GameEvent.BLOCK_UNSWITCH, 10);
-+        object2intopenhashmap.put(GameEvent.BLOCK_UNPRESS, 10);
++        object2intopenhashmap.put(GameEvent.BLOCK_DEACTIVATE, 10);
 +        object2intopenhashmap.put(GameEvent.BLOCK_DETACH, 10);
 +        object2intopenhashmap.put(GameEvent.DISPENSE_FAIL, 10);
 +        object2intopenhashmap.put(GameEvent.BLOCK_OPEN, 11);
-+        object2intopenhashmap.put(GameEvent.BLOCK_SWITCH, 11);
-+        object2intopenhashmap.put(GameEvent.BLOCK_PRESS, 11);
++        object2intopenhashmap.put(GameEvent.BLOCK_ACTIVATE, 11);
 +        object2intopenhashmap.put(GameEvent.BLOCK_ATTACH, 11);
 +        object2intopenhashmap.put(GameEvent.ENTITY_PLACE, 12);
 +        object2intopenhashmap.put(GameEvent.BLOCK_PLACE, 12);
 +        object2intopenhashmap.put(GameEvent.FLUID_PLACE, 12);
-+        object2intopenhashmap.put(GameEvent.ENTITY_KILLED, 13);
++        object2intopenhashmap.put(GameEvent.ENTITY_DIE, 13);
 +        object2intopenhashmap.put(GameEvent.BLOCK_DESTROY, 13);
 +        object2intopenhashmap.put(GameEvent.FLUID_PICKUP, 13);
-+        object2intopenhashmap.put(GameEvent.FISHING_ROD_REEL_IN, 14);
++        object2intopenhashmap.put(GameEvent.ITEM_INTERACT_FINISH, 14);
 +        object2intopenhashmap.put(GameEvent.CONTAINER_CLOSE, 14);
 +        object2intopenhashmap.put(GameEvent.PISTON_CONTRACT, 14);
-+        object2intopenhashmap.put(GameEvent.SHULKER_CLOSE, 14);
 +        object2intopenhashmap.put(GameEvent.PISTON_EXTEND, 15);
 +        object2intopenhashmap.put(GameEvent.CONTAINER_OPEN, 15);
-+        object2intopenhashmap.put(GameEvent.FISHING_ROD_CAST, 15);
++        object2intopenhashmap.put(GameEvent.ITEM_INTERACT_START, 15);
 +        object2intopenhashmap.put(GameEvent.EXPLODE, 15);
 +        object2intopenhashmap.put(GameEvent.LIGHTNING_STRIKE, 15);
-+        object2intopenhashmap.put(GameEvent.SHULKER_OPEN, 15);
++        object2intopenhashmap.put(GameEvent.INSTRUMENT_PLAY, 15);
      }));
      public static final EnumProperty<SculkSensorPhase> PHASE = BlockStateProperties.SCULK_SENSOR_PHASE;
      public static final IntegerProperty POWER = BlockStateProperties.POWER;
-@@ -95,7 +101,7 @@
+@@ -96,7 +102,7 @@
  
      public SculkSensorBlock(BlockBehaviour.Properties settings, int range) {
          super(settings);
@@ -123,7 +117,7 @@
          this.listenerRange = range;
      }
  
-@@ -106,33 +112,34 @@
+@@ -107,38 +113,53 @@
      @Nullable
      @Override
      public BlockState getStateForPlacement(BlockPlaceContext ctx) {
@@ -143,7 +137,7 @@
      }
  
      @Override
-     public void tick(BlockState state, ServerLevel world, BlockPos pos, Random random) {
+     public void tick(BlockState state, ServerLevel world, BlockPos pos, RandomSource random) {
 -        if (getPhase(state) != SculkSensorPhase.ACTIVE) {
 -            if (getPhase(state) == SculkSensorPhase.COOLDOWN) {
 -                world.setBlock(pos, state.setValue(PHASE, SculkSensorPhase.INACTIVE), 3);
@@ -159,6 +153,40 @@
      }
  
      @Override
+     public void stepOn(Level world, BlockPos pos, BlockState state, Entity entity) {
+-        if (!world.isClientSide() && canActivate(state) && entity.getType() != EntityType.WARDEN) {
+-            BlockEntity blockEntity = world.getBlockEntity(pos);
+-            if (blockEntity instanceof SculkSensorBlockEntity) {
+-                SculkSensorBlockEntity sculkSensorBlockEntity = (SculkSensorBlockEntity)blockEntity;
+-                sculkSensorBlockEntity.setLastVibrationFrequency(VIBRATION_FREQUENCY_FOR_EVENT.get(GameEvent.STEP));
++        if (!world.isClientSide() && SculkSensorBlock.canActivate(state) && entity.getType() != EntityType.WARDEN) {
++            // CraftBukkit start
++            org.bukkit.event.Cancellable cancellable;
++            if (entity instanceof Player) {
++                cancellable = org.bukkit.craftbukkit.v1_19_R1.event.CraftEventFactory.callPlayerInteractEvent((Player) entity, org.bukkit.event.block.Action.PHYSICAL, pos, null, null, null);
++            } else {
++                cancellable = new org.bukkit.event.entity.EntityInteractEvent(entity.getBukkitEntity(), world.getWorld().getBlockAt(pos.getX(), pos.getY(), pos.getZ()));
++                world.getCraftServer().getPluginManager().callEvent((org.bukkit.event.entity.EntityInteractEvent) cancellable);
++            }
++            if (cancellable.isCancelled()) {
++                return;
+             }
++            // CraftBukkit end
++            BlockEntity tileentity = world.getBlockEntity(pos);
+ 
+-            activate(entity.getResponsibleEntity(), world, pos, state, 15);
++            if (tileentity instanceof SculkSensorBlockEntity) {
++                SculkSensorBlockEntity sculksensorblockentity = (SculkSensorBlockEntity) tileentity;
++
++                sculksensorblockentity.setLastVibrationFrequency(SculkSensorBlock.VIBRATION_FREQUENCY_FOR_EVENT.get(GameEvent.STEP));
++            }
++
++            SculkSensorBlock.activate(entity.getResponsibleEntity(), world, pos, state, 15);
+         }
+ 
+         super.stepOn(world, pos, state, entity);
+@@ -147,8 +168,8 @@
+     @Override
      public void onPlace(BlockState state, Level world, BlockPos pos, BlockState oldState, boolean notify) {
          if (!world.isClientSide() && !state.is(oldState.getBlock())) {
 -            if (state.getValue(POWER) > 0 && !world.getBlockTicks().hasScheduledTick(pos, this)) {
@@ -168,7 +196,7 @@
              }
  
              world.scheduleTick(new BlockPos(pos), state.getBlock(), 1);
-@@ -142,8 +149,8 @@
+@@ -158,8 +179,8 @@
      @Override
      public void onRemove(BlockState state, Level world, BlockPos pos, BlockState newState, boolean moved) {
          if (!state.is(newState.getBlock())) {
@@ -179,7 +207,7 @@
              }
  
              super.onRemove(state, world, pos, newState, moved);
-@@ -152,8 +159,8 @@
+@@ -168,8 +189,8 @@
  
      @Override
      public BlockState updateShape(BlockState state, Direction direction, BlockState neighborState, LevelAccessor world, BlockPos pos, BlockPos neighborPos) {
@@ -190,10 +218,10 @@
          }
  
          return super.updateShape(state, direction, neighborState, world, pos, neighborPos);
-@@ -173,14 +180,14 @@
+@@ -189,14 +210,14 @@
      @Nullable
      @Override
-     public <T extends BlockEntity> GameEventListener getListener(Level world, T blockEntity) {
+     public <T extends BlockEntity> GameEventListener getListener(ServerLevel world, T blockEntity) {
 -        return blockEntity instanceof SculkSensorBlockEntity ? ((SculkSensorBlockEntity)blockEntity).getListener() : null;
 +        return blockEntity instanceof SculkSensorBlockEntity ? ((SculkSensorBlockEntity) blockEntity).getListener() : null;
      }
@@ -208,7 +236,7 @@
          }) : null;
      }
  
-@@ -191,7 +198,7 @@
+@@ -207,7 +228,7 @@
  
      @Override
      public VoxelShape getShape(BlockState state, BlockGetter world, BlockPos pos, CollisionContext context) {
@@ -217,17 +245,8 @@
      }
  
      @Override
-@@ -199,56 +206,83 @@
-         return true;
-     }
+@@ -217,55 +238,75 @@
  
-+    // Paper start - optimize redstone (Alternate Current)
-+    @Override
-+    public boolean isSignalSourceTo(Level level, BlockPos pos, BlockState state, Direction dir) {
-+        return true;
-+    }
-+    // Paper end
-+
      @Override
      public int getSignal(BlockState state, BlockGetter world, BlockPos pos, Direction direction) {
 -        return state.getValue(POWER);
@@ -256,7 +275,7 @@
 +        }
 +        // CraftBukkit end
 +        world.setBlock(pos, (BlockState) ((BlockState) state.setValue(SculkSensorBlock.PHASE, SculkSensorPhase.COOLDOWN)).setValue(SculkSensorBlock.POWER, 0), 3);
-         world.scheduleTick(new BlockPos(pos), state.getBlock(), 1);
+         world.scheduleTick(pos, state.getBlock(), 1);
 -        if (!state.getValue(WATERLOGGED)) {
 -            world.playSound((Player)null, pos, SoundEvents.SCULK_CLICKING_STOP, SoundSource.BLOCKS, 1.0F, world.random.nextFloat() * 0.2F + 0.8F);
 +        if (!(Boolean) state.getValue(SculkSensorBlock.WATERLOGGED)) {
@@ -267,7 +286,7 @@
 +        SculkSensorBlock.updateNeighbours(world, pos);
      }
  
-     public static void activate(Level world, BlockPos pos, BlockState state, int power) {
+     public static void activate(@Nullable Entity entity, Level world, BlockPos pos, BlockState state, int power) {
 -        world.setBlock(pos, state.setValue(PHASE, SculkSensorPhase.ACTIVE).setValue(POWER, Integer.valueOf(power)), 3);
 +        // CraftBukkit start
 +        BlockRedstoneEvent eventRedstone = new BlockRedstoneEvent(CraftBlock.at(world, pos), state.getValue(SculkSensorBlock.POWER), power);
@@ -279,11 +298,12 @@
 +        power = eventRedstone.getNewCurrent();
 +        // CraftBukkit end
 +        world.setBlock(pos, (BlockState) ((BlockState) state.setValue(SculkSensorBlock.PHASE, SculkSensorPhase.ACTIVE)).setValue(SculkSensorBlock.POWER, power), 3);
-         world.scheduleTick(new BlockPos(pos), state.getBlock(), 40);
+         world.scheduleTick(pos, state.getBlock(), 40);
 -        updateNeighbours(world, pos);
++        SculkSensorBlock.updateNeighbours(world, pos);
+         world.gameEvent(entity, GameEvent.SCULK_SENSOR_TENDRILS_CLICKING, pos);
 -        if (!state.getValue(WATERLOGGED)) {
 -            world.playSound((Player)null, (double)pos.getX() + 0.5D, (double)pos.getY() + 0.5D, (double)pos.getZ() + 0.5D, SoundEvents.SCULK_CLICKING, SoundSource.BLOCKS, 1.0F, world.random.nextFloat() * 0.2F + 0.8F);
-+        SculkSensorBlock.updateNeighbours(world, pos);
 +        if (!(Boolean) state.getValue(SculkSensorBlock.WATERLOGGED)) {
 +            world.playSound((Player) null, (double) pos.getX() + 0.5D, (double) pos.getY() + 0.5D, (double) pos.getZ() + 0.5D, SoundEvents.SCULK_CLICKING, SoundSource.BLOCKS, 1.0F, world.random.nextFloat() * 0.2F + 0.8F);
          }
@@ -291,7 +311,7 @@
      }
  
      @Override
-     public void animateTick(BlockState state, Level world, BlockPos pos, Random random) {
+     public void animateTick(BlockState state, Level world, BlockPos pos, RandomSource random) {
 -        if (getPhase(state) == SculkSensorPhase.ACTIVE) {
 -            Direction direction = Direction.getRandom(random);
 -            if (direction != Direction.UP && direction != Direction.DOWN) {
@@ -321,7 +341,7 @@
      }
  
      @Override
-@@ -258,9 +292,12 @@
+@@ -275,9 +316,12 @@
  
      @Override
      public int getAnalogOutputSignal(BlockState state, Level world, BlockPos pos) {
@@ -337,3 +357,22 @@
          } else {
              return 0;
          }
+@@ -296,9 +340,16 @@
+     @Override
+     public void spawnAfterBreak(BlockState state, ServerLevel world, BlockPos pos, ItemStack stack, boolean dropExperience) {
+         super.spawnAfterBreak(state, world, pos, stack, dropExperience);
+-        if (dropExperience) {
+-            this.tryDropExperience(world, pos, stack, ConstantInt.of(5));
++        // CraftBukkit start - Delegate to getExpDrop
++    }
++
++    @Override
++    public int getExpDrop(BlockState iblockdata, ServerLevel worldserver, BlockPos blockposition, ItemStack itemstack, boolean flag) {
++        if (flag) {
++            return this.tryDropExperience(worldserver, blockposition, itemstack, ConstantInt.of(5));
+         }
+ 
++        return 0;
++        // CraftBukkit end
+     }
+ }

@@ -25,24 +25,24 @@
          } else {
              Holder<Biome> holder = world.getBiome(pos);
 -            boolean bl = world.getDifficulty() != Difficulty.PEACEFUL && isDarkEnoughToSpawn(world, pos, random) && (spawnReason == MobSpawnType.SPAWNER || world.getFluidState(pos).is(FluidTags.WATER));
--            if (!holder.is(Biomes.RIVER) && !holder.is(Biomes.FROZEN_RIVER)) {
--                return random.nextInt(40) == 0 && isDeepEnoughToSpawn(world, pos) && bl;
--            } else {
+-            if (holder.is(BiomeTags.MORE_FREQUENT_DROWNED_SPAWNS)) {
 -                return random.nextInt(15) == 0 && bl;
+-            } else {
+-                return random.nextInt(40) == 0 && isDeepEnoughToSpawn(world, pos) && bl;
 -            }
 +            boolean flag = world.getDifficulty() != Difficulty.PEACEFUL && isDarkEnoughToSpawn(world, pos, random) && (spawnReason == MobSpawnType.SPAWNER || world.getFluidState(pos).is(FluidTags.WATER));
 +
-+            return !holder.is(Biomes.RIVER) && !holder.is(Biomes.FROZEN_RIVER) ? random.nextInt(40) == 0 && Drowned.isDeepEnoughToSpawn(world, pos) && flag : random.nextInt(15) == 0 && flag;
++            return holder.is(BiomeTags.MORE_FREQUENT_DROWNED_SPAWNS) ? random.nextInt(15) == 0 && flag : random.nextInt(40) == 0 && Drowned.isDeepEnoughToSpawn(world, pos) && flag;
          }
      }
  
 @@ -149,8 +147,9 @@
  
      @Override
-     protected void populateDefaultEquipmentSlots(DifficultyInstance difficulty) {
--        if ((double)this.random.nextFloat() > 0.9D) {
-+        if ((double) this.random.nextFloat() > 0.9D) {
-             int i = this.random.nextInt(16);
+     protected void populateDefaultEquipmentSlots(RandomSource random, DifficultyInstance localDifficulty) {
+-        if ((double)random.nextFloat() > 0.9D) {
++        if ((double) random.nextFloat() > 0.9D) {
+             int i = random.nextInt(16);
 +
              if (i < 10) {
                  this.setItemSlot(EquipmentSlot.MAINHAND, new ItemStack(Items.TRIDENT));
@@ -253,19 +253,21 @@
                      return true;
                  }
              }
-@@ -367,12 +352,13 @@
+@@ -366,13 +351,14 @@
+ 
          @Nullable
          private Vec3 getWaterPos() {
-             Random random = this.mob.getRandom();
+-            RandomSource randomSource = this.mob.getRandom();
 -            BlockPos blockPos = this.mob.blockPosition();
++            RandomSource randomsource = this.mob.getRandom();
 +            BlockPos blockposition = this.mob.blockPosition();
  
 -            for(int i = 0; i < 10; ++i) {
--                BlockPos blockPos2 = blockPos.offset(random.nextInt(20) - 10, 2 - random.nextInt(8), random.nextInt(20) - 10);
+-                BlockPos blockPos2 = blockPos.offset(randomSource.nextInt(20) - 10, 2 - randomSource.nextInt(8), randomSource.nextInt(20) - 10);
 -                if (this.level.getBlockState(blockPos2).is(Blocks.WATER)) {
 -                    return Vec3.atBottomCenterOf(blockPos2);
 +            for (int i = 0; i < 10; ++i) {
-+                BlockPos blockposition1 = blockposition.offset(random.nextInt(20) - 10, 2 - random.nextInt(8), random.nextInt(20) - 10);
++                BlockPos blockposition1 = blockposition.offset(randomsource.nextInt(20) - 10, 2 - randomsource.nextInt(8), randomsource.nextInt(20) - 10);
 +
 +                if (this.level.getBlockState(blockposition1).is(Blocks.WATER)) {
 +                    return Vec3.atBottomCenterOf(blockposition1);

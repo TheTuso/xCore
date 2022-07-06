@@ -1,19 +1,19 @@
 --- a/net/minecraft/world/level/levelgen/structure/templatesystem/StructureTemplate.java
 +++ b/net/minecraft/world/level/levelgen/structure/templatesystem/StructureTemplate.java
-@@ -23,6 +23,7 @@
+@@ -22,6 +22,7 @@
  import net.minecraft.nbt.IntTag;
  import net.minecraft.nbt.ListTag;
  import net.minecraft.nbt.NbtUtils;
 +import net.minecraft.nbt.Tag;
+ import net.minecraft.util.RandomSource;
  import net.minecraft.world.Clearable;
  import net.minecraft.world.entity.Entity;
- import net.minecraft.world.entity.EntityType;
 @@ -49,8 +50,12 @@
  import net.minecraft.world.phys.Vec3;
  import net.minecraft.world.phys.shapes.BitSetDiscreteVoxelShape;
  import net.minecraft.world.phys.shapes.DiscreteVoxelShape;
-+import org.bukkit.craftbukkit.v1_18_R2.persistence.CraftPersistentDataContainer;
-+import org.bukkit.craftbukkit.v1_18_R2.persistence.CraftPersistentDataTypeRegistry;
++import org.bukkit.craftbukkit.v1_19_R1.persistence.CraftPersistentDataContainer;
++import org.bukkit.craftbukkit.v1_19_R1.persistence.CraftPersistentDataTypeRegistry;
 +// CraftBukkit end
  
  public class StructureTemplate {
@@ -171,20 +171,23 @@
          }
  
      }
-@@ -175,14 +202,19 @@
+@@ -174,30 +201,36 @@
+     }
  
-     public List<StructureTemplate.StructureBlockInfo> filterBlocks(BlockPos pos, StructurePlaceSettings placementData, Block block, boolean transformed) {
-         List<StructureTemplate.StructureBlockInfo> list = Lists.newArrayList();
+     public ObjectArrayList<StructureTemplate.StructureBlockInfo> filterBlocks(BlockPos pos, StructurePlaceSettings placementData, Block block, boolean transformed) {
+-        ObjectArrayList<StructureTemplate.StructureBlockInfo> objectArrayList = new ObjectArrayList<>();
 -        BoundingBox boundingBox = placementData.getBoundingBox();
++        ObjectArrayList<StructureTemplate.StructureBlockInfo> objectarraylist = new ObjectArrayList();
 +        BoundingBox structureboundingbox = placementData.getBoundingBox();
 +
          if (this.palettes.isEmpty()) {
-             return Collections.emptyList();
+-            return objectArrayList;
++            return objectarraylist;
          } else {
 -            for(StructureTemplate.StructureBlockInfo structureBlockInfo : placementData.getRandomPalette(this.palettes, pos).blocks(block)) {
 -                BlockPos blockPos = transformed ? calculateRelativePosition(placementData, structureBlockInfo.pos).offset(pos) : structureBlockInfo.pos;
 -                if (boundingBox == null || boundingBox.isInside(blockPos)) {
--                    list.add(new StructureTemplate.StructureBlockInfo(blockPos, structureBlockInfo.state.rotate(placementData.getRotation()), structureBlockInfo.nbt));
+-                    objectArrayList.add(new StructureTemplate.StructureBlockInfo(blockPos, structureBlockInfo.state.rotate(placementData.getRotation()), structureBlockInfo.nbt));
 +            Iterator iterator = placementData.getRandomPalette(this.palettes, pos).blocks(block).iterator();
 +
 +            while (iterator.hasNext()) {
@@ -192,11 +195,13 @@
 +                BlockPos blockposition1 = transformed ? StructureTemplate.calculateRelativePosition(placementData, definedstructure_blockinfo.pos).offset(pos) : definedstructure_blockinfo.pos;
 +
 +                if (structureboundingbox == null || structureboundingbox.isInside(blockposition1)) {
-+                    list.add(new StructureTemplate.StructureBlockInfo(blockposition1, definedstructure_blockinfo.state.rotate(placementData.getRotation()), definedstructure_blockinfo.nbt));
++                    objectarraylist.add(new StructureTemplate.StructureBlockInfo(blockposition1, definedstructure_blockinfo.state.rotate(placementData.getRotation()), definedstructure_blockinfo.nbt));
                  }
              }
  
-@@ -191,13 +223,14 @@
+-            return objectArrayList;
++            return objectarraylist;
+         }
      }
  
      public BlockPos calculateConnectedPosition(StructurePlaceSettings placementData1, BlockPos pos1, StructurePlaceSettings placementData2, BlockPos pos2) {
@@ -214,7 +219,7 @@
 +        return StructureTemplate.transform(pos, placementData.getMirror(), placementData.getRotation(), placementData.getRotationPivot());
      }
  
-     public boolean placeInWorld(ServerLevelAccessor world, BlockPos pos, BlockPos pivot, StructurePlaceSettings placementData, Random random, int flags) {
+     public boolean placeInWorld(ServerLevelAccessor world, BlockPos pos, BlockPos pivot, StructurePlaceSettings placementData, RandomSource random, int flags) {
 @@ -205,55 +238,69 @@
              return false;
          } else {
@@ -457,21 +462,19 @@
                  }
  
                  return true;
-@@ -339,62 +405,73 @@
-         }
+@@ -340,61 +406,72 @@
      }
  
--    public static void updateShapeAtEdge(LevelAccessor world, int flags, DiscreteVoxelShape discreteVoxelShape, int startX, int startY, int startZ) {
--        discreteVoxelShape.forAllFaces((direction, m, n, o) -> {
--            BlockPos blockPos = new BlockPos(startX + m, startY + n, startZ + o);
+     public static void updateShapeAtEdge(LevelAccessor world, int flags, DiscreteVoxelShape set, int startX, int startY, int startZ) {
+-        set.forAllFaces((direction, x, y, z) -> {
+-            BlockPos blockPos = new BlockPos(startX + x, startY + y, startZ + z);
 -            BlockPos blockPos2 = blockPos.relative(direction);
 -            BlockState blockState = world.getBlockState(blockPos);
 -            BlockState blockState2 = world.getBlockState(blockPos2);
 -            BlockState blockState3 = blockState.updateShape(direction, blockState2, world, blockPos, blockPos2);
 -            if (blockState != blockState3) {
 -                world.setBlock(blockPos, blockState3, flags & -2);
-+    public static void updateShapeAtEdge(LevelAccessor world, int flags, DiscreteVoxelShape voxelshapediscrete, int startX, int startY, int startZ) {
-+        voxelshapediscrete.forAllFaces((enumdirection, i1, j1, k1) -> {
++        set.forAllFaces((enumdirection, i1, j1, k1) -> {
 +            BlockPos blockposition = new BlockPos(startX + i1, startY + j1, startZ + k1);
 +            BlockPos blockposition1 = blockposition.relative(enumdirection);
 +            BlockState iblockdata = world.getBlockState(blockposition);
@@ -494,12 +497,12 @@
          });
      }
  
-     public static List<StructureTemplate.StructureBlockInfo> processBlockInfos(LevelAccessor world, BlockPos pos, BlockPos pivot, StructurePlaceSettings placementData, List<StructureTemplate.StructureBlockInfo> list) {
--        List<StructureTemplate.StructureBlockInfo> list2 = Lists.newArrayList();
+     public static List<StructureTemplate.StructureBlockInfo> processBlockInfos(LevelAccessor world, BlockPos pos, BlockPos pivot, StructurePlaceSettings placementData, List<StructureTemplate.StructureBlockInfo> infos) {
+-        List<StructureTemplate.StructureBlockInfo> list = Lists.newArrayList();
 +        List<StructureTemplate.StructureBlockInfo> list1 = Lists.newArrayList();
-+        Iterator iterator = list.iterator();
++        Iterator iterator = infos.iterator();
  
--        for(StructureTemplate.StructureBlockInfo structureBlockInfo : list) {
+-        for(StructureTemplate.StructureBlockInfo structureBlockInfo : infos) {
 -            BlockPos blockPos = calculateRelativePosition(placementData, structureBlockInfo.pos).offset(pos);
 -            StructureTemplate.StructureBlockInfo structureBlockInfo2 = new StructureTemplate.StructureBlockInfo(blockPos, structureBlockInfo.state, structureBlockInfo.nbt != null ? structureBlockInfo.nbt.copy() : null);
 +        while (iterator.hasNext()) {
@@ -513,17 +516,17 @@
              }
  
 -            if (structureBlockInfo2 != null) {
--                list2.add(structureBlockInfo2);
+-                list.add(structureBlockInfo2);
 +            if (definedstructure_blockinfo1 != null) {
 +                list1.add(definedstructure_blockinfo1);
              }
          }
  
--        return list2;
+-        return list;
 +        return list1;
      }
  
--    private void placeEntities(ServerLevelAccessor world, BlockPos pos, Mirror mirror, Rotation rotation, BlockPos pivot, @Nullable BoundingBox area, boolean initializeMobs) {
+     private void placeEntities(ServerLevelAccessor world, BlockPos pos, Mirror mirror, Rotation rotation, BlockPos pivot, @Nullable BoundingBox area, boolean initializeMobs) {
 -        for(StructureTemplate.StructureEntityInfo structureEntityInfo : this.entityInfoList) {
 -            BlockPos blockPos = transform(structureEntityInfo.blockPos, mirror, rotation, pivot).offset(pos);
 -            if (area == null || area.isInside(blockPos)) {
@@ -537,19 +540,15 @@
 -                compoundTag.put("Pos", listTag);
 -                compoundTag.remove("UUID");
 -                createEntityIgnoreException(world, compoundTag).ifPresent((entity) -> {
--                    float f = entity.rotate(rotation);
--                    f += entity.mirror(mirror) - entity.getYRot();
--                    entity.moveTo(vec32.x, vec32.y, vec32.z, f, entity.getXRot());
-+    private void placeEntities(ServerLevelAccessor world, BlockPos pos, Mirror enumblockmirror, Rotation enumblockrotation, BlockPos pivot, @Nullable BoundingBox area, boolean initializeMobs) {
 +        Iterator iterator = this.entityInfoList.iterator();
 +
 +        while (iterator.hasNext()) {
 +            StructureTemplate.StructureEntityInfo definedstructure_entityinfo = (StructureTemplate.StructureEntityInfo) iterator.next();
-+            BlockPos blockposition2 = StructureTemplate.transform(definedstructure_entityinfo.blockPos, enumblockmirror, enumblockrotation, pivot).offset(pos);
++            BlockPos blockposition2 = StructureTemplate.transform(definedstructure_entityinfo.blockPos, mirror, rotation, pivot).offset(pos);
 +
 +            if (area == null || area.isInside(blockposition2)) {
 +                CompoundTag nbttagcompound = definedstructure_entityinfo.nbt.copy();
-+                Vec3 vec3d = StructureTemplate.transform(definedstructure_entityinfo.pos, enumblockmirror, enumblockrotation, pivot);
++                Vec3 vec3d = StructureTemplate.transform(definedstructure_entityinfo.pos, mirror, rotation, pivot);
 +                Vec3 vec3d1 = vec3d.add((double) pos.getX(), (double) pos.getY(), (double) pos.getZ());
 +                ListTag nbttaglist = new ListTag();
 +
@@ -559,9 +558,10 @@
 +                nbttagcompound.put("Pos", nbttaglist);
 +                nbttagcompound.remove("UUID");
 +                StructureTemplate.createEntityIgnoreException(world, nbttagcompound).ifPresent((entity) -> {
-+                    float f = entity.rotate(enumblockrotation);
+                     float f = entity.rotate(rotation);
 +
-+                    f += entity.mirror(enumblockmirror) - entity.getYRot();
+                     f += entity.mirror(mirror) - entity.getYRot();
+-                    entity.moveTo(vec32.x, vec32.y, vec32.z, f, entity.getXRot());
 +                    entity.moveTo(vec3d1.x, vec3d1.y, vec3d1.z, f, entity.getXRot());
                      if (initializeMobs && entity instanceof Mob) {
 -                        ((Mob)entity).finalizeSpawn(world, world.getCurrentDifficultyAt(new BlockPos(vec32)), MobSpawnType.STRUCTURE, (SpawnGroupData)null, compoundTag);
@@ -574,13 +574,12 @@
  
      private static Optional<Entity> createEntityIgnoreException(ServerLevelAccessor world, CompoundTag nbt) {
 -        try {
--            return EntityType.create(nbt, world.getLevel());
++        // CraftBukkit start
++        // try {
+             return EntityType.create(nbt, world.getLevel());
 -        } catch (Exception var3) {
 -            return Optional.empty();
 -        }
-+        // CraftBukkit start
-+        // try {
-+            return EntityType.create(nbt, (Level) world.getLevel());
 +        // } catch (Exception exception) {
 +            // return Optional.empty();
 +        // }
@@ -1046,9 +1045,9 @@
          }
  
          public List<StructureTemplate.StructureBlockInfo> blocks(Block block) {
--            return this.cache.computeIfAbsent(block, (blockx) -> {
--                return this.blocks.stream().filter((structureBlockInfo) -> {
--                    return structureBlockInfo.state.is(blockx);
+-            return this.cache.computeIfAbsent(block, (block2) -> {
+-                return this.blocks.stream().filter((info) -> {
+-                    return info.state.is(block2);
 +            return (List) this.cache.computeIfAbsent(block, (block1) -> {
 +                return (List) this.blocks.stream().filter((definedstructure_blockinfo) -> {
 +                    return definedstructure_blockinfo.state.is(block1);

@@ -6,7 +6,7 @@ plugins {
 }
 
 group = "pl.tuso.core"
-version = "1.2"
+version = "1.6"
 
 java {
     toolchain.languageVersion.set(JavaLanguageVersion.of(17))
@@ -17,7 +17,7 @@ repositories {
 }
 
 dependencies {
-    paperDevBundle("1.18.2-R0.1-SNAPSHOT")
+    paperDevBundle("1.19-R0.1-SNAPSHOT")
     implementation("io.lettuce:lettuce-core:6.1.8.RELEASE")
     implementation("com.github.ben-manes.caffeine:caffeine:3.1.0")
     implementation("org.mongodb:mongodb-driver-sync:4.6.1")
@@ -63,7 +63,7 @@ publishing {
         register<MavenPublication>("gpr") {
             groupId = "pl.tuso.core"
             artifactId = "xcore"
-            version = "1.2"
+            version = "1.6"
             from(components["java"])
         }
     }

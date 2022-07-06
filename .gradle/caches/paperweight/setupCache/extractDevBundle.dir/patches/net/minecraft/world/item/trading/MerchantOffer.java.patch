@@ -4,7 +4,7 @@
  import net.minecraft.util.Mth;
  import net.minecraft.world.item.ItemStack;
  
-+import org.bukkit.craftbukkit.v1_18_R2.inventory.CraftMerchantRecipe; // CraftBukkit
++import org.bukkit.craftbukkit.v1_19_R1.inventory.CraftMerchantRecipe; // CraftBukkit
 +
  public class MerchantOffer {
 +
@@ -14,11 +14,9 @@
      public int uses;
      public int maxUses;
 -    public boolean rewardExp = true;
--    private int specialPriceDiff;
--    private int demand;
 +    public boolean rewardExp;
-+    public int specialPriceDiff; // PAIL private -> public
-+    public int demand; // PAIL private -> public
+     public int specialPriceDiff;
+     public int demand;
      public float priceMultiplier;
 -    public int xp = 1;
 +    public int xp;

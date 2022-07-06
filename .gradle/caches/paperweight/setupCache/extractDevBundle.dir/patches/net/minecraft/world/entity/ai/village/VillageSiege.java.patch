@@ -44,7 +44,7 @@
 -        for(Player player : world.players()) {
 -            if (!player.isSpectator()) {
 -                BlockPos blockPos = player.blockPosition();
--                if (world.isVillage(blockPos) && Biome.getBiomeCategory(world.getBiome(blockPos)) != Biome.BiomeCategory.MUSHROOM) {
+-                if (world.isVillage(blockPos) && !world.getBiome(blockPos).is(BiomeTags.WITHOUT_ZOMBIE_SIEGES)) {
 -                    for(int i = 0; i < 10; ++i) {
 -                        float f = world.random.nextFloat() * ((float)Math.PI * 2F);
 -                        this.spawnX = blockPos.getX() + Mth.floor(Mth.cos(f) * 32.0F);
@@ -58,7 +58,7 @@
 +            if (!entityhuman.isSpectator()) {
 +                BlockPos blockposition = entityhuman.blockPosition();
 +
-+                if (world.isVillage(blockposition) && Biome.getBiomeCategory(world.getBiome(blockposition)) != Biome.BiomeCategory.MUSHROOM) {
++                if (world.isVillage(blockposition) && !world.getBiome(blockposition).is(BiomeTags.WITHOUT_ZOMBIE_SIEGES)) {
 +                    for (int i = 0; i < 10; ++i) {
 +                        float f = world.random.nextFloat() * 6.2831855F;
 +

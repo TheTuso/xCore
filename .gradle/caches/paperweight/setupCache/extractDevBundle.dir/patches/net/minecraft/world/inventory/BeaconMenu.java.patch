@@ -1,6 +1,6 @@
 --- a/net/minecraft/world/inventory/BeaconMenu.java
 +++ b/net/minecraft/world/inventory/BeaconMenu.java
-@@ -5,12 +5,16 @@
+@@ -6,12 +6,16 @@
  import net.minecraft.world.Container;
  import net.minecraft.world.SimpleContainer;
  import net.minecraft.world.effect.MobEffect;
@@ -9,7 +9,7 @@
  import net.minecraft.world.item.ItemStack;
  import net.minecraft.world.level.Level;
  import net.minecraft.world.level.block.Blocks;
-+import org.bukkit.craftbukkit.v1_18_R2.inventory.CraftInventoryView;
++import org.bukkit.craftbukkit.v1_19_R1.inventory.CraftInventoryView;
 +// CraftBukkit end
  
  public class BeaconMenu extends AbstractContainerMenu {
@@ -17,7 +17,7 @@
      private static final int PAYMENT_SLOT = 0;
      private static final int SLOT_COUNT = 1;
      private static final int DATA_COUNT = 3;
-@@ -18,20 +22,14 @@
+@@ -19,20 +23,14 @@
      private static final int INV_SLOT_END = 28;
      private static final int USE_ROW_SLOT_START = 28;
      private static final int USE_ROW_SLOT_END = 37;
@@ -43,7 +43,7 @@
  
      public BeaconMenu(int syncId, Container inventory) {
          this(syncId, inventory, new SimpleContainerData(3), ContainerLevelAccess.NULL);
-@@ -39,23 +37,37 @@
+@@ -40,23 +38,37 @@
  
      public BeaconMenu(int syncId, Container inventory, ContainerData propertyDelegate, ContainerLevelAccess context) {
          super(MenuType.BEACON, syncId);
@@ -88,7 +88,7 @@
          }
  
      }
-@@ -64,9 +76,10 @@
+@@ -65,9 +77,10 @@
      public void removed(Player player) {
          super.removed(player);
          if (!player.level.isClientSide) {
@@ -102,7 +102,7 @@
              }
  
          }
-@@ -74,6 +87,7 @@
+@@ -75,6 +88,7 @@
  
      @Override
      public boolean stillValid(Player player) {
@@ -110,7 +110,7 @@
          return stillValid(this.access, player, Blocks.BEACON);
      }
  
-@@ -85,47 +99,49 @@
+@@ -86,47 +100,49 @@
  
      @Override
      public ItemStack quickMoveStack(Player player, int index) {
@@ -175,26 +175,37 @@
      }
  
      public int getLevels() {
-@@ -144,10 +160,16 @@
+@@ -142,13 +158,27 @@
+     public MobEffect getSecondaryEffect() {
+         return MobEffect.byId(this.beaconData.get(2));
+     }
++    // Paper start
++    private static @Nullable org.bukkit.potion.PotionEffectType convert(Optional<MobEffect> effect) {
++        return effect.flatMap(net.minecraft.core.Registry.MOB_EFFECT::getResourceKey).map(key -> {
++            return org.bukkit.potion.PotionEffectType.getByKey(org.bukkit.craftbukkit.v1_19_R1.util.CraftNamespacedKey.fromMinecraft(key.location()));
++        }).orElse(null);
++    }
++    // Paper end
  
-     public void updateEffects(int primaryEffectId, int secondaryEffectId) {
+     public void updateEffects(Optional<MobEffect> primary, Optional<MobEffect> secondary) {
          if (this.paymentSlot.hasItem()) {
--            this.beaconData.set(1, primaryEffectId);
--            this.beaconData.set(2, secondaryEffectId);
+-            this.beaconData.set(1, primary.map(MobEffect::getId).orElse(-1));
+-            this.beaconData.set(2, secondary.map(MobEffect::getId).orElse(-1));
 +            // Paper start
-+            io.papermc.paper.event.player.PlayerChangeBeaconEffectEvent event = new io.papermc.paper.event.player.PlayerChangeBeaconEffectEvent((org.bukkit.entity.Player) this.player.player.getBukkitEntity(), org.bukkit.potion.PotionEffectType.getById(primaryEffectId), org.bukkit.potion.PotionEffectType.getById(secondaryEffectId), this.access.getLocation().getBlock());
++            io.papermc.paper.event.player.PlayerChangeBeaconEffectEvent event = new io.papermc.paper.event.player.PlayerChangeBeaconEffectEvent((org.bukkit.entity.Player) this.player.player.getBukkitEntity(), convert(primary), convert(secondary), this.access.getLocation().getBlock());
 +            if (event.callEvent()) {
-+                this.beaconData.set(1, event.getPrimary() == null ? 0 : event.getPrimary().getId());
-+                this.beaconData.set(2, event.getSecondary() == null ? 0 : event.getSecondary().getId());
-+                if (!event.willConsumeItem()) return;
-             this.paymentSlot.remove(1);
-             this.access.execute(Level::blockEntityChanged);
-+            }
++            this.beaconData.set(1, event.getPrimary() == null ? -1 : event.getPrimary().getId());
++            this.beaconData.set(2, event.getSecondary() == null ? -1 : event.getSecondary().getId());
++            if (event.willConsumeItem()) {
 +            // Paper end
+             this.paymentSlot.remove(1);
++            }
+             this.access.execute(Level::blockEntityChanged);
++            } // Paper end
          }
  
      }
-@@ -156,7 +178,8 @@
+@@ -157,7 +187,8 @@
          return !this.beacon.getItem(0).isEmpty();
      }
  
@@ -204,7 +215,7 @@
          public PaymentSlot(Container inventory, int index, int x, int y) {
              super(inventory, index, x, y);
          }
-@@ -171,4 +194,17 @@
+@@ -172,4 +203,17 @@
              return 1;
          }
      }
@@ -216,7 +227,7 @@
 +            return this.bukkitEntity;
 +        }
 +
-+        org.bukkit.craftbukkit.v1_18_R2.inventory.CraftInventory inventory = new org.bukkit.craftbukkit.v1_18_R2.inventory.CraftInventoryBeacon(this.beacon);
++        org.bukkit.craftbukkit.v1_19_R1.inventory.CraftInventory inventory = new org.bukkit.craftbukkit.v1_19_R1.inventory.CraftInventoryBeacon(this.beacon);
 +        this.bukkitEntity = new CraftInventoryView(this.player.player.getBukkitEntity(), inventory, this);
 +        return this.bukkitEntity;
 +    }

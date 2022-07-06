@@ -1,6 +1,6 @@
 --- a/net/minecraft/server/commands/TimeCommand.java
 +++ b/net/minecraft/server/commands/TimeCommand.java
-@@ -2,62 +2,91 @@
+@@ -2,39 +2,47 @@
  
  import com.mojang.brigadier.CommandDispatcher;
  import com.mojang.brigadier.arguments.IntegerArgumentType;
@@ -9,7 +9,7 @@
  import net.minecraft.commands.CommandSourceStack;
 -import net.minecraft.commands.Commands;
  import net.minecraft.commands.arguments.TimeArgument;
- import net.minecraft.network.chat.TranslatableComponent;
+ import net.minecraft.network.chat.Component;
  import net.minecraft.server.level.ServerLevel;
 +// CraftBukkit start
 +import org.bukkit.Bukkit;
@@ -70,15 +70,13 @@
      }
  
      private static int queryTime(CommandSourceStack source, int time) {
--        source.sendSuccess(new TranslatableComponent("commands.time.query", time), false);
-+        source.sendSuccess(new TranslatableComponent("commands.time.query", new Object[]{time}), false);
-         return time;
+@@ -43,21 +51,42 @@
      }
  
      public static int setTime(CommandSourceStack source, int time) {
 -        for(ServerLevel serverLevel : source.getServer().getAllLevels()) {
 -            serverLevel.setDayTime((long)time);
-+        Iterator iterator = com.destroystokyo.paper.PaperConfig.timeCommandAffectsAllWorlds ? source.getServer().getAllLevels().iterator() : com.google.common.collect.Iterators.singletonIterator(source.getLevel()); // CraftBukkit - SPIGOT-6496: Only set the time for the world the command originates in // Paper - add config option for spigot's change
++        Iterator iterator = io.papermc.paper.configuration.GlobalConfiguration.get().commands.timeCommandAffectsAllWorlds ? source.getServer().getAllLevels().iterator() : com.google.common.collect.Iterators.singletonIterator(source.getLevel()); // CraftBukkit - SPIGOT-6496: Only set the time for the world the command originates in // Paper - add config option for spigot's change
 +
 +        while (iterator.hasNext()) {
 +            ServerLevel worldserver = (ServerLevel) iterator.next();
@@ -92,16 +90,15 @@
 +            // CraftBukkit end
          }
  
--        source.sendSuccess(new TranslatableComponent("commands.time.set", time), true);
+         source.sendSuccess(Component.translatable("commands.time.set", time), true);
 -        return getDayTime(source.getLevel());
-+        source.sendSuccess(new TranslatableComponent("commands.time.set", new Object[]{time}), true);
 +        return TimeCommand.getDayTime(source.getLevel());
      }
  
      public static int addTime(CommandSourceStack source, int time) {
 -        for(ServerLevel serverLevel : source.getServer().getAllLevels()) {
 -            serverLevel.setDayTime(serverLevel.getDayTime() + (long)time);
-+        Iterator iterator = com.destroystokyo.paper.PaperConfig.timeCommandAffectsAllWorlds ? source.getServer().getAllLevels().iterator() : com.google.common.collect.Iterators.singletonIterator(source.getLevel()); // CraftBukkit - SPIGOT-6496: Only set the time for the world the command originates in // Paper - add config option for spigot's change
++        Iterator iterator = io.papermc.paper.configuration.GlobalConfiguration.get().commands.timeCommandAffectsAllWorlds ? source.getServer().getAllLevels().iterator() : com.google.common.collect.Iterators.singletonIterator(source.getLevel()); // CraftBukkit - SPIGOT-6496: Only set the time for the world the command originates in // Paper - add config option for spigot's change
 +
 +        while (iterator.hasNext()) {
 +            ServerLevel worldserver = (ServerLevel) iterator.next();
@@ -116,11 +113,11 @@
          }
  
 -        int i = getDayTime(source.getLevel());
--        source.sendSuccess(new TranslatableComponent("commands.time.set", i), true);
+-        source.sendSuccess(Component.translatable("commands.time.set", i), true);
 -        return i;
 +        int j = TimeCommand.getDayTime(source.getLevel());
 +
-+        source.sendSuccess(new TranslatableComponent("commands.time.set", new Object[]{j}), true);
++        source.sendSuccess(Component.translatable("commands.time.set", j), true);
 +        return j;
      }
  }

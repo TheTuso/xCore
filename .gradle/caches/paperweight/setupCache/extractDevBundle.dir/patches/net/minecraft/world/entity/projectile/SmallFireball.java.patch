@@ -22,39 +22,34 @@
      }
  
      public SmallFireball(Level world, double x, double y, double z, double velocityX, double velocityY, double velocityZ) {
-@@ -31,15 +38,25 @@
+@@ -31,13 +38,21 @@
          super.onHitEntity(entityHitResult);
          if (!this.level.isClientSide) {
              Entity entity = entityHitResult.getEntity();
+-            Entity entity2 = this.getOwner();
++            Entity entity1 = this.getOwner();
+             int i = entity.getRemainingFireTicks();
+-            entity.setSecondsOnFire(5);
+-            if (!entity.hurt(DamageSource.fireball(this, entity2), 5.0F)) {
 +
-             if (!entity.fireImmune()) {
--                Entity entity2 = this.getOwner();
-+                Entity entity1 = this.getOwner();
-                 int i = entity.getRemainingFireTicks();
--                entity.setSecondsOnFire(5);
--                boolean bl = entity.hurt(DamageSource.fireball(this, entity2), 5.0F);
--                if (!bl) {
++            // CraftBukkit start - Entity damage by entity event + combust event
++            EntityCombustByEntityEvent event = new EntityCombustByEntityEvent((org.bukkit.entity.Projectile) this.getBukkitEntity(), entity.getBukkitEntity(), 5);
++            entity.level.getCraftServer().getPluginManager().callEvent(event);
 +
-+                // CraftBukkit start - Entity damage by entity event + combust event
-+                EntityCombustByEntityEvent event = new EntityCombustByEntityEvent((org.bukkit.entity.Projectile) this.getBukkitEntity(), entity.getBukkitEntity(), 5);
-+                entity.level.getCraftServer().getPluginManager().callEvent(event);
-+
-+                if (!event.isCancelled()) {
-+                    entity.setSecondsOnFire(event.getDuration(), false);
-+                }
-+                // CraftBukkit end
-+                boolean flag = entity.hurt(DamageSource.fireball(this, entity1), 5.0F);
-+
-+                if (!flag) {
-                     entity.setRemainingFireTicks(i);
--                } else if (entity2 instanceof LivingEntity) {
--                    this.doEnchantDamageEffects((LivingEntity)entity2, entity);
-+                } else if (entity1 instanceof LivingEntity) {
-+                    this.doEnchantDamageEffects((LivingEntity) entity1, entity);
-                 }
++            if (!event.isCancelled()) {
++                entity.setSecondsOnFire(event.getDuration(), false);
++            }
++            // CraftBukkit end
++            if (!entity.hurt(DamageSource.fireball(this, entity1), 5.0F)) {
+                 entity.setRemainingFireTicks(i);
+-            } else if (entity2 instanceof LivingEntity) {
+-                this.doEnchantDamageEffects((LivingEntity)entity2, entity);
++            } else if (entity1 instanceof LivingEntity) {
++                this.doEnchantDamageEffects((LivingEntity) entity1, entity);
              }
  
-@@ -51,10 +68,12 @@
+         }
+@@ -48,10 +63,12 @@
          super.onHitBlock(blockHitResult);
          if (!this.level.isClientSide) {
              Entity entity = this.getOwner();
@@ -66,7 +61,7 @@
 +            if (isIncendiary) { // CraftBukkit
 +                BlockPos blockposition = blockHitResult.getBlockPos().relative(blockHitResult.getDirection());
 +
-+                if (this.level.isEmptyBlock(blockposition) && !org.bukkit.craftbukkit.v1_18_R2.event.CraftEventFactory.callBlockIgniteEvent(level, blockposition, this).isCancelled()) { // CraftBukkit
++                if (this.level.isEmptyBlock(blockposition) && !org.bukkit.craftbukkit.v1_19_R1.event.CraftEventFactory.callBlockIgniteEvent(level, blockposition, this).isCancelled()) { // CraftBukkit
 +                    this.level.setBlockAndUpdate(blockposition, BaseFireBlock.getState(this.level, blockposition));
                  }
              }

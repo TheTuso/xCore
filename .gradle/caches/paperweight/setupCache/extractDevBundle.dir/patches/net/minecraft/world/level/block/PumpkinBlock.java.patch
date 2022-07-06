@@ -5,8 +5,8 @@
          if (itemStack.is(Items.SHEARS)) {
              if (!world.isClientSide) {
 +                // Paper start - Add PlayerShearBlockEvent
-+                io.papermc.paper.event.block.PlayerShearBlockEvent event = new io.papermc.paper.event.block.PlayerShearBlockEvent((org.bukkit.entity.Player) player.getBukkitEntity(), net.minecraft.server.MCUtil.toBukkitBlock(world, pos), org.bukkit.craftbukkit.v1_18_R2.inventory.CraftItemStack.asCraftMirror(itemStack), (hand == InteractionHand.OFF_HAND ? org.bukkit.inventory.EquipmentSlot.OFF_HAND : org.bukkit.inventory.EquipmentSlot.HAND), new java.util.ArrayList<>());
-+                event.getDrops().add(org.bukkit.craftbukkit.v1_18_R2.inventory.CraftItemStack.asCraftMirror(new ItemStack(Items.PUMPKIN_SEEDS, 4)));
++                io.papermc.paper.event.block.PlayerShearBlockEvent event = new io.papermc.paper.event.block.PlayerShearBlockEvent((org.bukkit.entity.Player) player.getBukkitEntity(), net.minecraft.server.MCUtil.toBukkitBlock(world, pos), org.bukkit.craftbukkit.v1_19_R1.inventory.CraftItemStack.asCraftMirror(itemStack), (hand == InteractionHand.OFF_HAND ? org.bukkit.inventory.EquipmentSlot.OFF_HAND : org.bukkit.inventory.EquipmentSlot.HAND), new java.util.ArrayList<>());
++                event.getDrops().add(org.bukkit.craftbukkit.v1_19_R1.inventory.CraftItemStack.asCraftMirror(new ItemStack(Items.PUMPKIN_SEEDS, 4)));
 +                if (!event.callEvent()) {
 +                    return InteractionResult.PASS;
 +                }
@@ -18,7 +18,7 @@
 -                ItemEntity itemEntity = new ItemEntity(world, (double)pos.getX() + 0.5D + (double)direction2.getStepX() * 0.65D, (double)pos.getY() + 0.1D, (double)pos.getZ() + 0.5D + (double)direction2.getStepZ() * 0.65D, new ItemStack(Items.PUMPKIN_SEEDS, 4));
 +                // Paper start - Add PlayerShearBlockEvent
 +                for (org.bukkit.inventory.ItemStack item : event.getDrops()) {
-+                ItemEntity itemEntity = new ItemEntity(world, (double) pos.getX() + 0.5D + (double) direction2.getStepX() * 0.65D, (double) pos.getY() + 0.1D, (double) pos.getZ() + 0.5D + (double) direction2.getStepZ() * 0.65D, org.bukkit.craftbukkit.v1_18_R2.inventory.CraftItemStack.asNMSCopy(item));
++                ItemEntity itemEntity = new ItemEntity(world, (double) pos.getX() + 0.5D + (double) direction2.getStepX() * 0.65D, (double) pos.getY() + 0.1D, (double) pos.getZ() + 0.5D + (double) direction2.getStepZ() * 0.65D, org.bukkit.craftbukkit.v1_19_R1.inventory.CraftItemStack.asNMSCopy(item));
 +                // Paper end
                  itemEntity.setDeltaMovement(0.05D * (double)direction2.getStepX() + world.random.nextDouble() * 0.02D, 0.05D, 0.05D * (double)direction2.getStepZ() + world.random.nextDouble() * 0.02D);
                  world.addFreshEntity(itemEntity);

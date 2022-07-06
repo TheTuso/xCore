@@ -18,7 +18,7 @@
 +        int j = (int) Math.min((long) this.getValue(stat) + (long) value, 2147483647L);
 +
 +        // CraftBukkit start - fire Statistic events
-+        org.bukkit.event.Cancellable cancellable = org.bukkit.craftbukkit.v1_18_R2.event.CraftEventFactory.handleStatisticsIncrease(player, stat, this.getValue(stat), j);
++        org.bukkit.event.Cancellable cancellable = org.bukkit.craftbukkit.v1_19_R1.event.CraftEventFactory.handleStatisticsIncrease(player, stat, this.getValue(stat), j);
 +        if (cancellable != null && cancellable.isCancelled()) {
 +            return;
 +        }

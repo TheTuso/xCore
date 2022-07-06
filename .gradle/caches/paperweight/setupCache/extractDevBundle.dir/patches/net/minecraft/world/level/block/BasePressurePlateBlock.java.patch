@@ -32,7 +32,7 @@
      }
  
      @Override
-     public void tick(BlockState state, ServerLevel world, BlockPos pos, Random random) {
+     public void tick(BlockState state, ServerLevel world, BlockPos pos, RandomSource random) {
          int i = this.getSignalForState(state);
 +
          if (i > 0) {
@@ -44,7 +44,7 @@
  
      @Override
      public void entityInside(BlockState state, Level world, BlockPos pos, Entity entity) {
-+        if (!new io.papermc.paper.event.entity.EntityInsideBlockEvent(entity.getBukkitEntity(), org.bukkit.craftbukkit.v1_18_R2.block.CraftBlock.at(world, pos)).callEvent()) { return; } // Paper
++        if (!new io.papermc.paper.event.entity.EntityInsideBlockEvent(entity.getBukkitEntity(), org.bukkit.craftbukkit.v1_19_R1.block.CraftBlock.at(world, pos)).callEvent()) { return; } // Paper
          if (!world.isClientSide) {
              int i = this.getSignalForState(state);
 +
@@ -90,11 +90,11 @@
 -        if (!bl2 && bl) {
 +        if (!flag1 && flag) {
              this.playOffSound(world, pos);
-             world.gameEvent(entity, GameEvent.BLOCK_UNPRESS, pos);
+             world.gameEvent(entity, GameEvent.BLOCK_DEACTIVATE, pos);
 -        } else if (bl2 && !bl) {
 +        } else if (flag1 && !flag) {
              this.playOnSound(world, pos);
-             world.gameEvent(entity, GameEvent.BLOCK_PRESS, pos);
+             world.gameEvent(entity, GameEvent.BLOCK_ACTIVATE, pos);
          }
  
 -        if (bl2) {
@@ -104,22 +104,3 @@
          }
  
      }
-@@ -132,6 +153,18 @@
-         return true;
-     }
- 
-+    // Paper start - optimize redstone (Alternate Current)
-+    @Override
-+    public boolean isSignalSourceTo(Level level, BlockPos pos, BlockState state, Direction dir) {
-+        return true;
-+    }
-+
-+    @Override
-+    public boolean isDirectSignalSourceTo(Level level, BlockPos pos, BlockState state, Direction dir) {
-+        return dir == Direction.UP;
-+    }
-+    // Paper end
-+
-     @Override
-     public PushReaction getPistonPushReaction(BlockState state) {
-         return PushReaction.DESTROY;

@@ -9,13 +9,12 @@ import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 import net.minecraft.commands.CommandSource;
 import net.minecraft.commands.CommandSourceStack;
-import net.minecraft.network.chat.TextComponent;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.phys.Vec2;
 import net.minecraft.world.phys.Vec3;
 import org.bukkit.command.CommandSender;
-import org.bukkit.craftbukkit.v1_18_R2.CraftServer;
-import org.bukkit.craftbukkit.v1_18_R2.command.ServerCommandSender;
+import org.bukkit.craftbukkit.v1_19_R1.CraftServer;
+import org.bukkit.craftbukkit.v1_19_R1.command.ServerCommandSender;
 import org.checkerframework.checker.nullness.qual.NonNull;
 import org.checkerframework.checker.nullness.qual.Nullable;
 import org.checkerframework.framework.qual.DefaultQualifier;
@@ -77,7 +76,7 @@ public final class FeedbackForwardingSender extends ServerCommandSender {
             overworld,
             4,
             this.getName(),
-            new TextComponent(this.getName()),
+            net.minecraft.network.chat.Component.literal(this.getName()),
             this.server.getServer(),
             null
         );
@@ -85,8 +84,8 @@ public final class FeedbackForwardingSender extends ServerCommandSender {
 
     private record Source(FeedbackForwardingSender sender) implements CommandSource {
         @Override
-        public void sendMessage(final net.minecraft.network.chat.Component message, final UUID sender) {
-            this.sender.sendMessage(Identity.identity(sender), PaperAdventure.asAdventure(message));
+        public void sendSystemMessage(final net.minecraft.network.chat.Component message) {
+            this.sender.sendMessage(Identity.nil(), PaperAdventure.asAdventure(message));
         }
 
         @Override

@@ -4,8 +4,8 @@ import net.minecraft.core.Registry;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.tags.TagKey;
 import org.bukkit.GameEvent;
-import org.bukkit.craftbukkit.v1_18_R2.tag.CraftTag;
-import org.bukkit.craftbukkit.v1_18_R2.util.CraftNamespacedKey;
+import org.bukkit.craftbukkit.v1_19_R1.tag.CraftTag;
+import org.bukkit.craftbukkit.v1_19_R1.util.CraftNamespacedKey;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Collections;

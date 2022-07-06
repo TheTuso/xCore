@@ -256,7 +256,7 @@
                  this.setHurtTime(10);
                  this.markHurt();
                  this.setDamage(this.getDamage() + amount * 10.0F);
-                 this.gameEvent(GameEvent.ENTITY_DAMAGED, source.getEntity());
+                 this.gameEvent(GameEvent.ENTITY_DAMAGE, source.getEntity());
 -                boolean bl = source.getEntity() instanceof Player && ((Player)source.getEntity()).getAbilities().instabuild;
 -                if (bl || this.getDamage() > 40.0F) {
 +                boolean flag = source.getEntity() instanceof Player && ((Player) source.getEntity()).getAbilities().instabuild;
@@ -289,10 +289,10 @@
      }
  
      public void destroy(DamageSource damageSource) {
-         this.remove(Entity.RemovalReason.KILLED);
+         this.kill();
          if (this.level.getGameRules().getBoolean(GameRules.RULE_DOENTITYDROPS)) {
--            ItemStack itemStack = new ItemStack(Items.MINECART);
-+            ItemStack itemstack = new ItemStack(Items.MINECART);
+-            ItemStack itemStack = new ItemStack(this.getDropItem());
++            ItemStack itemstack = new ItemStack(this.getDropItem());
 +
              if (this.hasCustomName()) {
 -                itemStack.setHoverName(this.getCustomName());
@@ -304,7 +304,7 @@
          }
  
      }
-@@ -262,7 +314,7 @@
+@@ -264,7 +316,7 @@
      }
  
      private static Pair<Vec3i, Vec3i> exits(RailShape shape) {
@@ -313,7 +313,7 @@
      }
  
      @Override
-@@ -272,6 +324,14 @@
+@@ -274,6 +326,14 @@
  
      @Override
      public void tick() {
@@ -328,7 +328,7 @@
          if (this.getHurtTime() > 0) {
              this.setHurtTime(this.getHurtTime() - 1);
          }
-@@ -281,17 +341,20 @@
+@@ -283,17 +343,20 @@
          }
  
          this.checkOutOfWorld();
@@ -357,7 +357,7 @@
                  this.setRot(this.getYRot(), this.getXRot());
              } else {
                  this.reapplyPosition();
-@@ -300,23 +363,25 @@
+@@ -302,23 +365,25 @@
  
          } else {
              if (!this.isNoGravity()) {
@@ -391,7 +391,7 @@
                  }
              } else {
                  this.comeOffTrack();
-@@ -324,38 +389,84 @@
+@@ -326,38 +391,84 @@
  
              this.checkInsideBlocks();
              this.setXRot(0.0F);
@@ -488,7 +488,7 @@
                      }
                  }
              }
-@@ -371,182 +482,207 @@
+@@ -373,182 +484,207 @@
      }
  
      protected double getMaxSpeed() {
@@ -804,7 +804,7 @@
              }
          }
  
-@@ -557,14 +693,15 @@
+@@ -559,14 +695,15 @@
      }
  
      protected void applyNaturalSlowdown() {
@@ -825,7 +825,7 @@
      }
  
      @Nullable
-@@ -572,32 +709,36 @@
+@@ -574,32 +711,36 @@
          int i = Mth.floor(x);
          int j = Mth.floor(y);
          int k = Mth.floor(z);
@@ -882,7 +882,7 @@
              }
  
              return this.getPos(x, y, z);
-@@ -611,42 +752,46 @@
+@@ -613,42 +754,46 @@
          int i = Mth.floor(x);
          int j = Mth.floor(y);
          int k = Mth.floor(z);
@@ -957,7 +957,7 @@
                  y += 0.5D;
              }
  
-@@ -658,8 +803,9 @@
+@@ -660,8 +805,9 @@
  
      @Override
      public AABB getBoundingBoxForCulling() {
@@ -969,11 +969,11 @@
      }
  
      @Override
-@@ -685,56 +831,70 @@
+@@ -687,56 +833,70 @@
      public void push(Entity entity) {
          if (!this.level.isClientSide) {
              if (!entity.noPhysics && !this.noPhysics) {
-+                if (!this.level.paperConfig.allowVehicleCollisions && this.level.paperConfig.onlyPlayersCollide && !(entity instanceof Player)) return; // Paper
++                if (!this.level.paperConfig().collisions.allowVehicleCollisions && this.level.paperConfig().collisions.onlyPlayersCollide && !(entity instanceof Player)) return; // Paper
                  if (!this.hasPassenger(entity)) {
 -                    double d = entity.getX() - this.getX();
 -                    double e = entity.getZ() - this.getZ();
@@ -1080,7 +1080,7 @@
                          }
                      }
  
-@@ -748,8 +908,8 @@
+@@ -750,8 +910,8 @@
          this.lx = x;
          this.ly = y;
          this.lz = z;
@@ -1091,7 +1091,7 @@
          this.lSteps = interpolationSteps + 2;
          this.setDeltaMovement(this.lxd, this.lyd, this.lzd);
      }
-@@ -763,33 +923,33 @@
+@@ -765,33 +925,33 @@
      }
  
      public void setDamage(float damageWobbleStrength) {
@@ -1132,7 +1132,7 @@
      }
  
      public BlockState getDefaultDisplayBlockState() {
-@@ -797,7 +957,7 @@
+@@ -799,7 +959,7 @@
      }
  
      public int getDisplayOffset() {
@@ -1141,7 +1141,7 @@
      }
  
      public int getDefaultDisplayOffset() {
-@@ -805,21 +965,21 @@
+@@ -807,21 +967,21 @@
      }
  
      public void setDisplayBlockState(BlockState state) {
@@ -1167,7 +1167,7 @@
      }
  
      @Override
-@@ -830,6 +990,7 @@
+@@ -832,6 +992,7 @@
      @Override
      public ItemStack getPickResult() {
          Item item;
@@ -1175,7 +1175,7 @@
          switch (this.getMinecartType()) {
              case FURNACE:
                  item = Items.FURNACE_MINECART;
-@@ -854,12 +1015,31 @@
+@@ -856,12 +1017,31 @@
      }
  
      public static enum Type {

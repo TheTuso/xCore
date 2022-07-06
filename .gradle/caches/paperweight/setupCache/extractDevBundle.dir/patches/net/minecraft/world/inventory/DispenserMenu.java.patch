@@ -5,8 +5,8 @@
  import net.minecraft.world.item.ItemStack;
  
 +// CraftBukkit start
-+import org.bukkit.craftbukkit.v1_18_R2.inventory.CraftInventory;
-+import org.bukkit.craftbukkit.v1_18_R2.inventory.CraftInventoryView;
++import org.bukkit.craftbukkit.v1_19_R1.inventory.CraftInventory;
++import org.bukkit.craftbukkit.v1_19_R1.inventory.CraftInventoryView;
 +// CraftBukkit end
 +
  public class DispenserMenu extends AbstractContainerMenu {

@@ -12,7 +12,7 @@
  import net.minecraft.world.level.block.entity.HopperBlockEntity;
  import net.minecraft.world.level.block.state.BlockBehaviour;
  import net.minecraft.world.level.block.state.BlockState;
-+import org.bukkit.craftbukkit.v1_18_R2.inventory.CraftItemStack;
++import org.bukkit.craftbukkit.v1_19_R1.inventory.CraftItemStack;
 +import org.bukkit.event.inventory.InventoryMoveItemEvent;
 +// CraftBukkit end
  
@@ -38,13 +38,13 @@
      public void dispenseFrom(ServerLevel world, BlockPos pos) {
 -        BlockSourceImpl blockSourceImpl = new BlockSourceImpl(world, pos);
 -        DispenserBlockEntity dispenserBlockEntity = blockSourceImpl.getEntity();
--        int i = dispenserBlockEntity.getRandomSlot();
+-        int i = dispenserBlockEntity.getRandomSlot(world.random);
 +        BlockSourceImpl sourceblock = new BlockSourceImpl(world, pos);
 +        DispenserBlockEntity tileentitydispenser = (DispenserBlockEntity) sourceblock.getEntity();
-+        int i = tileentitydispenser.getRandomSlot();
++        int i = tileentitydispenser.getRandomSlot(world.random);
 +
          if (i < 0) {
-+            if (org.bukkit.craftbukkit.v1_18_R2.event.CraftEventFactory.handleBlockFailedDispenseEvent(world, pos)) // Paper - BlockFailedDispenseEvent is called here
++            if (org.bukkit.craftbukkit.v1_19_R1.event.CraftEventFactory.handleBlockFailedDispenseEvent(world, pos)) // Paper - BlockFailedDispenseEvent is called here
              world.levelEvent(1001, pos, 0);
          } else {
 -            ItemStack itemStack = dispenserBlockEntity.getItem(i);
@@ -74,7 +74,7 @@
 +                    org.bukkit.inventory.Inventory destinationInventory;
 +                    // Have to special case large chests as they work oddly
 +                    if (iinventory instanceof CompoundContainer) {
-+                        destinationInventory = new org.bukkit.craftbukkit.v1_18_R2.inventory.CraftInventoryDoubleChest((CompoundContainer) iinventory);
++                        destinationInventory = new org.bukkit.craftbukkit.v1_19_R1.inventory.CraftInventoryDoubleChest((CompoundContainer) iinventory);
                      } else {
 -                        itemStack2 = itemStack.copy();
 +                        destinationInventory = iinventory.getOwner().getInventory();

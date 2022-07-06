@@ -20,7 +20,7 @@
  import net.minecraft.world.level.block.DispenserBlock;
  import net.minecraft.world.phys.AABB;
 +// CraftBukkit start
-+import org.bukkit.craftbukkit.v1_18_R2.inventory.CraftItemStack;
++import org.bukkit.craftbukkit.v1_19_R1.inventory.CraftItemStack;
 +import org.bukkit.event.block.BlockDispenseArmorEvent;
 +// CraftBukkit end
  
@@ -56,7 +56,7 @@
 +            org.bukkit.block.Block block = world.getWorld().getBlockAt(pointer.getPos().getX(), pointer.getPos().getY(), pointer.getPos().getZ());
 +            CraftItemStack craftItem = CraftItemStack.asCraftMirror(itemstack1);
 +
-+            BlockDispenseArmorEvent event = new BlockDispenseArmorEvent(block, craftItem.clone(), (org.bukkit.craftbukkit.v1_18_R2.entity.CraftLivingEntity) entityliving.getBukkitEntity());
++            BlockDispenseArmorEvent event = new BlockDispenseArmorEvent(block, craftItem.clone(), (org.bukkit.craftbukkit.v1_19_R1.entity.CraftLivingEntity) entityliving.getBukkitEntity());
 +            if (!DispenserBlock.eventFired) {
 +                world.getCraftServer().getPluginManager().callEvent(event);
 +            }

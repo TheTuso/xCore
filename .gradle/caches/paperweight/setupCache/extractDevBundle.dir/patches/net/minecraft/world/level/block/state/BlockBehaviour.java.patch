@@ -5,7 +5,7 @@
  package net.minecraft.world.level.block.state;
  
  import com.google.common.collect.ImmutableMap;
-@@ -32,6 +33,7 @@
+@@ -33,6 +34,7 @@
  import net.minecraft.world.item.Item;
  import net.minecraft.world.item.ItemStack;
  import net.minecraft.world.item.context.BlockPlaceContext;
@@ -13,7 +13,7 @@
  import net.minecraft.world.level.BlockGetter;
  import net.minecraft.world.level.EmptyBlockGetter;
  import net.minecraft.world.level.Level;
-@@ -67,6 +69,7 @@
+@@ -68,6 +70,7 @@
  import net.minecraft.world.phys.shapes.VoxelShape;
  
  public abstract class BlockBehaviour {
@@ -21,7 +21,7 @@
      protected static final Direction[] UPDATE_SHAPE_ORDER = new Direction[]{Direction.WEST, Direction.EAST, Direction.NORTH, Direction.SOUTH, Direction.DOWN, Direction.UP};
      protected final Material material;
      public final boolean hasCollision;
-@@ -97,8 +100,7 @@
+@@ -98,8 +101,7 @@
  
      /** @deprecated */
      @Deprecated
@@ -31,7 +31,7 @@
  
      /** @deprecated */
      @Deprecated
-@@ -133,14 +135,22 @@
+@@ -134,14 +136,22 @@
          DebugPackets.sendNeighborsUpdatePacket(world, pos);
      }
  
@@ -54,24 +54,7 @@
          if (state.hasBlockEntity() && !state.is(newState.getBlock())) {
              world.removeBlockEntity(pos);
          }
-@@ -177,6 +187,16 @@
-         return false;
-     }
- 
-+    // Paper start - optimize redstone (Alternate Current)
-+    public boolean isSignalSourceTo(Level level, BlockPos pos, BlockState state, Direction dir) {
-+        return false;
-+    }
-+
-+    public boolean isDirectSignalSourceTo(Level level, BlockPos pos, BlockState state, Direction dir) {
-+        return false;
-+    }
-+    // Paper end
-+
-     /** @deprecated */
-     @Deprecated
-     public PushReaction getPistonPushReaction(BlockState state) {
-@@ -222,7 +242,7 @@
+@@ -219,7 +229,7 @@
      /** @deprecated */
      @Deprecated
      public boolean canBeReplaced(BlockState state, BlockPlaceContext context) {
@@ -80,7 +63,7 @@
      }
  
      /** @deprecated */
-@@ -234,14 +254,16 @@
+@@ -231,14 +241,16 @@
      /** @deprecated */
      @Deprecated
      public List<ItemStack> getDrops(BlockState state, LootContext.Builder builder) {
@@ -103,7 +86,7 @@
          }
      }
  
-@@ -272,11 +294,7 @@
+@@ -269,11 +281,7 @@
      /** @deprecated */
      @Deprecated
      public int getLightBlock(BlockState state, BlockGetter world, BlockPos pos) {
@@ -116,13 +99,13 @@
      }
  
      /** @deprecated */
-@@ -336,30 +354,29 @@
+@@ -339,30 +347,29 @@
  
      /** @deprecated */
      @Deprecated
--    public void tick(BlockState state, ServerLevel world, BlockPos pos, Random random) {
+-    public void tick(BlockState state, ServerLevel world, BlockPos pos, RandomSource random) {
 -    }
-+    public void tick(BlockState state, ServerLevel world, BlockPos pos, Random random) {}
++    public void tick(BlockState state, ServerLevel world, BlockPos pos, RandomSource random) {}
  
      /** @deprecated */
      @Deprecated
@@ -141,9 +124,9 @@
  
      /** @deprecated */
      @Deprecated
--    public void spawnAfterBreak(BlockState state, ServerLevel world, BlockPos pos, ItemStack stack) {
+-    public void spawnAfterBreak(BlockState state, ServerLevel world, BlockPos pos, ItemStack stack, boolean dropExperience) {
 -    }
-+    public void spawnAfterBreak(BlockState state, ServerLevel world, BlockPos pos, ItemStack stack) {}
++    public void spawnAfterBreak(BlockState state, ServerLevel world, BlockPos pos, ItemStack stack, boolean dropExperience) {}
  
      /** @deprecated */
      @Deprecated
@@ -153,7 +136,7 @@
  
      /** @deprecated */
      @Deprecated
-@@ -369,8 +386,7 @@
+@@ -372,8 +379,7 @@
  
      /** @deprecated */
      @Deprecated
@@ -163,7 +146,7 @@
  
      /** @deprecated */
      @Deprecated
-@@ -380,8 +396,9 @@
+@@ -383,8 +389,9 @@
  
      public final ResourceLocation getLootTable() {
          if (this.drops == null) {
@@ -175,7 +158,7 @@
          }
  
          return this.drops;
-@@ -389,30 +406,271 @@
+@@ -392,30 +399,280 @@
  
      /** @deprecated */
      @Deprecated
@@ -220,6 +203,7 @@
 +        BlockBehaviour.StatePredicate hasPostProcess;
 +        BlockBehaviour.StatePredicate emissiveRendering;
 +        boolean dynamicShape;
++        Function<BlockState, BlockBehaviour.OffsetType> offsetType;
 +
 +        private Properties(Material material, MaterialColor mapColorProvider) {
 +            this(material, (iblockdata) -> {
@@ -252,6 +236,9 @@
 +            };
 +            this.emissiveRendering = (iblockdata, iblockaccess, blockposition) -> {
 +                return false;
++            };
++            this.offsetType = (iblockdata) -> {
++                return BlockBehaviour.OffsetType.NONE;
 +            };
 +            this.material = material;
 +            this.materialColor = mapColorProvider;
@@ -290,6 +277,7 @@
 +            blockbase_info.canOcclude = block.properties.canOcclude;
 +            blockbase_info.isAir = block.properties.isAir;
 +            blockbase_info.requiresCorrectToolForDrops = block.properties.requiresCorrectToolForDrops;
++            blockbase_info.offsetType = block.properties.offsetType;
 +            return blockbase_info;
 +        }
 +
@@ -352,7 +340,7 @@
 +            return this;
 +        }
 +
-+        public BlockBehaviour.Properties noDrops() {
++        public BlockBehaviour.Properties noLootTable() {
 +            this.drops = BuiltInLootTables.EMPTY;
 +            return this;
 +        }
@@ -418,13 +406,17 @@
 +            this.explosionResistance = Math.max(0.0F, resistance);
 +            return this;
 +        }
-+    }
 +
-+    public static enum OffsetType {
++        public BlockBehaviour.Properties offsetType(BlockBehaviour.OffsetType offsetType) {
++            return this.offsetType((iblockdata) -> {
++                return offsetType;
++            });
++        }
 +
-+        NONE, XZ, XYZ;
-+
-+        private OffsetType() {}
++        public BlockBehaviour.Properties offsetType(Function<BlockState, BlockBehaviour.OffsetType> offsetType) {
++            this.offsetType = offsetType;
++            return this;
++        }
 +    }
 +
 +    public interface StateArgumentPredicate<A> {
@@ -453,7 +445,7 @@
          private final BlockBehaviour.StatePredicate isRedstoneConductor;
          private final BlockBehaviour.StatePredicate isSuffocating;
          private final BlockBehaviour.StatePredicate isViewBlocking;
-@@ -423,33 +681,109 @@
+@@ -427,38 +684,116 @@
  
          protected BlockStateBase(Block block, ImmutableMap<Property<?>, Comparable<?>> propertyMap, MapCodec<BlockState> codec) {
              super(block, propertyMap, codec);
@@ -474,6 +466,7 @@
 -            this.isViewBlocking = properties.isViewBlocking;
 -            this.hasPostProcess = properties.hasPostProcess;
 -            this.emissiveRendering = properties.emissiveRendering;
+-            this.offsetType = properties.offsetType.apply(this.asState());
 +            this.isAir = blockbase_info.isAir;
 +            this.material = blockbase_info.material;
 +            this.materialColor = (MaterialColor) blockbase_info.materialColor.apply(this.asState());
@@ -485,15 +478,16 @@
 +            this.isViewBlocking = blockbase_info.isViewBlocking;
 +            this.hasPostProcess = blockbase_info.hasPostProcess;
 +            this.emissiveRendering = blockbase_info.emissiveRendering;
++            this.offsetType = (BlockBehaviour.OffsetType) blockbase_info.offsetType.apply(this.asState());
 +            this.conditionallyFullOpaque = this.isOpaque() & this.isTransparentOnSomeFaces(); // Paper
 +        }
 +        // Paper start - impl cached craft block data, lazy load to fix issue with loading at the wrong time
-+        private org.bukkit.craftbukkit.v1_18_R2.block.data.CraftBlockData cachedCraftBlockData;
++        private org.bukkit.craftbukkit.v1_19_R1.block.data.CraftBlockData cachedCraftBlockData;
 +
-+        public org.bukkit.craftbukkit.v1_18_R2.block.data.CraftBlockData createCraftBlockData() {
-+            if (cachedCraftBlockData == null) cachedCraftBlockData = org.bukkit.craftbukkit.v1_18_R2.block.data.CraftBlockData.createData(asState());
-+            return (org.bukkit.craftbukkit.v1_18_R2.block.data.CraftBlockData) cachedCraftBlockData.clone();
-+        }
++        public org.bukkit.craftbukkit.v1_19_R1.block.data.CraftBlockData createCraftBlockData() {
++            if (cachedCraftBlockData == null) cachedCraftBlockData = org.bukkit.craftbukkit.v1_19_R1.block.data.CraftBlockData.createData(asState());
++            return (org.bukkit.craftbukkit.v1_19_R1.block.data.CraftBlockData) cachedCraftBlockData.clone();
+         }
 +        // Paper end
 +
 +        // Paper start
@@ -523,7 +517,7 @@
 +
 +        public final long getBlockCollisionBehavior() {
 +            return this.blockCollisionBehavior;
-         }
++        }
 +        // Paper end
  
          public void initCache() {
@@ -570,16 +564,22 @@
 -            return this.owner;
 +            return (Block) this.owner;
          }
--
+ 
+         public Holder<Block> getBlockHolder() {
+-            return this.owner.builtInRegistryHolder();
++            return ((Block) this.owner).builtInRegistryHolder();
+         }
+ 
 +        // Paper start
 +        public final boolean isDestroyable() {
 +            return getBlock().isDestroyable();
 +        }
 +        // Paper end
++
          public Material getMaterial() {
              return this.material;
          }
-@@ -474,19 +808,19 @@
+@@ -483,19 +818,19 @@
              return this.getBlock().getOcclusionShape(this.asState(), world, pos);
          }
  
@@ -604,24 +604,7 @@
              return this.isAir;
          }
  
-@@ -522,6 +856,16 @@
-             return this.getBlock().isSignalSource(this.asState());
-         }
- 
-+        // Paper start - optimize redstone (Alternate Current)
-+        public boolean isSignalSourceTo(Level level, BlockPos pos, Direction dir) {
-+            return this.getBlock().isSignalSourceTo(level, pos, this.asState(), dir);
-+        }
-+
-+        public boolean isDirectSignalSourceTo(Level level, BlockPos pos, Direction dir) {
-+            return this.getBlock().isDirectSignalSourceTo(level, pos, this.asState(), dir);
-+        }
-+        // Paper end
-+
-         public int getSignal(BlockGetter world, BlockPos pos, Direction direction) {
-             return this.getBlock().getSignal(this.asState(), world, pos, direction);
-         }
-@@ -547,19 +891,20 @@
+@@ -556,19 +891,20 @@
          }
  
          public PushReaction getPistonPushReaction() {
@@ -646,33 +629,26 @@
              return this.canOcclude;
          }
  
-@@ -605,16 +950,18 @@
- 
-         public Vec3 getOffset(BlockGetter world, BlockPos pos) {
-             Block block = this.getBlock();
--            BlockBehaviour.OffsetType offsetType = block.getOffsetType();
--            if (offsetType == BlockBehaviour.OffsetType.NONE) {
-+            BlockBehaviour.OffsetType blockbase_enumrandomoffset = block.getOffsetType();
-+
-+            if (blockbase_enumrandomoffset == BlockBehaviour.OffsetType.NONE) {
+@@ -617,12 +953,13 @@
                  return Vec3.ZERO;
              } else {
+                 Block block = this.getBlock();
 -                long l = Mth.getSeed(pos.getX(), 0, pos.getZ());
 +                long i = Mth.getSeed(pos.getX(), 0, pos.getZ());
                  float f = block.getMaxHorizontalOffset();
 -                double d = Mth.clamp(((double)((float)(l & 15L) / 15.0F) - 0.5D) * 0.5D, (double)(-f), (double)f);
--                double e = offsetType == BlockBehaviour.OffsetType.XYZ ? ((double)((float)(l >> 4 & 15L) / 15.0F) - 1.0D) * (double)block.getMaxVerticalOffset() : 0.0D;
+-                double e = this.offsetType == BlockBehaviour.OffsetType.XYZ ? ((double)((float)(l >> 4 & 15L) / 15.0F) - 1.0D) * (double)block.getMaxVerticalOffset() : 0.0D;
 -                double g = Mth.clamp(((double)((float)(l >> 8 & 15L) / 15.0F) - 0.5D) * 0.5D, (double)(-f), (double)f);
 -                return new Vec3(d, e, g);
 +                double d0 = Mth.clamp(((double) ((float) (i & 15L) / 15.0F) - 0.5D) * 0.5D, (double) (-f), (double) f);
-+                double d1 = blockbase_enumrandomoffset == BlockBehaviour.OffsetType.XYZ ? ((double) ((float) (i >> 4 & 15L) / 15.0F) - 1.0D) * (double) block.getMaxVerticalOffset() : 0.0D;
++                double d1 = this.offsetType == BlockBehaviour.OffsetType.XYZ ? ((double) ((float) (i >> 4 & 15L) / 15.0F) - 1.0D) * (double) block.getMaxVerticalOffset() : 0.0D;
 +                double d2 = Mth.clamp(((double) ((float) (i >> 8 & 15L) / 15.0F) - 0.5D) * 0.5D, (double) (-f), (double) f);
 +
 +                return new Vec3(d0, d1, d2);
              }
          }
  
-@@ -632,13 +979,18 @@
+@@ -642,11 +979,15 @@
  
          public final void updateNeighbourShapes(LevelAccessor world, BlockPos pos, int flags, int maxUpdateDepth) {
              this.getBlock();
@@ -683,21 +659,16 @@
  
 -            for(Direction direction : BlockBehaviour.UPDATE_SHAPE_ORDER) {
 -                mutableBlockPos.setWithOffset(pos, direction);
--                BlockState blockState = world.getBlockState(mutableBlockPos);
--                BlockState blockState2 = blockState.updateShape(direction.getOpposite(), this.asState(), world, mutableBlockPos, pos);
--                Block.updateOrDestroy(blockState, blockState2, world, mutableBlockPos, flags, maxUpdateDepth);
+-                world.neighborShapeChanged(direction.getOpposite(), this.asState(), mutableBlockPos, pos, flags, maxUpdateDepth);
 +            for (int l = 0; l < k; ++l) {
 +                Direction enumdirection = aenumdirection[l];
 +
 +                blockposition_mutableblockposition.setWithOffset(pos, enumdirection);
-+                BlockState iblockdata = world.getBlockState(blockposition_mutableblockposition);
-+                BlockState iblockdata1 = iblockdata.updateShape(enumdirection.getOpposite(), this.asState(), world, blockposition_mutableblockposition, pos);
-+
-+                Block.updateOrDestroy(iblockdata, iblockdata1, world, blockposition_mutableblockposition, flags, maxUpdateDepth);
++                world.neighborShapeChanged(enumdirection.getOpposite(), this.asState(), blockposition_mutableblockposition, pos, flags, maxUpdateDepth);
              }
  
          }
-@@ -746,19 +1098,19 @@
+@@ -754,19 +1095,19 @@
  
          @Nullable
          public <T extends BlockEntity> BlockEntityTicker<T> getTicker(Level world, BlockEntityType<T> blockEntityType) {
@@ -722,8 +693,8 @@
          }
  
          public long getSeed(BlockPos pos) {
-@@ -791,7 +1143,8 @@
-             return this.requiresCorrectToolForDrops;
+@@ -803,7 +1144,8 @@
+             return this.offsetType;
          }
  
 -        static final class Cache {
@@ -732,7 +703,7 @@
              private static final Direction[] DIRECTIONS = Direction.values();
              private static final int SUPPORT_TYPE_COUNT = SupportType.values().length;
              protected final boolean solidRender;
-@@ -806,17 +1159,25 @@
+@@ -818,17 +1160,25 @@
  
              Cache(BlockState state) {
                  Block block = state.getBlock();
@@ -762,8 +733,8 @@
                      }
                  }
  
-@@ -824,14 +1185,22 @@
-                 if (!this.collisionShape.isEmpty() && block.getOffsetType() != BlockBehaviour.OffsetType.NONE) {
+@@ -836,14 +1186,22 @@
+                 if (!this.collisionShape.isEmpty() && state.getOffsetType() != BlockBehaviour.OffsetType.NONE) {
                      throw new IllegalStateException(String.format("%s has a collision shape and an offset type, but is not marked as dynamicShape in its properties.", Registry.BLOCK.getKey(block)));
                  } else {
 -                    this.largeCollisionShape = Arrays.stream(Direction.Axis.values()).anyMatch((axis) -> {
@@ -791,7 +762,7 @@
                          }
                      }
  
-@@ -840,235 +1209,12 @@
+@@ -852,250 +1210,19 @@
              }
  
              public boolean isFaceSturdy(Direction direction, SupportType shapeType) {
@@ -805,8 +776,8 @@
              }
          }
      }
--
--    public static enum OffsetType {
+ 
+     public static enum OffsetType {
 -        NONE,
 -        XZ,
 -        XYZ;
@@ -847,6 +818,9 @@
 -            return false;
 -        };
 -        boolean dynamicShape;
+-        Function<BlockState, BlockBehaviour.OffsetType> offsetType = (state) -> {
+-            return BlockBehaviour.OffsetType.NONE;
+-        };
 -
 -        private Properties(Material material, MaterialColor mapColorProvider) {
 -            this(material, (state) -> {
@@ -891,6 +865,7 @@
 -            properties.canOcclude = block.properties.canOcclude;
 -            properties.isAir = block.properties.isAir;
 -            properties.requiresCorrectToolForDrops = block.properties.requiresCorrectToolForDrops;
+-            properties.offsetType = block.properties.offsetType;
 -            return properties;
 -        }
 -
@@ -953,7 +928,7 @@
 -            return this;
 -        }
 -
--        public BlockBehaviour.Properties noDrops() {
+-        public BlockBehaviour.Properties noLootTable() {
 -            this.drops = BuiltInLootTables.EMPTY;
 -            return this;
 -        }
@@ -967,7 +942,7 @@
 -            this.isAir = true;
 -            return this;
 -        }
--
+ 
 -        public BlockBehaviour.Properties isValidSpawn(BlockBehaviour.StateArgumentPredicate<EntityType<?>> predicate) {
 -            this.isValidSpawn = predicate;
 -            return this;
@@ -1019,13 +994,26 @@
 -            this.explosionResistance = Math.max(0.0F, resistance);
 -            return this;
 -        }
+-
+-        public BlockBehaviour.Properties offsetType(BlockBehaviour.OffsetType offsetType) {
+-            return this.offsetType((state) -> {
+-                return offsetType;
+-            });
+-        }
+-
+-        public BlockBehaviour.Properties offsetType(Function<BlockState, BlockBehaviour.OffsetType> offsetType) {
+-            this.offsetType = offsetType;
+-            return this;
+-        }
 -    }
 -
 -    public interface StateArgumentPredicate<A> {
 -        boolean test(BlockState state, BlockGetter world, BlockPos pos, A type);
 -    }
--
++        NONE, XZ, XYZ;
+ 
 -    public interface StatePredicate {
 -        boolean test(BlockState state, BlockGetter world, BlockPos pos);
--    }
++        private OffsetType() {}
+     }
  }

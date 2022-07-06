@@ -1,6 +1,6 @@
 --- a/net/minecraft/world/level/block/FenceGateBlock.java
 +++ b/net/minecraft/world/level/block/FenceGateBlock.java
-@@ -23,6 +23,7 @@
+@@ -24,6 +24,7 @@
  import net.minecraft.world.phys.shapes.VoxelShape;
  
  public class FenceGateBlock extends HorizontalDirectionalBlock {
@@ -8,7 +8,7 @@
      public static final BooleanProperty OPEN = BlockStateProperties.OPEN;
      public static final BooleanProperty POWERED = BlockStateProperties.POWERED;
      public static final BooleanProperty IN_WALL = BlockStateProperties.IN_WALL;
-@@ -39,56 +40,46 @@
+@@ -40,56 +41,46 @@
  
      public FenceGateBlock(BlockBehaviour.Properties settings) {
          super(settings);
@@ -77,7 +77,7 @@
              default:
                  return false;
          }
-@@ -96,13 +87,14 @@
+@@ -97,13 +88,14 @@
  
      @Override
      public BlockState getStateForPlacement(BlockPlaceContext ctx) {
@@ -99,7 +99,7 @@
      }
  
      private boolean isWall(BlockState state) {
-@@ -111,34 +103,48 @@
+@@ -112,34 +104,48 @@
  
      @Override
      public InteractionResult use(BlockState state, Level world, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
@@ -129,26 +129,26 @@
 +        boolean flag = (Boolean) state.getValue(FenceGateBlock.OPEN);
 +
 +        world.levelEvent(player, flag ? 1008 : 1014, pos, 0);
-+        world.gameEvent(player, flag ? GameEvent.BLOCK_OPEN : GameEvent.BLOCK_CLOSE, pos);
++        world.gameEvent((Entity) player, flag ? GameEvent.BLOCK_OPEN : GameEvent.BLOCK_CLOSE, pos);
          return InteractionResult.sidedSuccess(world.isClientSide);
      }
  
      @Override
-     public void neighborChanged(BlockState state, Level world, BlockPos pos, Block block, BlockPos fromPos, boolean notify) {
+     public void neighborChanged(BlockState state, Level world, BlockPos pos, Block sourceBlock, BlockPos sourcePos, boolean notify) {
          if (!world.isClientSide) {
 -            boolean bl = world.hasNeighborSignal(pos);
 -            if (state.getValue(POWERED) != bl) {
 -                world.setBlock(pos, state.setValue(POWERED, Boolean.valueOf(bl)).setValue(OPEN, Boolean.valueOf(bl)), 2);
 -                if (state.getValue(OPEN) != bl) {
 -                    world.levelEvent((Player)null, bl ? 1008 : 1014, pos, 0);
--                    world.gameEvent(bl ? GameEvent.BLOCK_OPEN : GameEvent.BLOCK_CLOSE, pos);
+-                    world.gameEvent((Entity)null, bl ? GameEvent.BLOCK_OPEN : GameEvent.BLOCK_CLOSE, pos);
 +            boolean flag1 = world.hasNeighborSignal(pos);
 +            // CraftBukkit start
 +            boolean oldPowered = state.getValue(FenceGateBlock.POWERED);
 +            if (oldPowered != flag1) {
 +                int newPower = flag1 ? 15 : 0;
 +                int oldPower = oldPowered ? 15 : 0;
-+                org.bukkit.block.Block bukkitBlock = org.bukkit.craftbukkit.v1_18_R2.block.CraftBlock.at(world, pos);
++                org.bukkit.block.Block bukkitBlock = org.bukkit.craftbukkit.v1_19_R1.block.CraftBlock.at(world, pos);
 +                org.bukkit.event.block.BlockRedstoneEvent eventRedstone = new org.bukkit.event.block.BlockRedstoneEvent(bukkitBlock, oldPower, newPower);
 +                world.getCraftServer().getPluginManager().callEvent(eventRedstone);
 +                flag1 = eventRedstone.getNewCurrent() > 0;
@@ -159,11 +159,11 @@
 +                world.setBlock(pos, (BlockState) ((BlockState) state.setValue(FenceGateBlock.POWERED, flag1)).setValue(FenceGateBlock.OPEN, flag1), 2);
 +                if ((Boolean) state.getValue(FenceGateBlock.OPEN) != flag1) {
 +                    world.levelEvent((Player) null, flag1 ? 1008 : 1014, pos, 0);
-+                    world.gameEvent(flag1 ? GameEvent.BLOCK_OPEN : GameEvent.BLOCK_CLOSE, pos);
++                    world.gameEvent((Entity) null, flag1 ? GameEvent.BLOCK_OPEN : GameEvent.BLOCK_CLOSE, pos);
                  }
              }
  
-@@ -147,10 +153,10 @@
+@@ -148,10 +154,10 @@
  
      @Override
      protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {

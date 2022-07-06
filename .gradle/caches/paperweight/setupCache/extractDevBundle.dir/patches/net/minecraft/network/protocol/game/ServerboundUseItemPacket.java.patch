@@ -5,27 +5,29 @@
  package net.minecraft.network.protocol.game;
  
  import net.minecraft.network.FriendlyByteBuf;
-@@ -5,14 +6,17 @@
+@@ -5,8 +6,10 @@
  import net.minecraft.world.InteractionHand;
  
  public class ServerboundUseItemPacket implements Packet<ServerGamePacketListener> {
 +
      private final InteractionHand hand;
+     private final int sequence;
 +    public long timestamp; // Spigot
  
-     public ServerboundUseItemPacket(InteractionHand hand) {
+     public ServerboundUseItemPacket(InteractionHand hand, int sequence) {
          this.hand = hand;
+@@ -14,7 +17,8 @@
      }
  
      public ServerboundUseItemPacket(FriendlyByteBuf buf) {
 -        this.hand = buf.readEnum(InteractionHand.class);
 +        this.timestamp = System.currentTimeMillis(); // Spigot
 +        this.hand = (InteractionHand) buf.readEnum(InteractionHand.class);
+         this.sequence = buf.readVarInt();
      }
  
-     @Override
-@@ -20,7 +24,6 @@
-         buf.writeEnum(this.hand);
+@@ -24,7 +28,6 @@
+         buf.writeVarInt(this.sequence);
      }
  
 -    @Override

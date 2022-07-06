@@ -5,8 +5,8 @@
  import net.minecraft.world.entity.npc.VillagerProfession;
  
 +// CraftBukkit start
-+import org.bukkit.craftbukkit.v1_18_R2.entity.CraftVillager;
-+import org.bukkit.craftbukkit.v1_18_R2.event.CraftEventFactory;
++import org.bukkit.craftbukkit.v1_19_R1.entity.CraftVillager;
++import org.bukkit.craftbukkit.v1_19_R1.event.CraftEventFactory;
 +import org.bukkit.event.entity.VillagerCareerChangeEvent;
 +// CraftBukkit end
 +
@@ -39,16 +39,15 @@
 -            MinecraftServer minecraftServer = world.getServer();
 -            Optional.ofNullable(minecraftServer.getLevel(globalPos.dimension())).flatMap((worldx) -> {
 -                return worldx.getPoiManager().getType(globalPos.pos());
--            }).flatMap((poiType) -> {
--                return Registry.VILLAGER_PROFESSION.stream().filter((profession) -> {
--                    return profession.getJobPoiType() == poiType;
 +            MinecraftServer minecraftserver = world.getServer();
 +
 +            Optional.ofNullable(minecraftserver.getLevel(globalpos.dimension())).flatMap((worldserver1) -> {
 +                return worldserver1.getPoiManager().getType(globalpos.pos());
-+            }).flatMap((villageplacetype) -> {
+             }).flatMap((holder) -> {
+-                return Registry.VILLAGER_PROFESSION.stream().filter((profession) -> {
+-                    return profession.heldJobSite().test(holder);
 +                return Registry.VILLAGER_PROFESSION.stream().filter((villagerprofession) -> {
-+                    return villagerprofession.getJobPoiType() == villageplacetype;
++                    return villagerprofession.heldJobSite().test(holder);
                  }).findFirst();
 -            }).ifPresent((profession) -> {
 -                entity.setVillagerData(entity.getVillagerData().setProfession(profession));

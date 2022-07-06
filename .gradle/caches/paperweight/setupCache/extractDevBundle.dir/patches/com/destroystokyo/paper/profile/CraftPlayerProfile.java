@@ -1,6 +1,6 @@
 package com.destroystokyo.paper.profile;
 
-import com.destroystokyo.paper.PaperConfig;
+import io.papermc.paper.configuration.GlobalConfiguration;
 import com.google.common.base.Charsets;
 import com.google.common.collect.Iterables;
 import com.mojang.authlib.GameProfile;
@@ -11,10 +11,10 @@ import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.players.GameProfileCache;
 import org.apache.commons.lang3.Validate;
 import org.bukkit.configuration.serialization.SerializableAs;
-import org.bukkit.craftbukkit.v1_18_R2.configuration.ConfigSerializationUtil;
-import org.bukkit.craftbukkit.v1_18_R2.entity.CraftPlayer;
-import org.bukkit.craftbukkit.v1_18_R2.profile.CraftPlayerTextures;
-import org.bukkit.craftbukkit.v1_18_R2.profile.CraftProfileProperty;
+import org.bukkit.craftbukkit.v1_19_R1.configuration.ConfigSerializationUtil;
+import org.bukkit.craftbukkit.v1_19_R1.entity.CraftPlayer;
+import org.bukkit.craftbukkit.v1_19_R1.profile.CraftPlayerTextures;
+import org.bukkit.craftbukkit.v1_19_R1.profile.CraftProfileProperty;
 import org.bukkit.profile.PlayerTextures;
 import org.jetbrains.annotations.NotNull;
 
@@ -172,12 +172,12 @@ public class CraftPlayerProfile implements PlayerProfile, SharedPlayerProfile {
             final CraftPlayerProfile clone = clone();
             clone.complete(true);
             return clone;
-        }, Util.backgroundExecutor());
+        }, Util.PROFILE_EXECUTOR);
     }
 
     @Override
     public boolean completeFromCache() {
-        return completeFromCache(false, PaperConfig.isProxyOnlineMode());
+        return completeFromCache(false, GlobalConfiguration.get().proxies.isProxyOnlineMode());
     }
 
     public boolean completeFromCache(boolean onlineMode) {
@@ -220,7 +220,7 @@ public class CraftPlayerProfile implements PlayerProfile, SharedPlayerProfile {
     }
 
     public boolean complete(boolean textures) {
-        return complete(textures, PaperConfig.isProxyOnlineMode());
+        return complete(textures, GlobalConfiguration.get().proxies.isProxyOnlineMode());
     }
     public boolean complete(boolean textures, boolean onlineMode) {
         MinecraftServer server = MinecraftServer.getServer();
@@ -333,7 +333,7 @@ public class CraftPlayerProfile implements PlayerProfile, SharedPlayerProfile {
     public String toString() {
         return "CraftPlayerProfile [uniqueId=" + getId() +
             ", name=" + getName() +
-            ", properties=" + org.bukkit.craftbukkit.v1_18_R2.profile.CraftPlayerProfile.toString(this.profile.getProperties()) +
+            ", properties=" + org.bukkit.craftbukkit.v1_19_R1.profile.CraftPlayerProfile.toString(this.profile.getProperties()) +
             "]";
     }
 

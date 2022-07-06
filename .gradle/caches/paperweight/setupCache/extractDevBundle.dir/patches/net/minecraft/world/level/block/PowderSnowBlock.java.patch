@@ -29,18 +29,19 @@
      public void entityInside(BlockState state, Level world, BlockPos pos, Entity entity) {
 -        if (!(entity instanceof LivingEntity) || entity.getFeetBlockState().is(this)) {
 -            entity.makeStuckInBlock(state, new Vec3((double)0.9F, 1.5D, (double)0.9F));
-+        if (!new io.papermc.paper.event.entity.EntityInsideBlockEvent(entity.getBukkitEntity(), org.bukkit.craftbukkit.v1_18_R2.block.CraftBlock.at(world, pos)).callEvent()) { return; } // Paper
++        if (!new io.papermc.paper.event.entity.EntityInsideBlockEvent(entity.getBukkitEntity(), org.bukkit.craftbukkit.v1_19_R1.block.CraftBlock.at(world, pos)).callEvent()) { return; } // Paper
 +        if (!(entity instanceof LivingEntity) || entity.getFeetBlockState().is((Block) this)) {
 +            entity.makeStuckInBlock(state, new Vec3(0.8999999761581421D, 1.5D, 0.8999999761581421D));
              if (world.isClientSide) {
-                 Random random = world.getRandom();
+-                RandomSource randomSource = world.getRandom();
 -                boolean bl = entity.xOld != entity.getX() || entity.zOld != entity.getZ();
--                if (bl && random.nextBoolean()) {
--                    world.addParticle(ParticleTypes.SNOWFLAKE, entity.getX(), (double)(pos.getY() + 1), entity.getZ(), (double)(Mth.randomBetween(random, -1.0F, 1.0F) * 0.083333336F), (double)0.05F, (double)(Mth.randomBetween(random, -1.0F, 1.0F) * 0.083333336F));
+-                if (bl && randomSource.nextBoolean()) {
+-                    world.addParticle(ParticleTypes.SNOWFLAKE, entity.getX(), (double)(pos.getY() + 1), entity.getZ(), (double)(Mth.randomBetween(randomSource, -1.0F, 1.0F) * 0.083333336F), (double)0.05F, (double)(Mth.randomBetween(randomSource, -1.0F, 1.0F) * 0.083333336F));
++                RandomSource randomsource = world.getRandom();
 +                boolean flag = entity.xOld != entity.getX() || entity.zOld != entity.getZ();
 +
-+                if (flag && random.nextBoolean()) {
-+                    world.addParticle(ParticleTypes.SNOWFLAKE, entity.getX(), (double) (pos.getY() + 1), entity.getZ(), (double) (Mth.randomBetween(random, -1.0F, 1.0F) * 0.083333336F), 0.05000000074505806D, (double) (Mth.randomBetween(random, -1.0F, 1.0F) * 0.083333336F));
++                if (flag && randomsource.nextBoolean()) {
++                    world.addParticle(ParticleTypes.SNOWFLAKE, entity.getX(), (double) (pos.getY() + 1), entity.getZ(), (double) (Mth.randomBetween(randomsource, -1.0F, 1.0F) * 0.083333336F), 0.05000000074505806D, (double) (Mth.randomBetween(randomsource, -1.0F, 1.0F) * 0.083333336F));
                  }
              }
          }
@@ -50,7 +51,7 @@
 -            if (entity.isOnFire() && (world.getGameRules().getBoolean(GameRules.RULE_MOBGRIEFING) || entity instanceof Player) && entity.mayInteract(world, pos)) {
 +            // CraftBukkit start
 +            if (entity.isOnFire() && entity.mayInteract(world, pos)) {
-+                if (org.bukkit.craftbukkit.v1_18_R2.event.CraftEventFactory.callEntityChangeBlockEvent(entity, pos, Blocks.AIR.defaultBlockState(), !(world.getGameRules().getBoolean(GameRules.RULE_MOBGRIEFING) || entity instanceof Player)).isCancelled()) {
++                if (org.bukkit.craftbukkit.v1_19_R1.event.CraftEventFactory.callEntityChangeBlockEvent(entity, pos, Blocks.AIR.defaultBlockState(), !(world.getGameRules().getBoolean(GameRules.RULE_MOBGRIEFING) || entity instanceof Player)).isCancelled()) {
 +                    return;
 +                }
 +                // CraftBukkit end

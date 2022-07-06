@@ -18,17 +18,17 @@
      }).thenComparingDouble((nbt) -> {
          return nbt.getDouble(0);
 @@ -74,6 +74,11 @@
-         if (compound.contains("Name", 8)) {
-             string = compound.getString("Name");
+         if (nbt.contains("Name", 8)) {
+             string = nbt.getString("Name");
          }
 +        // Paper start - support string UUID's
-+        if (compound.contains("Id", 8)) {
-+            uUID = UUID.fromString(compound.getString("Id"));
++        if (nbt.contains("Id", 8)) {
++            uUID = UUID.fromString(nbt.getString("Id"));
 +        }
 +        // Paper end
  
-         if (compound.hasUUID("Id")) {
-             uUID = compound.getUUID("Id");
+         if (nbt.hasUUID("Id")) {
+             uUID = nbt.getUUID("Id");
 @@ -87,7 +92,8 @@
                  for(String string2 : compoundTag.getAllKeys()) {
                      ListTag listTag = compoundTag.getList(string2, 10);

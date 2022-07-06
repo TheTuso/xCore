@@ -2,8 +2,8 @@ package io.papermc.paper.potion;
 
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.Ingredient;
-import org.bukkit.craftbukkit.v1_18_R2.inventory.CraftItemStack;
-import org.bukkit.craftbukkit.v1_18_R2.inventory.CraftRecipe;
+import org.bukkit.craftbukkit.v1_19_R1.inventory.CraftItemStack;
+import org.bukkit.craftbukkit.v1_19_R1.inventory.CraftRecipe;
 
 public record PaperPotionMix(ItemStack result, Ingredient input, Ingredient ingredient) {
 

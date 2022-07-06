@@ -4,7 +4,7 @@
  import net.minecraft.world.level.block.state.BlockState;
  import net.minecraft.world.level.block.state.StateDefinition;
  import net.minecraft.world.level.block.state.properties.BooleanProperty;
-+import org.bukkit.craftbukkit.v1_18_R2.event.CraftEventFactory; // CraftBukkit
++import org.bukkit.craftbukkit.v1_19_R1.event.CraftEventFactory; // CraftBukkit
  
  public class RedstoneLampBlock extends Block {
 +
@@ -24,7 +24,7 @@
      }
  
      @Override
-     public void neighborChanged(BlockState state, Level world, BlockPos pos, Block block, BlockPos fromPos, boolean notify) {
+     public void neighborChanged(BlockState state, Level world, BlockPos pos, Block sourceBlock, BlockPos sourcePos, boolean notify) {
          if (!world.isClientSide) {
 -            boolean bl = state.getValue(LIT);
 -            if (bl != world.hasNeighborSignal(pos)) {
@@ -49,7 +49,7 @@
 @@ -42,14 +50,19 @@
  
      @Override
-     public void tick(BlockState state, ServerLevel world, BlockPos pos, Random random) {
+     public void tick(BlockState state, ServerLevel world, BlockPos pos, RandomSource random) {
 -        if (state.getValue(LIT) && !world.hasNeighborSignal(pos)) {
 -            world.setBlock(pos, state.cycle(LIT), 2);
 +        if ((Boolean) state.getValue(RedstoneLampBlock.LIT) && !world.hasNeighborSignal(pos)) {

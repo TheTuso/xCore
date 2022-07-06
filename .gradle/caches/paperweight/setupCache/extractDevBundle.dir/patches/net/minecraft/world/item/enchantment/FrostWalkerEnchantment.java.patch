@@ -48,7 +48,7 @@
 +
 +                        if (iblockdata2.getMaterial() == Material.WATER && (Integer) iblockdata2.getValue(LiquidBlock.LEVEL) == 0 && iblockdata.canSurvive(world, blockposition1) && world.isUnobstructed(iblockdata, blockposition1, CollisionContext.empty())) {
 +                            // CraftBukkit Start - Call EntityBlockFormEvent for Frost Walker
-+                            if (org.bukkit.craftbukkit.v1_18_R2.event.CraftEventFactory.handleBlockFormEvent(world, blockposition1, iblockdata, entity)) {
++                            if (org.bukkit.craftbukkit.v1_19_R1.event.CraftEventFactory.handleBlockFormEvent(world, blockposition1, iblockdata, entity)) {
 +                                world.scheduleTick(blockposition1, Blocks.FROSTED_ICE, Mth.nextInt(entity.getRandom(), 60, 120));
 +                            }
 +                            // CraftBukkit End

@@ -7,7 +7,7 @@
  import com.mojang.datafixers.DataFixer;
  import com.mojang.datafixers.util.Pair;
  import it.unimi.dsi.fastutil.longs.Long2ByteMap;
-@@ -35,13 +36,144 @@
+@@ -38,13 +39,144 @@
  public class PoiManager extends SectionStorage<PoiSection> {
      public static final int MAX_VILLAGE_DISTANCE = 6;
      public static final int VILLAGE_SECTION_SIZE = 1;
@@ -31,8 +31,8 @@
      private final LongSet loadedChunks = new LongOpenHashSet();
 +    public final net.minecraft.server.level.ServerLevel world; // Paper // Paper public
  
-     public PoiManager(Path path, DataFixer dataFixer, boolean dsync, LevelHeightAccessor world) {
-         super(path, PoiSection::codec, PoiSection::new, dataFixer, DataFixTypes.POI_CHUNK, dsync, world);
+     public PoiManager(Path path, DataFixer dataFixer, boolean dsync, RegistryAccess registryManager, LevelHeightAccessor world) {
+         super(path, PoiSection::codec, PoiSection::new, dataFixer, DataFixTypes.POI_CHUNK, dsync, registryManager, world);
 -        this.distanceTracker = new PoiManager.DistanceTracker();
 +        if (world == null) { throw new IllegalStateException("world must be non-null"); } // Paper - require non-null
 +        this.world = (net.minecraft.server.level.ServerLevel)world; // Paper
@@ -152,30 +152,43 @@
      }
 +    // Paper end - actually unload POI data
  
-     public void add(BlockPos pos, PoiType type) {
+     public void add(BlockPos pos, Holder<PoiType> type) {
          this.getOrCreate(SectionPos.asLong(pos)).add(pos, type);
-@@ -98,36 +230,55 @@
+@@ -111,43 +243,62 @@
      }
  
-     public Optional<BlockPos> find(Predicate<PoiType> typePredicate, Predicate<BlockPos> posPredicate, BlockPos pos, int radius, PoiManager.Occupancy occupationStatus) {
+     public Optional<BlockPos> find(Predicate<Holder<PoiType>> typePredicate, Predicate<BlockPos> posPredicate, BlockPos pos, int radius, PoiManager.Occupancy occupationStatus) {
 -        return this.findAll(typePredicate, posPredicate, pos, radius, occupationStatus).findFirst();
 +        // Paper start - re-route to faster logic
 +        BlockPos ret = io.papermc.paper.util.PoiAccess.findAnyPoiPosition(this, typePredicate, posPredicate, pos, radius, occupationStatus, false);
 +        return Optional.ofNullable(ret);
-+        // Paper end - re-route to faster logic
++        // Paper end
      }
  
-     public Optional<BlockPos> findClosest(Predicate<PoiType> typePredicate, BlockPos pos, int radius, PoiManager.Occupancy occupationStatus) {
+     public Optional<BlockPos> findClosest(Predicate<Holder<PoiType>> typePredicate, BlockPos pos, int radius, PoiManager.Occupancy occupationStatus) {
 -        return this.getInRange(typePredicate, pos, radius, occupationStatus).map(PoiRecord::getPos).min(Comparator.comparingDouble((blockPos2) -> {
 -            return blockPos2.distSqr(pos);
 -        }));
 +        // Paper start - re-route to faster logic
-+        BlockPos ret = io.papermc.paper.util.PoiAccess.findClosestPoiDataPosition(this, typePredicate, null, pos, radius, radius*radius, occupationStatus, false);
++        BlockPos ret = io.papermc.paper.util.PoiAccess.findClosestPoiDataPosition(this, typePredicate, null, pos, radius, radius * radius, occupationStatus, false);
 +        return Optional.ofNullable(ret);
 +        // Paper end - re-route to faster logic
      }
  
-     public Optional<BlockPos> findClosest(Predicate<PoiType> typePredicate, Predicate<BlockPos> posPredicate, BlockPos pos, int radius, PoiManager.Occupancy occupationStatus) {
+     public Optional<Pair<Holder<PoiType>, BlockPos>> findClosestWithType(Predicate<Holder<PoiType>> typePredicate, BlockPos pos, int radius, PoiManager.Occupancy occupationStatus) {
+-        return this.getInRange(typePredicate, pos, radius, occupationStatus).min(Comparator.comparingDouble((poi) -> {
+-            return poi.getPos().distSqr(pos);
+-        })).map((poi) -> {
+-            return Pair.of(poi.getPoiType(), poi.getPos());
+-        });
++        // Paper start - re-route to faster logic
++        return Optional.ofNullable(io.papermc.paper.util.PoiAccess.findClosestPoiDataTypeAndPosition(
++            this, typePredicate, null, pos, radius, radius * radius, occupationStatus, false
++        ));
++        // Paper end - re-route to faster logic
+     }
+ 
+     public Optional<BlockPos> findClosest(Predicate<Holder<PoiType>> typePredicate, Predicate<BlockPos> posPredicate, BlockPos pos, int radius, PoiManager.Occupancy occupationStatus) {
 -        return this.getInRange(typePredicate, pos, radius, occupationStatus).map(PoiRecord::getPos).filter(posPredicate).min(Comparator.comparingDouble((blockPos2) -> {
 -            return blockPos2.distSqr(pos);
 -        }));
@@ -185,28 +198,23 @@
 +        // Paper end - re-route to faster logic
      }
  
-     public Optional<BlockPos> take(Predicate<PoiType> typePredicate, Predicate<BlockPos> positionPredicate, BlockPos pos, int radius) {
+     public Optional<BlockPos> take(Predicate<Holder<PoiType>> typePredicate, BiPredicate<Holder<PoiType>, BlockPos> biPredicate, BlockPos pos, int radius) {
 -        return this.getInRange(typePredicate, pos, radius, PoiManager.Occupancy.HAS_SPACE).filter((poi) -> {
--            return positionPredicate.test(poi.getPos());
+-            return biPredicate.test(poi.getPoiType(), poi.getPos());
 -        }).findFirst().map((poi) -> {
--            poi.acquireTicket();
--            return poi.getPos();
--        });
 +        // Paper start - re-route to faster logic
-+        PoiRecord ret = io.papermc.paper.util.PoiAccess.findAnyPoiRecord(
-+            this, typePredicate, positionPredicate, pos, radius, PoiManager.Occupancy.HAS_SPACE, false
++        final @javax.annotation.Nullable PoiRecord closest = io.papermc.paper.util.PoiAccess.findClosestPoiDataRecord(
++            this, typePredicate, biPredicate, pos, radius, radius * radius, Occupancy.HAS_SPACE, false
 +        );
-+        if (ret == null) {
-+            return Optional.empty();
-+        }
-+        ret.acquireTicket();
-+        return Optional.of(ret.getPos());
-+        // Paper end - re-route to faster logic
++        return Optional.ofNullable(closest).map(poi -> {
++            // Paper end - re-route to faster logic
+             poi.acquireTicket();
+             return poi.getPos();
+         });
      }
  
-     public Optional<BlockPos> getRandom(Predicate<PoiType> typePredicate, Predicate<BlockPos> positionPredicate, PoiManager.Occupancy occupationStatus, BlockPos pos, int radius, Random random) {
--        List<PoiRecord> list = this.getInRange(typePredicate, pos, radius, occupationStatus).collect(Collectors.toList());
--        Collections.shuffle(list, random);
+     public Optional<BlockPos> getRandom(Predicate<Holder<PoiType>> typePredicate, Predicate<BlockPos> positionPredicate, PoiManager.Occupancy occupationStatus, BlockPos pos, int radius, RandomSource random) {
+-        List<PoiRecord> list = Util.toShuffledList(this.getInRange(typePredicate, pos, radius, occupationStatus), random);
 -        return list.stream().filter((poi) -> {
 -            return positionPredicate.test(poi.getPos());
 -        }).findFirst().map(PoiRecord::getPos);
@@ -228,7 +236,7 @@
      }
  
      public boolean release(BlockPos pos) {
-@@ -160,8 +311,8 @@
+@@ -180,8 +331,8 @@
      }
  
      public int sectionsToVillage(SectionPos pos) {
@@ -239,7 +247,7 @@
      }
  
      boolean isVillageCenter(long pos) {
-@@ -173,19 +324,35 @@
+@@ -195,19 +346,35 @@
  
      @Override
      public void tick(BooleanSupplier shouldKeepTicking) {
@@ -279,7 +287,7 @@
      }
  
      public void checkConsistencyWithBlocks(ChunkPos chunkPos, LevelChunkSection chunkSection) {
-@@ -243,7 +410,7 @@
+@@ -265,7 +432,7 @@
  
          @Override
          protected int getLevelFromSource(long id) {
@@ -288,7 +296,7 @@
          }
  
          @Override
-@@ -266,6 +433,35 @@
+@@ -288,6 +455,35 @@
          }
      }
  

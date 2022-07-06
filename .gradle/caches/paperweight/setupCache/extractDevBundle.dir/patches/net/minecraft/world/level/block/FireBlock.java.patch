@@ -1,8 +1,8 @@
 --- a/net/minecraft/world/level/block/FireBlock.java
 +++ b/net/minecraft/world/level/block/FireBlock.java
 @@ -12,6 +12,7 @@
- import net.minecraft.core.Direction;
  import net.minecraft.server.level.ServerLevel;
+ import net.minecraft.util.RandomSource;
  import net.minecraft.world.item.context.BlockPlaceContext;
 +import net.minecraft.world.item.context.UseOnContext;
  import net.minecraft.world.level.BlockGetter;
@@ -13,9 +13,9 @@
  import net.minecraft.world.phys.shapes.Shapes;
  import net.minecraft.world.phys.shapes.VoxelShape;
 +// CraftBukkit start
-+import org.bukkit.craftbukkit.v1_18_R2.block.CraftBlockState;
-+import org.bukkit.craftbukkit.v1_18_R2.block.CraftBlockStates;
-+import org.bukkit.craftbukkit.v1_18_R2.event.CraftEventFactory;
++import org.bukkit.craftbukkit.v1_19_R1.block.CraftBlockState;
++import org.bukkit.craftbukkit.v1_19_R1.block.CraftBlockStates;
++import org.bukkit.craftbukkit.v1_19_R1.event.CraftEventFactory;
 +import org.bukkit.event.block.BlockBurnEvent;
 +import org.bukkit.event.block.BlockFadeEvent;
 +// CraftBukkit end
@@ -38,9 +38,9 @@
      private static final int BURN_EASY = 60;
      private static final int BURN_MEDIUM = 20;
      private static final int BURN_HARD = 5;
--    public final Object2IntMap<Block> flameOdds = new Object2IntOpenHashMap<>();
+-    public final Object2IntMap<Block> igniteOdds = new Object2IntOpenHashMap<>();
 -    private final Object2IntMap<Block> burnOdds = new Object2IntOpenHashMap<>();
-+    public final Object2IntMap<Block> flameOdds = new Object2IntOpenHashMap();
++    public final Object2IntMap<Block> igniteOdds = new Object2IntOpenHashMap();
 +    private final Object2IntMap<Block> burnOdds = new Object2IntOpenHashMap();
  
      public FireBlock(BlockBehaviour.Properties settings) {
@@ -169,7 +169,7 @@
      }
  
      @Override
-     public void tick(BlockState state, ServerLevel world, BlockPos pos, Random random) {
+     public void tick(BlockState state, ServerLevel world, BlockPos pos, RandomSource random) {
 -        world.scheduleTick(pos, this, getFireTickDelay(world.random));
 +        world.scheduleTick(pos, (Block) this, FireBlock.getFireTickDelay(world.random));
          if (world.getGameRules().getBoolean(GameRules.RULE_DOFIRETICK)) {
@@ -260,13 +260,13 @@
                                  }
  
 -                                mutableBlockPos.setWithOffset(pos, l, n, m);
--                                int p = this.getFireOdds(world, mutableBlockPos);
+-                                int p = this.getIgniteOdds(world, mutableBlockPos);
 -                                if (p > 0) {
 -                                    int q = (p + 40 + world.getDifficulty().getId() * 7) / (i + 30);
 -                                    if (bl2) {
 -                                        q /= 2;
 +                                blockposition_mutableblockposition.setWithOffset(pos, l, j1, i1);
-+                                int l1 = this.getFireOdds(world, blockposition_mutableblockposition);
++                                int l1 = this.getIgniteOdds(world, blockposition_mutableblockposition);
 +
 +                                if (l1 > 0) {
 +                                    int i2 = (l1 + 40 + world.getDifficulty().getId() * 7) / (i + 30);
@@ -293,30 +293,30 @@
                                      }
                                  }
                              }
-@@ -210,41 +262,71 @@
+@@ -210,40 +262,69 @@
      }
  
-     private int getBurnOdd(BlockState state) {
+     private int getBurnOdds(BlockState state) {
 -        return state.hasProperty(BlockStateProperties.WATERLOGGED) && state.getValue(BlockStateProperties.WATERLOGGED) ? 0 : this.burnOdds.getInt(state.getBlock());
 +        return state.hasProperty(BlockStateProperties.WATERLOGGED) && (Boolean) state.getValue(BlockStateProperties.WATERLOGGED) ? 0 : this.burnOdds.getInt(state.getBlock());
      }
  
-     private int getFlameOdds(BlockState state) {
--        return state.hasProperty(BlockStateProperties.WATERLOGGED) && state.getValue(BlockStateProperties.WATERLOGGED) ? 0 : this.flameOdds.getInt(state.getBlock());
-+        return state.hasProperty(BlockStateProperties.WATERLOGGED) && (Boolean) state.getValue(BlockStateProperties.WATERLOGGED) ? 0 : this.flameOdds.getInt(state.getBlock());
+     private int getIgniteOdds(BlockState state) {
+-        return state.hasProperty(BlockStateProperties.WATERLOGGED) && state.getValue(BlockStateProperties.WATERLOGGED) ? 0 : this.igniteOdds.getInt(state.getBlock());
++        return state.hasProperty(BlockStateProperties.WATERLOGGED) && (Boolean) state.getValue(BlockStateProperties.WATERLOGGED) ? 0 : this.igniteOdds.getInt(state.getBlock());
      }
  
--    private void checkBurnOut(Level world, BlockPos pos, int spreadFactor, Random rand, int currentAge) {
--        int i = this.getBurnOdd(world.getBlockState(pos));
--        if (rand.nextInt(spreadFactor) < i) {
+-    private void checkBurnOut(Level world, BlockPos pos, int spreadFactor, RandomSource random, int currentAge) {
+-        int i = this.getBurnOdds(world.getBlockState(pos));
+-        if (random.nextInt(spreadFactor) < i) {
 -            BlockState blockState = world.getBlockState(pos);
--            if (rand.nextInt(currentAge + 10) < 5 && !world.isRainingAt(pos)) {
--                int j = Math.min(currentAge + rand.nextInt(5) / 4, 15);
+-            if (random.nextInt(currentAge + 10) < 5 && !world.isRainingAt(pos)) {
+-                int j = Math.min(currentAge + random.nextInt(5) / 4, 15);
 -                world.setBlock(pos, this.getStateWithAge(world, pos, j), 3);
-+    private void trySpread(Level world, BlockPos blockposition, int i, Random random, int j, BlockPos sourceposition) { // CraftBukkit add sourceposition
-+        int k = this.getBurnOdd(world.getBlockState(blockposition));
++    private void trySpread(Level world, BlockPos blockposition, int i, RandomSource randomsource, int j, BlockPos sourceposition) { // CraftBukkit add sourceposition
++        int k = this.getBurnOdds(world.getBlockState(blockposition));
 +
-+        if (random.nextInt(i) < k) {
++        if (randomsource.nextInt(i) < k) {
 +            BlockState iblockdata = world.getBlockState(blockposition);
 +
 +            // CraftBukkit start
@@ -331,8 +331,8 @@
 +            }
 +            // CraftBukkit end
 +
-+            if (random.nextInt(j + 10) < 5 && !world.isRainingAt(blockposition)) {
-+                int l = Math.min(j + random.nextInt(5) / 4, 15);
++            if (randomsource.nextInt(j + 10) < 5 && !world.isRainingAt(blockposition)) {
++                int l = Math.min(j + randomsource.nextInt(5) / 4, 15);
 +
 +                world.setBlock(blockposition, this.getStateWithAge(world, blockposition, l), 3);
              } else {
@@ -344,10 +344,7 @@
 +            Block block = iblockdata.getBlock();
 +
              if (block instanceof TntBlock) {
--                TntBlock var10000 = (TntBlock)block;
 -                TntBlock.explode(world, pos);
-+                TntBlock blocktnt = (TntBlock) block;
-+
 +                // Paper start - TNTPrimeEvent
 +                org.bukkit.block.Block tntBlock = net.minecraft.server.MCUtil.toBukkitBlock(world, blockposition);
 +                if (!new com.destroystokyo.paper.event.block.TNTPrimeEvent(tntBlock, com.destroystokyo.paper.event.block.TNTPrimeEvent.PrimeReason.FIRE, null).callEvent()) {
@@ -382,7 +379,7 @@
                  return true;
              }
          }
-@@ -257,10 +339,14 @@
+@@ -256,10 +337,14 @@
              return 0;
          } else {
              int i = 0;
@@ -391,16 +388,16 @@
  
 -            for(Direction direction : Direction.values()) {
 -                BlockState blockState = world.getBlockState(pos.relative(direction));
--                i = Math.max(this.getFlameOdds(blockState), i);
+-                i = Math.max(this.getIgniteOdds(blockState), i);
 +            for (int k = 0; k < j; ++k) {
 +                Direction enumdirection = aenumdirection[k];
 +                BlockState iblockdata = world.getBlockState(pos.relative(enumdirection));
 +
-+                i = Math.max(this.getFlameOdds(iblockdata), i);
++                i = Math.max(this.getIgniteOdds(iblockdata), i);
              }
  
              return i;
-@@ -273,9 +359,11 @@
+@@ -272,9 +357,11 @@
      }
  
      @Override
@@ -414,8 +411,8 @@
 +        world.scheduleTick(blockposition, this, getFireTickDelay(world.random));
      }
  
-     private static int getFireTickDelay(Random random) {
-@@ -284,7 +372,7 @@
+     private static int getFireTickDelay(RandomSource random) {
+@@ -283,7 +370,7 @@
  
      @Override
      protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
@@ -424,7 +421,7 @@
      }
  
      private void setFlammable(Block block, int burnChance, int spreadChance) {
-@@ -293,146 +381,147 @@
+@@ -292,157 +379,158 @@
      }
  
      public static void bootStrap() {
@@ -435,60 +432,71 @@
 -        fireBlock.setFlammable(Blocks.JUNGLE_PLANKS, 5, 20);
 -        fireBlock.setFlammable(Blocks.ACACIA_PLANKS, 5, 20);
 -        fireBlock.setFlammable(Blocks.DARK_OAK_PLANKS, 5, 20);
+-        fireBlock.setFlammable(Blocks.MANGROVE_PLANKS, 5, 20);
 -        fireBlock.setFlammable(Blocks.OAK_SLAB, 5, 20);
 -        fireBlock.setFlammable(Blocks.SPRUCE_SLAB, 5, 20);
 -        fireBlock.setFlammable(Blocks.BIRCH_SLAB, 5, 20);
 -        fireBlock.setFlammable(Blocks.JUNGLE_SLAB, 5, 20);
 -        fireBlock.setFlammable(Blocks.ACACIA_SLAB, 5, 20);
 -        fireBlock.setFlammable(Blocks.DARK_OAK_SLAB, 5, 20);
+-        fireBlock.setFlammable(Blocks.MANGROVE_SLAB, 5, 20);
 -        fireBlock.setFlammable(Blocks.OAK_FENCE_GATE, 5, 20);
 -        fireBlock.setFlammable(Blocks.SPRUCE_FENCE_GATE, 5, 20);
 -        fireBlock.setFlammable(Blocks.BIRCH_FENCE_GATE, 5, 20);
 -        fireBlock.setFlammable(Blocks.JUNGLE_FENCE_GATE, 5, 20);
--        fireBlock.setFlammable(Blocks.DARK_OAK_FENCE_GATE, 5, 20);
 -        fireBlock.setFlammable(Blocks.ACACIA_FENCE_GATE, 5, 20);
+-        fireBlock.setFlammable(Blocks.DARK_OAK_FENCE_GATE, 5, 20);
+-        fireBlock.setFlammable(Blocks.MANGROVE_FENCE_GATE, 5, 20);
 -        fireBlock.setFlammable(Blocks.OAK_FENCE, 5, 20);
 -        fireBlock.setFlammable(Blocks.SPRUCE_FENCE, 5, 20);
 -        fireBlock.setFlammable(Blocks.BIRCH_FENCE, 5, 20);
 -        fireBlock.setFlammable(Blocks.JUNGLE_FENCE, 5, 20);
--        fireBlock.setFlammable(Blocks.DARK_OAK_FENCE, 5, 20);
 -        fireBlock.setFlammable(Blocks.ACACIA_FENCE, 5, 20);
+-        fireBlock.setFlammable(Blocks.DARK_OAK_FENCE, 5, 20);
+-        fireBlock.setFlammable(Blocks.MANGROVE_FENCE, 5, 20);
 -        fireBlock.setFlammable(Blocks.OAK_STAIRS, 5, 20);
 -        fireBlock.setFlammable(Blocks.BIRCH_STAIRS, 5, 20);
 -        fireBlock.setFlammable(Blocks.SPRUCE_STAIRS, 5, 20);
 -        fireBlock.setFlammable(Blocks.JUNGLE_STAIRS, 5, 20);
 -        fireBlock.setFlammable(Blocks.ACACIA_STAIRS, 5, 20);
 -        fireBlock.setFlammable(Blocks.DARK_OAK_STAIRS, 5, 20);
+-        fireBlock.setFlammable(Blocks.MANGROVE_STAIRS, 5, 20);
 -        fireBlock.setFlammable(Blocks.OAK_LOG, 5, 5);
 -        fireBlock.setFlammable(Blocks.SPRUCE_LOG, 5, 5);
 -        fireBlock.setFlammable(Blocks.BIRCH_LOG, 5, 5);
 -        fireBlock.setFlammable(Blocks.JUNGLE_LOG, 5, 5);
 -        fireBlock.setFlammable(Blocks.ACACIA_LOG, 5, 5);
 -        fireBlock.setFlammable(Blocks.DARK_OAK_LOG, 5, 5);
+-        fireBlock.setFlammable(Blocks.MANGROVE_LOG, 5, 5);
 -        fireBlock.setFlammable(Blocks.STRIPPED_OAK_LOG, 5, 5);
 -        fireBlock.setFlammable(Blocks.STRIPPED_SPRUCE_LOG, 5, 5);
 -        fireBlock.setFlammable(Blocks.STRIPPED_BIRCH_LOG, 5, 5);
 -        fireBlock.setFlammable(Blocks.STRIPPED_JUNGLE_LOG, 5, 5);
 -        fireBlock.setFlammable(Blocks.STRIPPED_ACACIA_LOG, 5, 5);
 -        fireBlock.setFlammable(Blocks.STRIPPED_DARK_OAK_LOG, 5, 5);
+-        fireBlock.setFlammable(Blocks.STRIPPED_MANGROVE_LOG, 5, 5);
 -        fireBlock.setFlammable(Blocks.STRIPPED_OAK_WOOD, 5, 5);
 -        fireBlock.setFlammable(Blocks.STRIPPED_SPRUCE_WOOD, 5, 5);
 -        fireBlock.setFlammable(Blocks.STRIPPED_BIRCH_WOOD, 5, 5);
 -        fireBlock.setFlammable(Blocks.STRIPPED_JUNGLE_WOOD, 5, 5);
 -        fireBlock.setFlammable(Blocks.STRIPPED_ACACIA_WOOD, 5, 5);
 -        fireBlock.setFlammable(Blocks.STRIPPED_DARK_OAK_WOOD, 5, 5);
+-        fireBlock.setFlammable(Blocks.STRIPPED_MANGROVE_WOOD, 5, 5);
 -        fireBlock.setFlammable(Blocks.OAK_WOOD, 5, 5);
 -        fireBlock.setFlammable(Blocks.SPRUCE_WOOD, 5, 5);
 -        fireBlock.setFlammable(Blocks.BIRCH_WOOD, 5, 5);
 -        fireBlock.setFlammable(Blocks.JUNGLE_WOOD, 5, 5);
 -        fireBlock.setFlammable(Blocks.ACACIA_WOOD, 5, 5);
 -        fireBlock.setFlammable(Blocks.DARK_OAK_WOOD, 5, 5);
+-        fireBlock.setFlammable(Blocks.MANGROVE_WOOD, 5, 5);
+-        fireBlock.setFlammable(Blocks.MANGROVE_ROOTS, 5, 20);
 -        fireBlock.setFlammable(Blocks.OAK_LEAVES, 30, 60);
 -        fireBlock.setFlammable(Blocks.SPRUCE_LEAVES, 30, 60);
 -        fireBlock.setFlammable(Blocks.BIRCH_LEAVES, 30, 60);
 -        fireBlock.setFlammable(Blocks.JUNGLE_LEAVES, 30, 60);
 -        fireBlock.setFlammable(Blocks.ACACIA_LEAVES, 30, 60);
 -        fireBlock.setFlammable(Blocks.DARK_OAK_LEAVES, 30, 60);
+-        fireBlock.setFlammable(Blocks.MANGROVE_LEAVES, 30, 60);
 -        fireBlock.setFlammable(Blocks.BOOKSHELF, 30, 20);
 -        fireBlock.setFlammable(Blocks.TNT, 15, 100);
 -        fireBlock.setFlammable(Blocks.GRASS, 60, 100);
@@ -577,60 +585,71 @@
 +        blockfire.setFlammable(Blocks.JUNGLE_PLANKS, 5, 20);
 +        blockfire.setFlammable(Blocks.ACACIA_PLANKS, 5, 20);
 +        blockfire.setFlammable(Blocks.DARK_OAK_PLANKS, 5, 20);
++        blockfire.setFlammable(Blocks.MANGROVE_PLANKS, 5, 20);
 +        blockfire.setFlammable(Blocks.OAK_SLAB, 5, 20);
 +        blockfire.setFlammable(Blocks.SPRUCE_SLAB, 5, 20);
 +        blockfire.setFlammable(Blocks.BIRCH_SLAB, 5, 20);
 +        blockfire.setFlammable(Blocks.JUNGLE_SLAB, 5, 20);
 +        blockfire.setFlammable(Blocks.ACACIA_SLAB, 5, 20);
 +        blockfire.setFlammable(Blocks.DARK_OAK_SLAB, 5, 20);
++        blockfire.setFlammable(Blocks.MANGROVE_SLAB, 5, 20);
 +        blockfire.setFlammable(Blocks.OAK_FENCE_GATE, 5, 20);
 +        blockfire.setFlammable(Blocks.SPRUCE_FENCE_GATE, 5, 20);
 +        blockfire.setFlammable(Blocks.BIRCH_FENCE_GATE, 5, 20);
 +        blockfire.setFlammable(Blocks.JUNGLE_FENCE_GATE, 5, 20);
-+        blockfire.setFlammable(Blocks.DARK_OAK_FENCE_GATE, 5, 20);
 +        blockfire.setFlammable(Blocks.ACACIA_FENCE_GATE, 5, 20);
++        blockfire.setFlammable(Blocks.DARK_OAK_FENCE_GATE, 5, 20);
++        blockfire.setFlammable(Blocks.MANGROVE_FENCE_GATE, 5, 20);
 +        blockfire.setFlammable(Blocks.OAK_FENCE, 5, 20);
 +        blockfire.setFlammable(Blocks.SPRUCE_FENCE, 5, 20);
 +        blockfire.setFlammable(Blocks.BIRCH_FENCE, 5, 20);
 +        blockfire.setFlammable(Blocks.JUNGLE_FENCE, 5, 20);
-+        blockfire.setFlammable(Blocks.DARK_OAK_FENCE, 5, 20);
 +        blockfire.setFlammable(Blocks.ACACIA_FENCE, 5, 20);
++        blockfire.setFlammable(Blocks.DARK_OAK_FENCE, 5, 20);
++        blockfire.setFlammable(Blocks.MANGROVE_FENCE, 5, 20);
 +        blockfire.setFlammable(Blocks.OAK_STAIRS, 5, 20);
 +        blockfire.setFlammable(Blocks.BIRCH_STAIRS, 5, 20);
 +        blockfire.setFlammable(Blocks.SPRUCE_STAIRS, 5, 20);
 +        blockfire.setFlammable(Blocks.JUNGLE_STAIRS, 5, 20);
 +        blockfire.setFlammable(Blocks.ACACIA_STAIRS, 5, 20);
 +        blockfire.setFlammable(Blocks.DARK_OAK_STAIRS, 5, 20);
++        blockfire.setFlammable(Blocks.MANGROVE_STAIRS, 5, 20);
 +        blockfire.setFlammable(Blocks.OAK_LOG, 5, 5);
 +        blockfire.setFlammable(Blocks.SPRUCE_LOG, 5, 5);
 +        blockfire.setFlammable(Blocks.BIRCH_LOG, 5, 5);
 +        blockfire.setFlammable(Blocks.JUNGLE_LOG, 5, 5);
 +        blockfire.setFlammable(Blocks.ACACIA_LOG, 5, 5);
 +        blockfire.setFlammable(Blocks.DARK_OAK_LOG, 5, 5);
++        blockfire.setFlammable(Blocks.MANGROVE_LOG, 5, 5);
 +        blockfire.setFlammable(Blocks.STRIPPED_OAK_LOG, 5, 5);
 +        blockfire.setFlammable(Blocks.STRIPPED_SPRUCE_LOG, 5, 5);
 +        blockfire.setFlammable(Blocks.STRIPPED_BIRCH_LOG, 5, 5);
 +        blockfire.setFlammable(Blocks.STRIPPED_JUNGLE_LOG, 5, 5);
 +        blockfire.setFlammable(Blocks.STRIPPED_ACACIA_LOG, 5, 5);
 +        blockfire.setFlammable(Blocks.STRIPPED_DARK_OAK_LOG, 5, 5);
++        blockfire.setFlammable(Blocks.STRIPPED_MANGROVE_LOG, 5, 5);
 +        blockfire.setFlammable(Blocks.STRIPPED_OAK_WOOD, 5, 5);
 +        blockfire.setFlammable(Blocks.STRIPPED_SPRUCE_WOOD, 5, 5);
 +        blockfire.setFlammable(Blocks.STRIPPED_BIRCH_WOOD, 5, 5);
 +        blockfire.setFlammable(Blocks.STRIPPED_JUNGLE_WOOD, 5, 5);
 +        blockfire.setFlammable(Blocks.STRIPPED_ACACIA_WOOD, 5, 5);
 +        blockfire.setFlammable(Blocks.STRIPPED_DARK_OAK_WOOD, 5, 5);
++        blockfire.setFlammable(Blocks.STRIPPED_MANGROVE_WOOD, 5, 5);
 +        blockfire.setFlammable(Blocks.OAK_WOOD, 5, 5);
 +        blockfire.setFlammable(Blocks.SPRUCE_WOOD, 5, 5);
 +        blockfire.setFlammable(Blocks.BIRCH_WOOD, 5, 5);
 +        blockfire.setFlammable(Blocks.JUNGLE_WOOD, 5, 5);
 +        blockfire.setFlammable(Blocks.ACACIA_WOOD, 5, 5);
 +        blockfire.setFlammable(Blocks.DARK_OAK_WOOD, 5, 5);
++        blockfire.setFlammable(Blocks.MANGROVE_WOOD, 5, 5);
++        blockfire.setFlammable(Blocks.MANGROVE_ROOTS, 5, 20);
 +        blockfire.setFlammable(Blocks.OAK_LEAVES, 30, 60);
 +        blockfire.setFlammable(Blocks.SPRUCE_LEAVES, 30, 60);
 +        blockfire.setFlammable(Blocks.BIRCH_LEAVES, 30, 60);
 +        blockfire.setFlammable(Blocks.JUNGLE_LEAVES, 30, 60);
 +        blockfire.setFlammable(Blocks.ACACIA_LEAVES, 30, 60);
 +        blockfire.setFlammable(Blocks.DARK_OAK_LEAVES, 30, 60);
++        blockfire.setFlammable(Blocks.MANGROVE_LEAVES, 30, 60);
 +        blockfire.setFlammable(Blocks.BOOKSHELF, 30, 20);
 +        blockfire.setFlammable(Blocks.TNT, 15, 100);
 +        blockfire.setFlammable(Blocks.GRASS, 60, 100);

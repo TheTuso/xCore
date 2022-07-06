@@ -8,113 +8,174 @@
  import com.mojang.brigadier.StringReader;
  import com.mojang.brigadier.exceptions.CommandSyntaxException;
  import com.mojang.brigadier.exceptions.Dynamic2CommandExceptionType;
-@@ -9,8 +10,10 @@
- import com.mojang.brigadier.exceptions.SimpleCommandExceptionType;
+@@ -10,8 +11,10 @@
  import com.mojang.brigadier.suggestion.Suggestions;
  import com.mojang.brigadier.suggestion.SuggestionsBuilder;
+ import com.mojang.datafixers.util.Either;
 +import java.util.Iterator;
  import java.util.Locale;
  import java.util.Map;
 +import java.util.Map.Entry;
  import java.util.Optional;
  import java.util.concurrent.CompletableFuture;
- import java.util.function.BiFunction;
-@@ -29,21 +32,22 @@
+ import java.util.function.Function;
+@@ -33,25 +36,26 @@
  import net.minecraft.world.level.block.state.properties.Property;
  
  public class BlockStateParser {
 +
-     public static final SimpleCommandExceptionType ERROR_NO_TAGS_ALLOWED = new SimpleCommandExceptionType(new TranslatableComponent("argument.block.tag.disallowed"));
+     public static final SimpleCommandExceptionType ERROR_NO_TAGS_ALLOWED = new SimpleCommandExceptionType(Component.translatable("argument.block.tag.disallowed"));
 -    public static final DynamicCommandExceptionType ERROR_UNKNOWN_BLOCK = new DynamicCommandExceptionType((block) -> {
--        return new TranslatableComponent("argument.block.id.invalid", block);
+-        return Component.translatable("argument.block.id.invalid", block);
 +    public static final DynamicCommandExceptionType ERROR_UNKNOWN_BLOCK = new DynamicCommandExceptionType((object) -> {
-+        return new TranslatableComponent("argument.block.id.invalid", new Object[]{object});
++        return Component.translatable("argument.block.id.invalid", object);
      });
 -    public static final Dynamic2CommandExceptionType ERROR_UNKNOWN_PROPERTY = new Dynamic2CommandExceptionType((block, property) -> {
--        return new TranslatableComponent("argument.block.property.unknown", block, property);
+-        return Component.translatable("argument.block.property.unknown", block, property);
 +    public static final Dynamic2CommandExceptionType ERROR_UNKNOWN_PROPERTY = new Dynamic2CommandExceptionType((object, object1) -> {
-+        return new TranslatableComponent("argument.block.property.unknown", new Object[]{object, object1});
++        return Component.translatable("argument.block.property.unknown", object, object1);
      });
 -    public static final Dynamic2CommandExceptionType ERROR_DUPLICATE_PROPERTY = new Dynamic2CommandExceptionType((block, property) -> {
--        return new TranslatableComponent("argument.block.property.duplicate", property, block);
+-        return Component.translatable("argument.block.property.duplicate", property, block);
 +    public static final Dynamic2CommandExceptionType ERROR_DUPLICATE_PROPERTY = new Dynamic2CommandExceptionType((object, object1) -> {
-+        return new TranslatableComponent("argument.block.property.duplicate", new Object[]{object1, object});
++        return Component.translatable("argument.block.property.duplicate", object1, object);
      });
 -    public static final Dynamic3CommandExceptionType ERROR_INVALID_VALUE = new Dynamic3CommandExceptionType((block, property, value) -> {
--        return new TranslatableComponent("argument.block.property.invalid", block, value, property);
+-        return Component.translatable("argument.block.property.invalid", block, value, property);
 +    public static final Dynamic3CommandExceptionType ERROR_INVALID_VALUE = new Dynamic3CommandExceptionType((object, object1, object2) -> {
-+        return new TranslatableComponent("argument.block.property.invalid", new Object[]{object, object2, object1});
++        return Component.translatable("argument.block.property.invalid", object, object2, object1);
      });
 -    public static final Dynamic2CommandExceptionType ERROR_EXPECTED_VALUE = new Dynamic2CommandExceptionType((block, property) -> {
--        return new TranslatableComponent("argument.block.property.novalue", block, property);
+-        return Component.translatable("argument.block.property.novalue", block, property);
 +    public static final Dynamic2CommandExceptionType ERROR_EXPECTED_VALUE = new Dynamic2CommandExceptionType((object, object1) -> {
-+        return new TranslatableComponent("argument.block.property.novalue", new Object[]{object, object1});
++        return Component.translatable("argument.block.property.novalue", object, object1);
      });
-     public static final SimpleCommandExceptionType ERROR_EXPECTED_END_OF_PROPERTIES = new SimpleCommandExceptionType(new TranslatableComponent("argument.block.property.unclosed"));
+     public static final SimpleCommandExceptionType ERROR_EXPECTED_END_OF_PROPERTIES = new SimpleCommandExceptionType(Component.translatable("argument.block.property.unclosed"));
+-    public static final DynamicCommandExceptionType ERROR_UNKNOWN_TAG = new DynamicCommandExceptionType((tag) -> {
+-        return Component.translatable("arguments.block.tag.unknown", tag);
++    public static final DynamicCommandExceptionType ERROR_UNKNOWN_TAG = new DynamicCommandExceptionType((object) -> {
++        return Component.translatable("arguments.block.tag.unknown", object);
+     });
      private static final char SYNTAX_START_PROPERTIES = '[';
-@@ -52,12 +56,12 @@
-     private static final char SYNTAX_EQUALS = '=';
-     private static final char SYNTAX_PROPERTY_SEPARATOR = ',';
-     private static final char SYNTAX_TAG = '#';
--    private static final BiFunction<SuggestionsBuilder, Registry<Block>, CompletableFuture<Suggestions>> SUGGEST_NOTHING = (builder, registry) -> {
--        return builder.buildFuture();
-+    private static final BiFunction<SuggestionsBuilder, Registry<Block>, CompletableFuture<Suggestions>> SUGGEST_NOTHING = (suggestionsbuilder, iregistry) -> {
-+        return suggestionsbuilder.buildFuture();
-     };
+     private static final char SYNTAX_START_NBT = '{';
+@@ -64,7 +68,7 @@
      private final StringReader reader;
      private final boolean forTesting;
+     private final boolean allowNbt;
 -    private final Map<Property<?>, Comparable<?>> properties = Maps.newHashMap();
 +    private final Map<Property<?>, Comparable<?>> properties = Maps.newLinkedHashMap(); // CraftBukkit - stable
      private final Map<String, String> vagueProperties = Maps.newHashMap();
      public ResourceLocation id = new ResourceLocation("");
-     private StateDefinition<Block, BlockState> definition;
-@@ -67,9 +71,10 @@
      @Nullable
-     private TagKey<Block> tag;
-     private int tagCursor;
--    private BiFunction<SuggestionsBuilder, Registry<Block>, CompletableFuture<Suggestions>> suggestions = SUGGEST_NOTHING;
-+    private BiFunction<SuggestionsBuilder, Registry<Block>, CompletableFuture<Suggestions>> suggestions;
+@@ -75,9 +79,10 @@
+     private CompoundTag nbt;
+     @Nullable
+     private HolderSet<Block> tag;
+-    private Function<SuggestionsBuilder, CompletableFuture<Suggestions>> suggestions = SUGGEST_NOTHING;
++    private Function<SuggestionsBuilder, CompletableFuture<Suggestions>> suggestions;
  
-     public BlockStateParser(StringReader reader, boolean allowTag) {
+     private BlockStateParser(HolderLookup<Block> registryWrapper, StringReader reader, boolean allowTag, boolean allowSnbt) {
 +        this.suggestions = BlockStateParser.SUGGEST_NOTHING;
+         this.blocks = registryWrapper;
          this.reader = reader;
          this.forTesting = allowTag;
+@@ -85,58 +90,62 @@
      }
-@@ -112,48 +117,59 @@
+ 
+     public static BlockStateParser.BlockResult parseForBlock(Registry<Block> registry, String string, boolean allowSnbt) throws CommandSyntaxException {
+-        return parseForBlock(registry, new StringReader(string), allowSnbt);
++        return BlockStateParser.parseForBlock(registry, new StringReader(string), allowSnbt);
+     }
+ 
+     public static BlockStateParser.BlockResult parseForBlock(Registry<Block> registry, StringReader reader, boolean allowSnbt) throws CommandSyntaxException {
+-        return parseForBlock(HolderLookup.forRegistry(registry), reader, allowSnbt);
++        return BlockStateParser.parseForBlock(HolderLookup.forRegistry(registry), reader, allowSnbt);
+     }
+ 
+     public static BlockStateParser.BlockResult parseForBlock(HolderLookup<Block> registryWrapper, StringReader reader, boolean allowSnbt) throws CommandSyntaxException {
+         int i = reader.getCursor();
+ 
+         try {
+-            BlockStateParser blockStateParser = new BlockStateParser(registryWrapper, reader, false, allowSnbt);
+-            blockStateParser.parse();
+-            return new BlockStateParser.BlockResult(blockStateParser.state, blockStateParser.properties, blockStateParser.nbt);
+-        } catch (CommandSyntaxException var5) {
++            BlockStateParser argumentblock = new BlockStateParser(registryWrapper, reader, false, allowSnbt);
++
++            argumentblock.parse();
++            return new BlockStateParser.BlockResult(argumentblock.state, argumentblock.properties, argumentblock.nbt);
++        } catch (CommandSyntaxException commandsyntaxexception) {
+             reader.setCursor(i);
+-            throw var5;
++            throw commandsyntaxexception;
+         }
+     }
+ 
+     public static Either<BlockStateParser.BlockResult, BlockStateParser.TagResult> parseForTesting(Registry<Block> registry, String string, boolean allowSnbt) throws CommandSyntaxException {
+-        return parseForTesting(registry, new StringReader(string), allowSnbt);
++        return BlockStateParser.parseForTesting(registry, new StringReader(string), allowSnbt);
+     }
+ 
+     public static Either<BlockStateParser.BlockResult, BlockStateParser.TagResult> parseForTesting(Registry<Block> registry, StringReader reader, boolean allowSnbt) throws CommandSyntaxException {
+-        return parseForTesting(HolderLookup.forRegistry(registry), new StringReader(reader), allowSnbt);
++        return BlockStateParser.parseForTesting(HolderLookup.forRegistry(registry), new StringReader(reader), allowSnbt);
+     }
+ 
+     public static Either<BlockStateParser.BlockResult, BlockStateParser.TagResult> parseForTesting(HolderLookup<Block> registryWrapper, StringReader reader, boolean allowSnbt) throws CommandSyntaxException {
+         int i = reader.getCursor();
+ 
+         try {
+-            BlockStateParser blockStateParser = new BlockStateParser(registryWrapper, reader, true, allowSnbt);
+-            blockStateParser.parse();
+-            return blockStateParser.tag != null ? Either.right(new BlockStateParser.TagResult(blockStateParser.tag, blockStateParser.vagueProperties, blockStateParser.nbt)) : Either.left(new BlockStateParser.BlockResult(blockStateParser.state, blockStateParser.properties, blockStateParser.nbt));
+-        } catch (CommandSyntaxException var5) {
++            BlockStateParser argumentblock = new BlockStateParser(registryWrapper, reader, true, allowSnbt);
++
++            argumentblock.parse();
++            return argumentblock.tag != null ? Either.right(new BlockStateParser.TagResult(argumentblock.tag, argumentblock.vagueProperties, argumentblock.nbt)) : Either.left(new BlockStateParser.BlockResult(argumentblock.state, argumentblock.properties, argumentblock.nbt));
++        } catch (CommandSyntaxException commandsyntaxexception) {
+             reader.setCursor(i);
+-            throw var5;
++            throw commandsyntaxexception;
+         }
+     }
+ 
+     public static CompletableFuture<Suggestions> fillSuggestions(HolderLookup<Block> registryWrapper, SuggestionsBuilder builder, boolean allowTag, boolean allowSnbt) {
+-        StringReader stringReader = new StringReader(builder.getInput());
+-        stringReader.setCursor(builder.getStart());
+-        BlockStateParser blockStateParser = new BlockStateParser(registryWrapper, stringReader, allowTag, allowSnbt);
++        StringReader stringreader = new StringReader(builder.getInput());
++
++        stringreader.setCursor(builder.getStart());
++        BlockStateParser argumentblock = new BlockStateParser(registryWrapper, stringreader, allowTag, allowSnbt);
+ 
+         try {
+-            blockStateParser.parse();
+-        } catch (CommandSyntaxException var7) {
++            argumentblock.parse();
++        } catch (CommandSyntaxException commandsyntaxexception) {
++            ;
          }
  
-         if (allowNbt && this.reader.canRead() && this.reader.peek() == '{') {
+-        return blockStateParser.suggestions.apply(builder.createOffset(stringReader.getCursor()));
++        return (CompletableFuture) argumentblock.suggestions.apply(builder.createOffset(stringreader.getCursor()));
+     }
+ 
+     private void parse() throws CommandSyntaxException {
+@@ -163,7 +172,7 @@
+         }
+ 
+         if (this.allowNbt && this.reader.canRead() && this.reader.peek() == '{') {
 -            this.suggestions = SUGGEST_NOTHING;
 +            this.suggestions = BlockStateParser.SUGGEST_NOTHING;
              this.readNbt();
          }
  
-         return this;
+@@ -186,11 +195,14 @@
      }
  
--    private CompletableFuture<Suggestions> suggestPropertyNameOrEnd(SuggestionsBuilder builder, Registry<Block> registry) {
-+    private CompletableFuture<Suggestions> suggestPropertyNameOrEnd(SuggestionsBuilder builder, Registry<Block> iregistry) {
-         if (builder.getRemaining().isEmpty()) {
-             builder.suggest(String.valueOf(']'));
-         }
- 
--        return this.suggestPropertyName(builder, registry);
-+        return this.suggestPropertyName(builder, iregistry);
-     }
- 
--    private CompletableFuture<Suggestions> suggestVaguePropertyNameOrEnd(SuggestionsBuilder builder, Registry<Block> registry) {
-+    private CompletableFuture<Suggestions> suggestVaguePropertyNameOrEnd(SuggestionsBuilder builder, Registry<Block> iregistry) {
-         if (builder.getRemaining().isEmpty()) {
-             builder.suggest(String.valueOf(']'));
-         }
- 
--        return this.suggestVaguePropertyName(builder, registry);
-+        return this.suggestVaguePropertyName(builder, iregistry);
-     }
- 
--    private CompletableFuture<Suggestions> suggestPropertyName(SuggestionsBuilder builder, Registry<Block> registry) {
+     private CompletableFuture<Suggestions> suggestPropertyName(SuggestionsBuilder builder) {
 -        String string = builder.getRemaining().toLowerCase(Locale.ROOT);
-+    private CompletableFuture<Suggestions> suggestPropertyName(SuggestionsBuilder builder, Registry<Block> iregistry) {
 +        String s = builder.getRemaining().toLowerCase(Locale.ROOT);
 +        Iterator iterator = this.state.getProperties().iterator();
  
@@ -129,20 +190,19 @@
              }
          }
  
-         return builder.buildFuture();
+@@ -198,12 +210,20 @@
      }
  
--    private CompletableFuture<Suggestions> suggestVaguePropertyName(SuggestionsBuilder builder, Registry<Block> registry) {
+     private CompletableFuture<Suggestions> suggestVaguePropertyName(SuggestionsBuilder builder) {
 -        String string = builder.getRemaining().toLowerCase(Locale.ROOT);
-+    private CompletableFuture<Suggestions> suggestVaguePropertyName(SuggestionsBuilder builder, Registry<Block> iregistry) {
 +        String s = builder.getRemaining().toLowerCase(Locale.ROOT);
 +
          if (this.tag != null) {
--            for(Holder<Block> holder : registry.getTagOrEmpty(this.tag)) {
+-            for(Holder<Block> holder : this.tag) {
 -                for(Property<?> property : holder.value().getStateDefinition().getProperties()) {
 -                    if (!this.vagueProperties.containsKey(property.getName()) && property.getName().startsWith(string)) {
 -                        builder.suggest(property.getName() + "=");
-+            Iterator iterator = iregistry.getTagOrEmpty(this.tag).iterator();
++            Iterator iterator = this.tag.iterator();
 +
 +            while (iterator.hasNext()) {
 +                Holder<Block> holder = (Holder) iterator.next();
@@ -156,29 +216,13 @@
                      }
                  }
              }
-@@ -162,21 +178,25 @@
-         return builder.buildFuture();
-     }
- 
--    private CompletableFuture<Suggestions> suggestOpenNbt(SuggestionsBuilder builder, Registry<Block> registry) {
--        if (builder.getRemaining().isEmpty() && this.hasBlockEntity(registry)) {
-+    private CompletableFuture<Suggestions> suggestOpenNbt(SuggestionsBuilder builder, Registry<Block> iregistry) {
-+        if (builder.getRemaining().isEmpty() && this.hasBlockEntity(iregistry)) {
-             builder.suggest(String.valueOf('{'));
-         }
- 
-         return builder.buildFuture();
-     }
- 
--    private boolean hasBlockEntity(Registry<Block> registry) {
-+    private boolean hasBlockEntity(Registry<Block> iregistry) {
-         if (this.state != null) {
+@@ -225,8 +245,12 @@
              return this.state.hasBlockEntity();
          } else {
              if (this.tag != null) {
--                for(Holder<Block> holder : registry.getTagOrEmpty(this.tag)) {
+-                for(Holder<Block> holder : this.tag) {
 -                    if (holder.value().defaultBlockState().hasBlockEntity()) {
-+                Iterator iterator = iregistry.getTagOrEmpty(this.tag).iterator();
++                Iterator iterator = this.tag.iterator();
 +
 +                while (iterator.hasNext()) {
 +                    Holder<Block> holder = (Holder) iterator.next();
@@ -187,64 +231,46 @@
                          return true;
                      }
                  }
-@@ -186,7 +206,7 @@
-         }
-     }
- 
--    private CompletableFuture<Suggestions> suggestEquals(SuggestionsBuilder builder, Registry<Block> registry) {
-+    private CompletableFuture<Suggestions> suggestEquals(SuggestionsBuilder builder, Registry<Block> iregistry) {
-         if (builder.getRemaining().isEmpty()) {
-             builder.suggest(String.valueOf('='));
-         }
-@@ -194,7 +214,7 @@
-         return builder.buildFuture();
-     }
- 
--    private CompletableFuture<Suggestions> suggestNextPropertyOrEnd(SuggestionsBuilder builder, Registry<Block> registry) {
-+    private CompletableFuture<Suggestions> suggestNextPropertyOrEnd(SuggestionsBuilder builder, Registry<Block> iregistry) {
-         if (builder.getRemaining().isEmpty()) {
-             builder.suggest(String.valueOf(']'));
-         }
-@@ -207,31 +227,44 @@
+@@ -257,11 +281,17 @@
      }
  
      private static <T extends Comparable<T>> SuggestionsBuilder addSuggestions(SuggestionsBuilder builder, Property<T> property) {
 -        for(T comparable : property.getPossibleValues()) {
--            if (comparable instanceof Integer) {
--                builder.suggest(comparable);
+-            if (comparable instanceof Integer integer) {
 +        Iterator iterator = property.getPossibleValues().iterator();
 +
 +        while (iterator.hasNext()) {
 +            T t0 = (T) iterator.next(); // CraftBukkit - decompile error
 +
 +            if (t0 instanceof Integer) {
-+                builder.suggest((Integer) t0);
++                Integer integer = (Integer) t0;
++
+                 builder.suggest(integer);
              } else {
 -                builder.suggest(property.getName(comparable));
 +                builder.suggest(property.getName(t0));
              }
          }
  
-         return builder;
+@@ -269,19 +299,28 @@
      }
  
--    private CompletableFuture<Suggestions> suggestVaguePropertyValue(SuggestionsBuilder builder, Registry<Block> registry, String propertyName) {
+     private CompletableFuture<Suggestions> suggestVaguePropertyValue(SuggestionsBuilder builder, String name) {
 -        boolean bl = false;
-+    private CompletableFuture<Suggestions> suggestVaguePropertyValue(SuggestionsBuilder builder, Registry<Block> iregistry, String propertyName) {
 +        boolean flag = false;
 +
          if (this.tag != null) {
--            for(Holder<Block> holder : registry.getTagOrEmpty(this.tag)) {
+-            for(Holder<Block> holder : this.tag) {
 -                Block block = holder.value();
--                Property<?> property = block.getStateDefinition().getProperty(propertyName);
+-                Property<?> property = block.getStateDefinition().getProperty(name);
 -                if (property != null) {
 -                    addSuggestions(builder, property);
-+            Iterator iterator = iregistry.getTagOrEmpty(this.tag).iterator();
++            Iterator iterator = this.tag.iterator();
 +
 +            while (iterator.hasNext()) {
 +                Holder<Block> holder = (Holder) iterator.next();
 +                Block block = (Block) holder.value();
-+                Property<?> iblockstate = block.getStateDefinition().getProperty(propertyName);
++                Property<?> iblockstate = block.getStateDefinition().getProperty(name);
 +
 +                if (iblockstate != null) {
 +                    BlockStateParser.addSuggestions(builder, iblockstate);
@@ -265,7 +291,7 @@
                              break;
                          }
                      }
-@@ -239,7 +272,7 @@
+@@ -289,7 +328,7 @@
              }
          }
  
@@ -274,20 +300,17 @@
              builder.suggest(String.valueOf(','));
          }
  
-@@ -247,33 +280,36 @@
-         return builder.buildFuture();
-     }
+@@ -299,23 +338,26 @@
  
--    private CompletableFuture<Suggestions> suggestOpenVaguePropertiesOrNbt(SuggestionsBuilder builder, Registry<Block> registry) {
-+    private CompletableFuture<Suggestions> suggestOpenVaguePropertiesOrNbt(SuggestionsBuilder builder, Registry<Block> iregistry) {
+     private CompletableFuture<Suggestions> suggestOpenVaguePropertiesOrNbt(SuggestionsBuilder builder) {
          if (builder.getRemaining().isEmpty() && this.tag != null) {
 -            boolean bl = false;
 -            boolean bl2 = false;
 +            boolean flag = false;
 +            boolean flag1 = false;
-+            Iterator iterator = iregistry.getTagOrEmpty(this.tag).iterator();
++            Iterator iterator = this.tag.iterator();
  
--            for(Holder<Block> holder : registry.getTagOrEmpty(this.tag)) {
+-            for(Holder<Block> holder : this.tag) {
 -                Block block = holder.value();
 -                bl |= !block.getStateDefinition().getProperties().isEmpty();
 -                bl2 |= block.defaultBlockState().hasBlockEntity();
@@ -313,61 +336,45 @@
                  builder.suggest(String.valueOf('{'));
              }
          }
+@@ -353,26 +395,30 @@
  
--        return this.suggestTag(builder, registry);
-+        return this.suggestTag(builder, iregistry);
-     }
- 
--    private CompletableFuture<Suggestions> suggestOpenPropertiesOrNbt(SuggestionsBuilder builder, Registry<Block> registry) {
-+    private CompletableFuture<Suggestions> suggestOpenPropertiesOrNbt(SuggestionsBuilder builder, Registry<Block> iregistry) {
-         if (builder.getRemaining().isEmpty()) {
-             if (!this.state.getBlock().getStateDefinition().getProperties().isEmpty()) {
-                 builder.suggest(String.valueOf('['));
-@@ -287,33 +323,35 @@
-         return builder.buildFuture();
-     }
- 
--    private CompletableFuture<Suggestions> suggestTag(SuggestionsBuilder builder, Registry<Block> registry) {
--        return SharedSuggestionProvider.suggestResource(registry.getTagNames().map(TagKey::location), builder.createOffset(this.tagCursor).add(builder));
-+    private CompletableFuture<Suggestions> suggestTag(SuggestionsBuilder builder, Registry<Block> iregistry) {
-+        return SharedSuggestionProvider.suggestResource(iregistry.getTagNames().map(TagKey::location), builder.createOffset(this.tagCursor).add(builder));
-     }
- 
--    private CompletableFuture<Suggestions> suggestBlockIdOrTag(SuggestionsBuilder builder, Registry<Block> registry) {
-+    private CompletableFuture<Suggestions> suggestBlockIdOrTag(SuggestionsBuilder builder, Registry<Block> iregistry) {
-         if (this.forTesting) {
--            SharedSuggestionProvider.suggestResource(registry.getTagNames().map(TagKey::location), builder, String.valueOf('#'));
-+            SharedSuggestionProvider.suggestResource(iregistry.getTagNames().map(TagKey::location), builder, String.valueOf('#'));
-         }
- 
--        SharedSuggestionProvider.suggestResource(registry.keySet(), builder);
-+        SharedSuggestionProvider.suggestResource((Iterable) iregistry.keySet(), builder);
-         return builder.buildFuture();
-     }
- 
-     public void readBlock() throws CommandSyntaxException {
+     private void readBlock() throws CommandSyntaxException {
          int i = this.reader.getCursor();
 +
          this.id = ResourceLocation.read(this.reader);
--        Block block = Registry.BLOCK.getOptional(this.id).orElseThrow(() -> {
-+        Block block = (Block) Registry.BLOCK.getOptional(this.id).orElseThrow(() -> {
+-        Block block = this.blocks.get(ResourceKey.create(Registry.BLOCK_REGISTRY, this.id)).orElseThrow(() -> {
++        Block block = (Block) ((Holder) this.blocks.get(ResourceKey.create(Registry.BLOCK_REGISTRY, this.id)).orElseThrow(() -> {
              this.reader.setCursor(i);
 -            return ERROR_UNKNOWN_BLOCK.createWithContext(this.reader, this.id.toString());
+-        }).value();
 +            return BlockStateParser.ERROR_UNKNOWN_BLOCK.createWithContext(this.reader, this.id.toString());
-         });
++        })).value();
 +
          this.definition = block.getStateDefinition();
          this.state = block.defaultBlockState();
      }
  
-     public void readTag() throws CommandSyntaxException {
+     private void readTag() throws CommandSyntaxException {
          if (!this.forTesting) {
--            throw ERROR_NO_TAGS_ALLOWED.create();
-+            throw BlockStateParser.ERROR_NO_TAGS_ALLOWED.create();
+-            throw ERROR_NO_TAGS_ALLOWED.createWithContext(this.reader);
++            throw BlockStateParser.ERROR_NO_TAGS_ALLOWED.createWithContext(this.reader);
          } else {
-             this.suggestions = this::suggestTag;
+             int i = this.reader.getCursor();
++
              this.reader.expect('#');
-@@ -327,35 +365,37 @@
+             this.suggestions = this::suggestTag;
+-            ResourceLocation resourceLocation = ResourceLocation.read(this.reader);
+-            this.tag = this.blocks.get(TagKey.create(Registry.BLOCK_REGISTRY, resourceLocation)).orElseThrow(() -> {
++            ResourceLocation minecraftkey = ResourceLocation.read(this.reader);
++
++            this.tag = (HolderSet) this.blocks.get(TagKey.create(Registry.BLOCK_REGISTRY, minecraftkey)).orElseThrow(() -> {
+                 this.reader.setCursor(i);
+-                return ERROR_UNKNOWN_TAG.createWithContext(this.reader, resourceLocation.toString());
++                return BlockStateParser.ERROR_UNKNOWN_TAG.createWithContext(this.reader, minecraftkey.toString());
+             });
+         }
+     }
+@@ -382,35 +428,37 @@
          this.suggestions = this::suggestPropertyNameOrEnd;
          this.reader.skipWhitespace();
  
@@ -404,9 +411,9 @@
  
                  this.reader.skip();
                  this.reader.skipWhitespace();
--                this.suggestions = (builder, registry) -> {
+-                this.suggestions = (builder) -> {
 -                    return addSuggestions(builder, property).buildFuture();
-+                this.suggestions = (suggestionsbuilder, iregistry) -> {
++                this.suggestions = (suggestionsbuilder) -> {
 +                    return BlockStateParser.addSuggestions(suggestionsbuilder, iblockstate).buildFuture();
                  };
                  int j = this.reader.getCursor();
@@ -416,7 +423,7 @@
                  this.suggestions = this::suggestNextPropertyOrEnd;
                  this.reader.skipWhitespace();
                  if (!this.reader.canRead()) {
-@@ -369,7 +409,7 @@
+@@ -424,7 +472,7 @@
                  }
  
                  if (this.reader.peek() != ']') {
@@ -425,7 +432,7 @@
                  }
              }
  
-@@ -378,7 +418,7 @@
+@@ -433,7 +481,7 @@
                  return;
              }
  
@@ -434,7 +441,7 @@
          }
      }
  
-@@ -386,32 +426,35 @@
+@@ -441,32 +489,35 @@
          this.reader.skip();
          this.suggestions = this::suggestVaguePropertyNameOrEnd;
          int i = -1;
@@ -465,10 +472,10 @@
  
                  this.reader.skip();
                  this.reader.skipWhitespace();
--                this.suggestions = (builder, registry) -> {
--                    return this.suggestVaguePropertyValue(builder, registry, string);
-+                this.suggestions = (suggestionsbuilder, iregistry) -> {
-+                    return this.suggestVaguePropertyValue(suggestionsbuilder, iregistry, s);
+-                this.suggestions = (builder) -> {
+-                    return this.suggestVaguePropertyValue(builder, string);
++                this.suggestions = (suggestionsbuilder) -> {
++                    return this.suggestVaguePropertyValue(suggestionsbuilder, s);
                  };
                  i = this.reader.getCursor();
 -                String string2 = this.reader.readString();
@@ -479,7 +486,7 @@
                  this.reader.skipWhitespace();
                  if (!this.reader.canRead()) {
                      continue;
-@@ -425,7 +468,7 @@
+@@ -480,7 +531,7 @@
                  }
  
                  if (this.reader.peek() != ']') {
@@ -488,7 +495,7 @@
                  }
              }
  
-@@ -438,7 +481,7 @@
+@@ -493,7 +544,7 @@
                  this.reader.setCursor(i);
              }
  
@@ -497,7 +504,7 @@
          }
      }
  
-@@ -448,44 +491,47 @@
+@@ -503,47 +554,52 @@
  
      private <T extends Comparable<T>> void setValue(Property<T> property, String value, int cursor) throws CommandSyntaxException {
          Optional<T> optional = property.getValue(value);
@@ -515,8 +522,11 @@
      }
  
      public static String serialize(BlockState state) {
--        StringBuilder stringBuilder = new StringBuilder(Registry.BLOCK.getKey(state.getBlock()).toString());
-+        StringBuilder stringbuilder = new StringBuilder(Registry.BLOCK.getKey(state.getBlock()).toString());
+-        StringBuilder stringBuilder = new StringBuilder(state.getBlockHolder().unwrapKey().map((key) -> {
+-            return key.location().toString();
++        StringBuilder stringbuilder = new StringBuilder((String) state.getBlockHolder().unwrapKey().map((resourcekey) -> {
++            return resourcekey.location().toString();
+         }).orElse("air"));
 +
          if (!state.getProperties().isEmpty()) {
 -            stringBuilder.append('[');
@@ -554,10 +564,11 @@
 +        builder.append(property.getName((T) value)); // CraftBukkit - decompile error
      }
  
--    public CompletableFuture<Suggestions> fillSuggestions(SuggestionsBuilder builder, Registry<Block> registry) {
--        return this.suggestions.apply(builder.createOffset(this.reader.getCursor()), registry);
-+    public CompletableFuture<Suggestions> fillSuggestions(SuggestionsBuilder builder, Registry<Block> iregistry) {
-+        return (CompletableFuture) this.suggestions.apply(builder.createOffset(this.reader.getCursor()), iregistry);
+     public static record BlockResult(BlockState blockState, Map<Property<?>, Comparable<?>> properties, @Nullable CompoundTag nbt) {
++
      }
  
-     public Map<String, String> getVagueProperties() {
+     public static record TagResult(HolderSet<Block> tag, Map<String, String> vagueProperties, @Nullable CompoundTag nbt) {
++
+     }
+ }

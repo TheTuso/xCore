@@ -15,9 +15,9 @@
  import net.minecraft.world.item.Items;
  import net.minecraft.world.level.Level;
 +// CraftBukkit start
-+import org.bukkit.craftbukkit.v1_18_R2.inventory.CraftItemStack;
-+import org.bukkit.craftbukkit.v1_18_R2.inventory.CraftRecipe;
-+import org.bukkit.craftbukkit.v1_18_R2.inventory.CraftShapedRecipe;
++import org.bukkit.craftbukkit.v1_19_R1.inventory.CraftItemStack;
++import org.bukkit.craftbukkit.v1_19_R1.inventory.CraftRecipe;
++import org.bukkit.craftbukkit.v1_19_R1.inventory.CraftShapedRecipe;
 +import org.bukkit.inventory.RecipeChoice;
 +// CraftBukkit end
  

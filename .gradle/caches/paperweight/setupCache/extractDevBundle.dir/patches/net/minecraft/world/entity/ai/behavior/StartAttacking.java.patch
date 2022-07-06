@@ -9,8 +9,8 @@
  import net.minecraft.world.entity.Mob;
  import net.minecraft.world.entity.ai.memory.MemoryModuleType;
  import net.minecraft.world.entity.ai.memory.MemoryStatus;
-+import org.bukkit.craftbukkit.v1_18_R2.entity.CraftLivingEntity;
-+import org.bukkit.craftbukkit.v1_18_R2.event.CraftEventFactory;
++import org.bukkit.craftbukkit.v1_19_R1.entity.CraftLivingEntity;
++import org.bukkit.craftbukkit.v1_19_R1.event.CraftEventFactory;
 +import org.bukkit.event.entity.EntityTargetEvent;
 +// CraftBukkit end
  
@@ -19,11 +19,11 @@
      private final Predicate<E> canAttackPredicate;
      private final Function<E, Optional<? extends LivingEntity>> targetFinderFunction;
  
-@@ -21,30 +27,37 @@
+@@ -25,30 +31,37 @@
      }
  
      public StartAttacking(Function<E, Optional<? extends LivingEntity>> targetGetter) {
--        this((mob) -> {
+-        this((entity) -> {
 +        this((entityinsentient) -> {
              return true;
          }, targetGetter);
@@ -44,14 +44,14 @@
  
 -    @Override
      protected void start(ServerLevel world, E entity, long time) {
--        this.targetFinderFunction.apply(entity).ifPresent((livingEntity) -> {
--            this.setAttackTarget(entity, livingEntity);
+-        this.targetFinderFunction.apply(entity).ifPresent((target) -> {
+-            setAttackTarget(entity, target);
 +        (this.targetFinderFunction.apply(entity)).ifPresent((entityliving) -> { // CraftBukkit - decompile error
-+            this.setAttackTarget(entity, entityliving);
++            StartAttacking.setAttackTarget(entity, entityliving);
          });
      }
  
-     private void setAttackTarget(E entity, LivingEntity target) {
+     public static <E extends Mob> void setAttackTarget(E entity, LivingEntity target) {
 -        entity.getBrain().setMemory(MemoryModuleType.ATTACK_TARGET, target);
 +        // CraftBukkit start
 +        EntityTargetEvent event = CraftEventFactory.callEntityTargetLivingEvent(entity, target, (target instanceof ServerPlayer) ? EntityTargetEvent.TargetReason.CLOSEST_PLAYER : EntityTargetEvent.TargetReason.CLOSEST_ENTITY);

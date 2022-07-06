@@ -1,15 +1,15 @@
 --- a/net/minecraft/world/entity/Mob.java
 +++ b/net/minecraft/world/entity/Mob.java
-@@ -2,6 +2,8 @@
- 
+@@ -3,6 +3,8 @@
+ import com.google.common.collect.ImmutableSet;
  import com.google.common.collect.Maps;
  import java.util.Arrays;
 +import java.util.Iterator;
 +import java.util.List;
  import java.util.Map;
  import java.util.Optional;
- import java.util.Random;
-@@ -21,6 +23,7 @@
+ import java.util.UUID;
+@@ -22,6 +24,7 @@
  import net.minecraft.network.syncher.SynchedEntityData;
  import net.minecraft.resources.ResourceLocation;
  import net.minecraft.server.level.ServerLevel;
@@ -17,7 +17,7 @@
  import net.minecraft.sounds.SoundEvent;
  import net.minecraft.tags.TagKey;
  import net.minecraft.util.Mth;
-@@ -61,6 +64,7 @@
+@@ -63,6 +66,7 @@
  import net.minecraft.world.item.SwordItem;
  import net.minecraft.world.item.enchantment.EnchantmentHelper;
  import net.minecraft.world.level.GameRules;
@@ -25,12 +25,12 @@
  import net.minecraft.world.level.Level;
  import net.minecraft.world.level.LevelAccessor;
  import net.minecraft.world.level.LevelReader;
-@@ -68,8 +72,19 @@
+@@ -71,8 +75,19 @@
  import net.minecraft.world.level.material.Fluid;
  import net.minecraft.world.level.pathfinder.BlockPathTypes;
  import net.minecraft.world.level.storage.loot.LootContext;
-+import org.bukkit.craftbukkit.v1_18_R2.event.CraftEventFactory;
-+import org.bukkit.craftbukkit.v1_18_R2.entity.CraftLivingEntity;
++import org.bukkit.craftbukkit.v1_19_R1.event.CraftEventFactory;
++import org.bukkit.craftbukkit.v1_19_R1.entity.CraftLivingEntity;
 +import org.bukkit.event.entity.CreatureSpawnEvent;
 +import org.bukkit.event.entity.EntityCombustByEntityEvent;
 +import org.bukkit.event.entity.EntityTargetLivingEntityEvent;
@@ -45,7 +45,7 @@
      private static final EntityDataAccessor<Byte> DATA_MOB_FLAGS_ID = SynchedEntityData.defineId(Mob.class, EntityDataSerializers.BYTE);
      private static final int MOB_FLAG_NO_AI = 1;
      private static final int MOB_FLAG_LEFTHANDED = 2;
-@@ -90,17 +105,18 @@
+@@ -95,17 +110,18 @@
      private final BodyRotationControl bodyRotationControl;
      protected PathNavigation navigation;
      public GoalSelector goalSelector;
@@ -69,7 +69,7 @@
      @Nullable
      public ResourceLocation lootTable;
      public long lootTableSeed;
-@@ -109,11 +125,20 @@
+@@ -114,11 +130,20 @@
      private int delayedLeashHolderId;
      @Nullable
      private CompoundTag leashInfoTag;
@@ -92,7 +92,7 @@
          this.goalSelector = new GoalSelector(world.getProfilerSupplier());
          this.targetSelector = new GoalSelector(world.getProfilerSupplier());
          this.lookControl = new LookControl(this);
-@@ -130,8 +155,13 @@
+@@ -135,8 +160,13 @@
  
      }
  
@@ -107,7 +107,7 @@
  
      public static AttributeSupplier.Builder createMobAttributes() {
          return LivingEntity.createLivingAttributes().add(Attributes.FOLLOW_RANGE, 16.0D).add(Attributes.ATTACK_KNOCKBACK);
-@@ -146,15 +176,17 @@
+@@ -151,15 +181,17 @@
      }
  
      public float getPathfindingMalus(BlockPathTypes nodeType) {
@@ -131,7 +131,7 @@
      }
  
      public void setPathfindingMalus(BlockPathTypes nodeType, float penalty) {
-@@ -173,10 +205,24 @@
+@@ -178,10 +210,24 @@
          return this.lookControl;
      }
  
@@ -158,7 +158,7 @@
          } else {
              return this.moveControl;
          }
-@@ -188,8 +234,9 @@
+@@ -193,8 +239,9 @@
  
      public PathNavigation getNavigation() {
          if (this.isPassenger() && this.getVehicle() instanceof Mob) {
@@ -170,11 +170,11 @@
          } else {
              return this.navigation;
          }
-@@ -204,8 +251,40 @@
+@@ -209,8 +256,40 @@
          return this.target;
      }
  
-+    public org.bukkit.craftbukkit.v1_18_R2.entity.CraftMob getBukkitMob() { return (org.bukkit.craftbukkit.v1_18_R2.entity.CraftMob) super.getBukkitEntity(); } // Paper
++    public org.bukkit.craftbukkit.v1_19_R1.entity.CraftMob getBukkitMob() { return (org.bukkit.craftbukkit.v1_19_R1.entity.CraftMob) super.getBukkitEntity(); } // Paper
      public void setTarget(@Nullable LivingEntity target) {
 -        this.target = target;
 +        // CraftBukkit start - fire event
@@ -212,14 +212,7 @@
      }
  
      @Override
-@@ -217,13 +296,12 @@
-         return false;
-     }
- 
--    public void ate() {
--    }
-+    public void ate() {}
- 
+@@ -229,7 +308,7 @@
      @Override
      protected void defineSynchedData() {
          super.defineSynchedData();
@@ -228,7 +221,7 @@
      }
  
      public int getAmbientSoundInterval() {
-@@ -231,9 +309,10 @@
+@@ -237,9 +316,10 @@
      }
  
      public void playAmbientSound() {
@@ -242,7 +235,7 @@
          }
  
      }
-@@ -265,14 +344,16 @@
+@@ -271,14 +351,16 @@
          if (this.xpReward > 0) {
              int i = this.xpReward;
  
@@ -263,7 +256,7 @@
                      i += 1 + this.random.nextInt(3);
                  }
              }
-@@ -285,15 +366,16 @@
+@@ -291,15 +373,16 @@
  
      public void spawnAnim() {
          if (this.level.isClientSide) {
@@ -287,7 +280,7 @@
          }
  
      }
-@@ -321,11 +403,12 @@
+@@ -327,11 +410,12 @@
      }
  
      protected void updateControlFlags() {
@@ -305,7 +298,7 @@
      }
  
      @Override
-@@ -344,57 +427,74 @@
+@@ -350,57 +434,74 @@
          super.addAdditionalSaveData(nbt);
          nbt.putBoolean("CanPickUpLoot", this.canPickUpLoot());
          nbt.putBoolean("PersistenceRequired", this.persistenceRequired);
@@ -412,7 +405,7 @@
          } else if (this.leashInfoTag != null) {
              nbt.put("Leash", this.leashInfoTag.copy());
          }
-@@ -411,45 +511,58 @@
+@@ -417,45 +518,58 @@
              nbt.putBoolean("NoAI", this.isNoAi());
          }
  
@@ -485,7 +478,7 @@
              }
          }
  
-@@ -464,6 +577,11 @@
+@@ -470,6 +584,11 @@
          }
  
          this.setNoAi(nbt.getBoolean("NoAI"));
@@ -497,7 +490,7 @@
      }
  
      @Override
-@@ -482,7 +600,7 @@
+@@ -488,7 +607,7 @@
          return this.lootTable == null ? this.getDefaultLootTable() : this.lootTable;
      }
  
@@ -506,16 +499,18 @@
          return super.getLootTable();
      }
  
-@@ -509,9 +627,19 @@
+@@ -515,11 +634,20 @@
          super.aiStep();
          this.level.getProfiler().push("looting");
          if (!this.level.isClientSide && this.canPickUpLoot() && this.isAlive() && !this.dead && this.level.getGameRules().getBoolean(GameRules.RULE_MOBGRIEFING)) {
--            for(ItemEntity itemEntity : this.level.getEntitiesOfClass(ItemEntity.class, this.getBoundingBox().inflate(1.0D, 0.0D, 1.0D))) {
+-            Vec3i vec3i = this.getPickupReach();
++            Vec3i baseblockposition = this.getPickupReach();
++            List<ItemEntity> list = this.level.getEntitiesOfClass(ItemEntity.class, this.getBoundingBox().inflate((double) baseblockposition.getX(), (double) baseblockposition.getY(), (double) baseblockposition.getZ()));
++            Iterator iterator = list.iterator();
+ 
+-            for(ItemEntity itemEntity : this.level.getEntitiesOfClass(ItemEntity.class, this.getBoundingBox().inflate((double)vec3i.getX(), (double)vec3i.getY(), (double)vec3i.getZ()))) {
 -                if (!itemEntity.isRemoved() && !itemEntity.getItem().isEmpty() && !itemEntity.hasPickUpDelay() && this.wantsToPickUp(itemEntity.getItem())) {
 -                    this.pickUpItem(itemEntity);
-+            List<ItemEntity> list = this.level.getEntitiesOfClass(ItemEntity.class, this.getBoundingBox().inflate(1.0D, 0.0D, 1.0D));
-+            Iterator iterator = list.iterator();
-+
 +            while (iterator.hasNext()) {
 +                ItemEntity entityitem = (ItemEntity) iterator.next();
 +
@@ -529,7 +524,12 @@
                  }
              }
          }
-@@ -520,27 +648,44 @@
+@@ -528,30 +656,47 @@
+     }
+ 
+     protected Vec3i getPickupReach() {
+-        return ITEM_PICKUP_REACH;
++        return Mob.ITEM_PICKUP_REACH;
      }
  
      protected void pickUpItem(ItemEntity item) {
@@ -567,7 +567,7 @@
 +        // CraftBukkit start
 +        boolean canPickup = flag && this.canHoldItem(itemstack);
 +        if (entityitem != null) {
-+            canPickup = !org.bukkit.craftbukkit.v1_18_R2.event.CraftEventFactory.callEntityPickupItemEvent(this, entityitem, 0, !canPickup).isCancelled();
++            canPickup = !org.bukkit.craftbukkit.v1_19_R1.event.CraftEventFactory.callEntityPickupItemEvent(this, entityitem, 0, !canPickup).isCancelled();
 +        }
 +        if (canPickup) {
 +            // CraftBukkit end
@@ -580,13 +580,11 @@
              }
  
 -            this.setItemSlotAndDropWhenKilled(equipmentSlot, equipment);
--            this.equipEventAndSound(equipment);
 +            this.setItemSlotAndDropWhenKilled(enumitemslot, itemstack);
-+            this.equipEventAndSound(itemstack);
              return true;
          } else {
              return false;
-@@ -571,13 +716,10 @@
+@@ -582,13 +727,10 @@
              if (!(oldStack.getItem() instanceof SwordItem)) {
                  return true;
              } else {
@@ -604,7 +602,7 @@
              }
          } else if (newStack.getItem() instanceof BowItem && oldStack.getItem() instanceof BowItem) {
              return this.canReplaceEqualItem(newStack, oldStack);
-@@ -589,15 +731,10 @@
+@@ -600,15 +742,10 @@
              } else if (!(oldStack.getItem() instanceof ArmorItem)) {
                  return true;
              } else {
@@ -624,7 +622,7 @@
              }
          } else {
              if (newStack.getItem() instanceof DiggerItem) {
-@@ -606,10 +743,11 @@
+@@ -617,10 +754,11 @@
                  }
  
                  if (oldStack.getItem() instanceof DiggerItem) {
@@ -640,16 +638,16 @@
                      }
  
                      return this.canReplaceEqualItem(newStack, oldStack);
-@@ -621,19 +759,11 @@
+@@ -632,19 +770,11 @@
      }
  
      public boolean canReplaceEqualItem(ItemStack newStack, ItemStack oldStack) {
 -        if (newStack.getDamageValue() >= oldStack.getDamageValue() && (!newStack.hasTag() || oldStack.hasTag())) {
 -            if (newStack.hasTag() && oldStack.hasTag()) {
--                return newStack.getTag().getAllKeys().stream().anyMatch((string) -> {
--                    return !string.equals("Damage");
--                }) && !oldStack.getTag().getAllKeys().stream().anyMatch((string) -> {
--                    return !string.equals("Damage");
+-                return newStack.getTag().getAllKeys().stream().anyMatch((key) -> {
+-                    return !key.equals("Damage");
+-                }) && !oldStack.getTag().getAllKeys().stream().anyMatch((key) -> {
+-                    return !key.equals("Damage");
 -                });
 -            } else {
 -                return false;
@@ -665,7 +663,7 @@
      }
  
      public boolean canHoldItem(ItemStack stack) {
-@@ -661,20 +791,28 @@
+@@ -672,20 +802,28 @@
          if (this.level.getDifficulty() == Difficulty.PEACEFUL && this.shouldDespawnInPeaceful()) {
              this.discard();
          } else if (!this.isPersistenceRequired() && !this.requiresCustomPersistence()) {
@@ -674,7 +672,7 @@
 -                double d = entity.distanceToSqr(this);
 -                int i = this.getType().getCategory().getDespawnDistance();
 +            // Paper start - optimise checkDespawn
-+            Player entityhuman = this.level.findNearbyPlayer(this, level.paperConfig.hardDespawnDistances.getInt(this.getType().getCategory()) + 1, EntitySelector.affectsSpawning); // Paper
++            Player entityhuman = this.level.findNearbyPlayer(this, level.paperConfig().entities.spawning.despawnRanges.get(this.getType().getCategory()).hard() + 1, EntitySelector.affectsSpawning); // Paper
 +            if (entityhuman == null) {
 +                entityhuman = ((ServerLevel)this.level).playersAffectingSpawning.isEmpty() ? null : ((ServerLevel)this.level).playersAffectingSpawning.get(0);
 +            }
@@ -682,7 +680,7 @@
 +
 +            if (entityhuman != null) {
 +                double d0 = entityhuman.distanceToSqr((Entity) this);
-+                int i = this.level.paperConfig.hardDespawnDistances.getInt(this.getType().getCategory()); // Paper - custom despawn distances
++                int i = this.level.paperConfig().entities.spawning.despawnRanges.get(this.getType().getCategory()).hard(); // Paper - custom despawn distances
                  int j = i * i;
 -                if (d > (double)j && this.removeWhenFarAway(d)) {
 +
@@ -691,7 +689,7 @@
                  }
  
 -                int k = this.getType().getCategory().getNoDespawnDistance();
-+                int k = this.level.paperConfig.softDespawnDistances.getInt(this.getType().getCategory()); // Paper - custom despawn distances
++                int k = this.level.paperConfig().entities.spawning.despawnRanges.get(this.getType().getCategory()).soft(); // Paper - custom despawn distances
                  int l = k * k;
 -                if (this.noActionTime > 600 && this.random.nextInt(800) == 0 && d > (double)l && this.removeWhenFarAway(d)) {
 +
@@ -702,7 +700,7 @@
                      this.noActionTime = 0;
                  }
              }
-@@ -687,10 +825,22 @@
+@@ -698,10 +836,22 @@
      @Override
      protected final void serverAiStep() {
          ++this.noActionTime;
@@ -725,7 +723,7 @@
          if (i % 2 != 0 && this.tickCount > 1) {
              this.level.getProfiler().push("targetSelector");
              this.targetSelector.tickRunningGoals(false);
-@@ -729,8 +879,7 @@
+@@ -740,8 +890,7 @@
          DebugPackets.sendGoalSelector(this.level, this, this.goalSelector);
      }
  
@@ -735,7 +733,7 @@
  
      public int getMaxHeadXRot() {
          return 40;
-@@ -745,38 +894,44 @@
+@@ -756,38 +905,44 @@
      }
  
      public void lookAt(Entity targetEntity, float maxYawChange, float maxPitchChange) {
@@ -790,7 +788,7 @@
 +        return from + f3;
      }
  
-     public static boolean checkMobSpawnRules(EntityType<? extends Mob> type, LevelAccessor world, MobSpawnType spawnReason, BlockPos pos, Random random) {
+     public static boolean checkMobSpawnRules(EntityType<? extends Mob> type, LevelAccessor world, MobSpawnType spawnReason, BlockPos pos, RandomSource random) {
 -        BlockPos blockPos = pos.below();
 -        return spawnReason == MobSpawnType.SPAWNER || world.getBlockState(blockPos).isValidSpawn(world, blockPos, type);
 +        BlockPos blockposition1 = pos.below();
@@ -799,7 +797,7 @@
      }
  
      public boolean checkSpawnRules(LevelAccessor world, MobSpawnType spawnReason) {
-@@ -800,7 +955,8 @@
+@@ -811,7 +966,8 @@
          if (this.getTarget() == null) {
              return 3;
          } else {
@@ -809,7 +807,7 @@
              i -= (3 - this.level.getDifficulty().getId()) * 4;
              if (i < 0) {
                  i = 0;
-@@ -824,9 +980,9 @@
+@@ -835,9 +991,9 @@
      public ItemStack getItemBySlot(EquipmentSlot slot) {
          switch (slot.getType()) {
              case HAND:
@@ -821,7 +819,20 @@
              default:
                  return ItemStack.EMPTY;
          }
-@@ -848,18 +1004,28 @@
+@@ -848,10 +1004,10 @@
+         this.verifyEquippedItem(stack);
+         switch (slot.getType()) {
+             case HAND:
+-                this.onEquipItem(slot, this.handItems.set(slot.getIndex(), stack), stack);
++                this.onEquipItem(slot, (ItemStack) this.handItems.set(slot.getIndex(), stack), stack);
+                 break;
+             case ARMOR:
+-                this.onEquipItem(slot, this.armorItems.set(slot.getIndex(), stack), stack);
++                this.onEquipItem(slot, (ItemStack) this.armorItems.set(slot.getIndex(), stack), stack);
+         }
+ 
+     }
+@@ -859,18 +1015,28 @@
      @Override
      protected void dropCustomDeathLoot(DamageSource source, int lootingMultiplier, boolean allowDrops) {
          super.dropCustomDeathLoot(source, lootingMultiplier, allowDrops);
@@ -859,7 +870,7 @@
              }
          }
  
-@@ -867,6 +1033,7 @@
+@@ -878,6 +1044,7 @@
  
      protected float getEquipmentDropChance(EquipmentSlot slot) {
          float f;
@@ -867,15 +878,15 @@
          switch (slot.getType()) {
              case HAND:
                  f = this.handDropChances[slot.getIndex()];
-@@ -885,6 +1052,7 @@
-         if (this.random.nextFloat() < 0.15F * difficulty.getSpecialMultiplier()) {
-             int i = this.random.nextInt(2);
+@@ -896,6 +1063,7 @@
+         if (random.nextFloat() < 0.15F * localDifficulty.getSpecialMultiplier()) {
+             int i = random.nextInt(2);
              float f = this.level.getDifficulty() == Difficulty.HARD ? 0.1F : 0.25F;
 +
-             if (this.random.nextFloat() < 0.095F) {
+             if (random.nextFloat() < 0.095F) {
                  ++i;
              }
-@@ -897,20 +1065,26 @@
+@@ -908,20 +1076,26 @@
                  ++i;
              }
  
@@ -887,14 +898,14 @@
 -            for(EquipmentSlot equipmentSlot : EquipmentSlot.values()) {
 -                if (equipmentSlot.getType() == EquipmentSlot.Type.ARMOR) {
 -                    ItemStack itemStack = this.getItemBySlot(equipmentSlot);
--                    if (!bl && this.random.nextFloat() < f) {
+-                    if (!bl && random.nextFloat() < f) {
 +            for (int k = 0; k < j; ++k) {
 +                EquipmentSlot enumitemslot = aenumitemslot[k];
 +
 +                if (enumitemslot.getType() == EquipmentSlot.Type.ARMOR) {
 +                    ItemStack itemstack = this.getItemBySlot(enumitemslot);
 +
-+                    if (!flag && this.random.nextFloat() < f) {
++                    if (!flag && random.nextFloat() < f) {
                          break;
                      }
  
@@ -911,48 +922,61 @@
                          }
                      }
                  }
-@@ -977,11 +1151,16 @@
+@@ -988,11 +1162,16 @@
  
-     protected void populateDefaultEquipmentEnchantments(DifficultyInstance difficulty) {
-         float f = difficulty.getSpecialMultiplier();
+     protected void populateDefaultEquipmentEnchantments(RandomSource random, DifficultyInstance localDifficulty) {
+         float f = localDifficulty.getSpecialMultiplier();
 +
-         this.enchantSpawnedWeapon(f);
+         this.enchantSpawnedWeapon(random, f);
 +        EquipmentSlot[] aenumitemslot = EquipmentSlot.values();
 +        int i = aenumitemslot.length;
  
 -        for(EquipmentSlot equipmentSlot : EquipmentSlot.values()) {
 -            if (equipmentSlot.getType() == EquipmentSlot.Type.ARMOR) {
--                this.enchantSpawnedArmor(f, equipmentSlot);
+-                this.enchantSpawnedArmor(random, f, equipmentSlot);
 +        for (int j = 0; j < i; ++j) {
 +            EquipmentSlot enumitemslot = aenumitemslot[j];
 +
 +            if (enumitemslot.getType() == EquipmentSlot.Type.ARMOR) {
-+                this.enchantSpawnedArmor(f, enumitemslot);
++                this.enchantSpawnedArmor(random, f, enumitemslot);
              }
          }
  
-@@ -989,15 +1168,16 @@
+@@ -1000,24 +1179,26 @@
  
-     protected void enchantSpawnedWeapon(float power) {
-         if (!this.getMainHandItem().isEmpty() && this.random.nextFloat() < 0.25F * power) {
--            this.setItemSlot(EquipmentSlot.MAINHAND, EnchantmentHelper.enchantItem(this.random, this.getMainHandItem(), (int)(5.0F + power * (float)this.random.nextInt(18)), false));
-+            this.setItemSlot(EquipmentSlot.MAINHAND, EnchantmentHelper.enchantItem(this.random, this.getMainHandItem(), (int) (5.0F + power * (float) this.random.nextInt(18)), false));
+     protected void enchantSpawnedWeapon(RandomSource random, float power) {
+         if (!this.getMainHandItem().isEmpty() && random.nextFloat() < 0.25F * power) {
+-            this.setItemSlot(EquipmentSlot.MAINHAND, EnchantmentHelper.enchantItem(random, this.getMainHandItem(), (int)(5.0F + power * (float)random.nextInt(18)), false));
++            this.setItemSlot(EquipmentSlot.MAINHAND, EnchantmentHelper.enchantItem(random, this.getMainHandItem(), (int) (5.0F + power * (float) random.nextInt(18)), false));
          }
  
      }
  
-     protected void enchantSpawnedArmor(float power, EquipmentSlot slot) {
+     protected void enchantSpawnedArmor(RandomSource random, float power, EquipmentSlot slot) {
 -        ItemStack itemStack = this.getItemBySlot(slot);
--        if (!itemStack.isEmpty() && this.random.nextFloat() < 0.5F * power) {
--            this.setItemSlot(slot, EnchantmentHelper.enchantItem(this.random, itemStack, (int)(5.0F + power * (float)this.random.nextInt(18)), false));
+-        if (!itemStack.isEmpty() && random.nextFloat() < 0.5F * power) {
+-            this.setItemSlot(slot, EnchantmentHelper.enchantItem(random, itemStack, (int)(5.0F + power * (float)random.nextInt(18)), false));
 +        ItemStack itemstack = this.getItemBySlot(slot);
 +
-+        if (!itemstack.isEmpty() && this.random.nextFloat() < 0.5F * power) {
-+            this.setItemSlot(slot, EnchantmentHelper.enchantItem(this.random, itemstack, (int) (5.0F + power * (float) this.random.nextInt(18)), false));
++        if (!itemstack.isEmpty() && random.nextFloat() < 0.5F * power) {
++            this.setItemSlot(slot, EnchantmentHelper.enchantItem(random, itemstack, (int) (5.0F + power * (float) random.nextInt(18)), false));
          }
  
      }
-@@ -1043,8 +1223,9 @@
+ 
+     @Nullable
+     public SpawnGroupData finalizeSpawn(ServerLevelAccessor world, DifficultyInstance difficulty, MobSpawnType spawnReason, @Nullable SpawnGroupData entityData, @Nullable CompoundTag entityNbt) {
+-        RandomSource randomSource = world.getRandom();
+-        this.getAttribute(Attributes.FOLLOW_RANGE).addPermanentModifier(new AttributeModifier("Random spawn bonus", randomSource.triangle(0.0D, 0.11485000000000001D), AttributeModifier.Operation.MULTIPLY_BASE));
+-        if (randomSource.nextFloat() < 0.05F) {
++        RandomSource randomsource = world.getRandom();
++
++        this.getAttribute(Attributes.FOLLOW_RANGE).addPermanentModifier(new AttributeModifier("Random spawn bonus", randomsource.triangle(0.0D, 0.11485000000000001D), AttributeModifier.Operation.MULTIPLY_BASE));
++        if (randomsource.nextFloat() < 0.05F) {
+             this.setLeftHanded(true);
+         } else {
+             this.setLeftHanded(false);
+@@ -1051,8 +1232,9 @@
  
      @Override
      public boolean canTakeItem(ItemStack stack) {
@@ -964,7 +988,7 @@
      }
  
      public boolean isPersistenceRequired() {
-@@ -1056,39 +1237,58 @@
+@@ -1064,17 +1246,27 @@
          if (!this.isAlive()) {
              return InteractionResult.PASS;
          } else if (this.getLeashHolder() == player) {
@@ -990,11 +1014,16 @@
 +                return enuminteractionresult;
              } else {
 -                interactionResult = this.mobInteract(player, hand);
--                return interactionResult.consumesAction() ? interactionResult : super.interact(player, hand);
+-                if (interactionResult.consumesAction()) {
 +                enuminteractionresult = this.mobInteract(player, hand);
-+                return enuminteractionresult.consumesAction() ? enuminteractionresult : super.interact(player, hand);
-             }
-         }
++                if (enuminteractionresult.consumesAction()) {
+                     this.gameEvent(GameEvent.ENTITY_INTERACT);
+-                    return interactionResult;
++                    return enuminteractionresult;
+                 } else {
+                     return super.interact(player, hand);
+                 }
+@@ -1083,25 +1275,34 @@
      }
  
      private InteractionResult checkAndHandleImportantInteractions(Player player, InteractionHand hand) {
@@ -1041,7 +1070,7 @@
                      });
                      return optional.isPresent() ? InteractionResult.SUCCESS : InteractionResult.PASS;
                  } else {
-@@ -1100,8 +1300,7 @@
+@@ -1113,8 +1314,7 @@
          }
      }
  
@@ -1051,7 +1080,7 @@
  
      protected InteractionResult mobInteract(Player player, InteractionHand hand) {
          return InteractionResult.PASS;
-@@ -1112,16 +1311,12 @@
+@@ -1125,16 +1325,12 @@
      }
  
      public boolean isWithinRestriction(BlockPos pos) {
@@ -1070,7 +1099,7 @@
      }
  
      public BlockPos getRestrictCenter() {
-@@ -1140,47 +1335,65 @@
+@@ -1153,47 +1349,65 @@
          return this.restrictRadius != -1.0F;
      }
  
@@ -1156,7 +1185,7 @@
          }
      }
  
-@@ -1191,7 +1404,11 @@
+@@ -1204,7 +1418,11 @@
  
          if (this.leashHolder != null) {
              if (!this.isAlive() || !this.leashHolder.isAlive()) {
@@ -1169,7 +1198,7 @@
              }
  
          }
-@@ -1202,11 +1419,13 @@
+@@ -1215,11 +1433,13 @@
              this.leashHolder = null;
              this.leashInfoTag = null;
              if (!this.level.isClientSide && dropItem) {
@@ -1185,7 +1214,7 @@
              }
          }
  
-@@ -1233,7 +1452,7 @@
+@@ -1246,7 +1466,7 @@
          this.leashHolder = entity;
          this.leashInfoTag = null;
          if (!this.level.isClientSide && sendPacket && this.level instanceof ServerLevel) {
@@ -1194,7 +1223,7 @@
          }
  
          if (this.isPassenger()) {
-@@ -1249,31 +1468,40 @@
+@@ -1262,31 +1482,40 @@
  
      @Override
      public boolean startRiding(Entity entity, boolean force) {
@@ -1244,7 +1273,7 @@
                  this.leashInfoTag = null;
              }
          }
-@@ -1291,34 +1519,36 @@
+@@ -1304,34 +1533,36 @@
      }
  
      public void setNoAi(boolean aiDisabled) {
@@ -1292,12 +1321,20 @@
  
      @Override
      public HumanoidArm getMainArm() {
-@@ -1326,48 +1556,60 @@
+@@ -1339,53 +1570,66 @@
      }
  
      public double getMeleeAttackRangeSqr(LivingEntity target) {
 -        return (double)(this.getBbWidth() * 2.0F * this.getBbWidth() * 2.0F + target.getBbWidth());
 +        return (double) (this.getBbWidth() * 2.0F * this.getBbWidth() * 2.0F + target.getBbWidth());
+     }
+ 
+     public boolean isWithinMeleeAttackRange(LivingEntity entity) {
+-        double d = this.distanceToSqr(entity.getX(), entity.getY(), entity.getZ());
+-        return d <= this.getMeleeAttackRangeSqr(entity);
++        double d0 = this.distanceToSqr(entity.getX(), entity.getY(), entity.getZ());
++
++        return d0 <= this.getMeleeAttackRangeSqr(entity);
      }
  
      @Override
@@ -1368,10 +1405,10 @@
              }
          }
  
-@@ -1376,9 +1618,10 @@
+@@ -1394,9 +1638,10 @@
      public boolean isSunBurnTick() {
          if (this.level.isDay() && !this.level.isClientSide) {
-             float f = this.getBrightness();
+             float f = this.getLightLevelDependentMagicValue();
 -            BlockPos blockPos = new BlockPos(this.getX(), this.getEyeY(), this.getZ());
 -            boolean bl = this.isInWaterRainOrBubble() || this.isInPowderSnow || this.wasInPowderSnow;
 -            if (f > 0.5F && this.random.nextFloat() * 30.0F < (f - 0.4F) * 2.0F && !bl && this.level.canSeeSky(blockPos)) {
@@ -1382,7 +1419,7 @@
                  return true;
              }
          }
-@@ -1404,16 +1647,21 @@
+@@ -1422,20 +1667,25 @@
      @Override
      protected void removeAfterChangingDimensions() {
          super.removeAfterChangingDimensions();
@@ -1407,5 +1444,10 @@
 +        SpawnEggItem itemmonsteregg = SpawnEggItem.byId(this.getType());
 +
 +        return itemmonsteregg == null ? null : new ItemStack(itemmonsteregg);
+     }
+ 
+     public Iterable<BlockPos> iteratePathfindingStartNodeCandidatePositions() {
+-        return ImmutableSet.of(new BlockPos(this.getBoundingBox().minX, (double)this.getBlockY(), this.getBoundingBox().minZ), new BlockPos(this.getBoundingBox().minX, (double)this.getBlockY(), this.getBoundingBox().maxZ), new BlockPos(this.getBoundingBox().maxX, (double)this.getBlockY(), this.getBoundingBox().minZ), new BlockPos(this.getBoundingBox().maxX, (double)this.getBlockY(), this.getBoundingBox().maxZ));
++        return ImmutableSet.of(new BlockPos(this.getBoundingBox().minX, (double) this.getBlockY(), this.getBoundingBox().minZ), new BlockPos(this.getBoundingBox().minX, (double) this.getBlockY(), this.getBoundingBox().maxZ), new BlockPos(this.getBoundingBox().maxX, (double) this.getBlockY(), this.getBoundingBox().minZ), new BlockPos(this.getBoundingBox().maxX, (double) this.getBlockY(), this.getBoundingBox().maxZ));
      }
  }

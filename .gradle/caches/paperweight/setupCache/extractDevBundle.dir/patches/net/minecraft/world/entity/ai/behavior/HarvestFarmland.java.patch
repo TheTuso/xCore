@@ -1,14 +1,14 @@
 --- a/net/minecraft/world/entity/ai/behavior/HarvestFarmland.java
 +++ b/net/minecraft/world/entity/ai/behavior/HarvestFarmland.java
-@@ -25,6 +25,7 @@
- import net.minecraft.world.level.block.state.BlockState;
+@@ -26,6 +26,7 @@
+ import net.minecraft.world.level.gameevent.GameEvent;
  
  public class HarvestFarmland extends Behavior<Villager> {
 +
      private static final int HARVEST_DURATION = 200;
      public static final float SPEED_MODIFIER = 0.5F;
      @Nullable
-@@ -37,22 +38,22 @@
+@@ -38,22 +39,22 @@
          super(ImmutableMap.of(MemoryModuleType.LOOK_TARGET, MemoryStatus.VALUE_ABSENT, MemoryModuleType.WALK_TARGET, MemoryStatus.VALUE_ABSENT, MemoryModuleType.SECONDARY_JOB_SITE, MemoryStatus.VALUE_PRESENT));
      }
  
@@ -39,7 +39,7 @@
                          }
                      }
                  }
-@@ -65,84 +66,97 @@
+@@ -66,92 +67,101 @@
  
      @Nullable
      private BlockPos getValidFarmland(ServerLevel world) {
@@ -100,7 +100,7 @@
 +
 +                if (block instanceof CropBlock && ((CropBlock) block).isMaxAge(iblockdata)) {
 +                    // CraftBukkit start
-+                    if (!org.bukkit.craftbukkit.v1_18_R2.event.CraftEventFactory.callEntityChangeBlockEvent(entityvillager, this.aboveFarmlandPos, Blocks.AIR.defaultBlockState()).isCancelled()) {
++                    if (!org.bukkit.craftbukkit.v1_19_R1.event.CraftEventFactory.callEntityChangeBlockEvent(entityvillager, this.aboveFarmlandPos, Blocks.AIR.defaultBlockState()).isCancelled()) {
 +                        worldserver.destroyBlock(this.aboveFarmlandPos, true, entityvillager);
 +                    }
 +                    // CraftBukkit end
@@ -116,40 +116,52 @@
 -                        boolean bl = false;
 -                        if (!itemStack.isEmpty()) {
 -                            if (itemStack.is(Items.WHEAT_SEEDS)) {
--                                serverLevel.setBlock(this.aboveFarmlandPos, Blocks.WHEAT.defaultBlockState(), 3);
+-                                BlockState blockState2 = Blocks.WHEAT.defaultBlockState();
+-                                serverLevel.setBlockAndUpdate(this.aboveFarmlandPos, blockState2);
+-                                serverLevel.gameEvent(GameEvent.BLOCK_PLACE, this.aboveFarmlandPos, GameEvent.Context.of(villager, blockState2));
 -                                bl = true;
 -                            } else if (itemStack.is(Items.POTATO)) {
--                                serverLevel.setBlock(this.aboveFarmlandPos, Blocks.POTATOES.defaultBlockState(), 3);
+-                                BlockState blockState3 = Blocks.POTATOES.defaultBlockState();
+-                                serverLevel.setBlockAndUpdate(this.aboveFarmlandPos, blockState3);
+-                                serverLevel.gameEvent(GameEvent.BLOCK_PLACE, this.aboveFarmlandPos, GameEvent.Context.of(villager, blockState3));
 -                                bl = true;
 -                            } else if (itemStack.is(Items.CARROT)) {
--                                serverLevel.setBlock(this.aboveFarmlandPos, Blocks.CARROTS.defaultBlockState(), 3);
+-                                BlockState blockState4 = Blocks.CARROTS.defaultBlockState();
+-                                serverLevel.setBlockAndUpdate(this.aboveFarmlandPos, blockState4);
+-                                serverLevel.gameEvent(GameEvent.BLOCK_PLACE, this.aboveFarmlandPos, GameEvent.Context.of(villager, blockState4));
 -                                bl = true;
 -                            } else if (itemStack.is(Items.BEETROOT_SEEDS)) {
--                                serverLevel.setBlock(this.aboveFarmlandPos, Blocks.BEETROOTS.defaultBlockState(), 3);
+-                                BlockState blockState5 = Blocks.BEETROOTS.defaultBlockState();
+-                                serverLevel.setBlockAndUpdate(this.aboveFarmlandPos, blockState5);
+-                                serverLevel.gameEvent(GameEvent.BLOCK_PLACE, this.aboveFarmlandPos, GameEvent.Context.of(villager, blockState5));
 -                                bl = true;
 +                    for (int j = 0; j < inventorysubcontainer.getContainerSize(); ++j) {
 +                        ItemStack itemstack = inventorysubcontainer.getItem(j);
 +                        boolean flag = false;
 +
 +                        if (!itemstack.isEmpty()) {
++                            BlockState iblockdata1;
++
 +                            // CraftBukkit start
-+                            Block planted = null;
 +                            if (itemstack.is(Items.WHEAT_SEEDS)) {
-+                                planted = Blocks.WHEAT;
++                                iblockdata1 = Blocks.WHEAT.defaultBlockState();
 +                                flag = true;
 +                            } else if (itemstack.is(Items.POTATO)) {
-+                                planted = Blocks.POTATOES;
++                                iblockdata1 = Blocks.POTATOES.defaultBlockState();
 +                                flag = true;
 +                            } else if (itemstack.is(Items.CARROT)) {
-+                                planted = Blocks.CARROTS;
++                                iblockdata1 = Blocks.CARROTS.defaultBlockState();
 +                                flag = true;
 +                            } else if (itemstack.is(Items.BEETROOT_SEEDS)) {
-+                                planted = Blocks.BEETROOTS;
++                                iblockdata1 = Blocks.BEETROOTS.defaultBlockState();
 +                                flag = true;
++                            } else {
++                                iblockdata1 = null;
 +                            }
 +
-+                            if (planted != null && !org.bukkit.craftbukkit.v1_18_R2.event.CraftEventFactory.callEntityChangeBlockEvent(entityvillager, this.aboveFarmlandPos, planted.defaultBlockState()).isCancelled()) {
-+                                worldserver.setBlock(this.aboveFarmlandPos, planted.defaultBlockState(), 3);
++                            if (iblockdata1 != null && !org.bukkit.craftbukkit.v1_19_R1.event.CraftEventFactory.callEntityChangeBlockEvent(entityvillager, this.aboveFarmlandPos, iblockdata1).isCancelled()) {
++                                worldserver.setBlockAndUpdate(this.aboveFarmlandPos, iblockdata1);
++                                worldserver.gameEvent(GameEvent.BLOCK_PLACE, this.aboveFarmlandPos, GameEvent.Context.of(entityvillager, iblockdata1));
 +                            } else {
 +                                flag = false;
                              }
@@ -187,7 +199,7 @@
                      }
                  }
              }
-@@ -151,8 +165,7 @@
+@@ -160,8 +170,7 @@
          }
      }
  

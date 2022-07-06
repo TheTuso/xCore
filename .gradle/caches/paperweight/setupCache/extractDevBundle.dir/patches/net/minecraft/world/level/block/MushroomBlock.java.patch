@@ -4,9 +4,9 @@
  package net.minecraft.world.level.block;
  
 +import java.util.Iterator;
- import java.util.Random;
  import java.util.function.Supplier;
  import net.minecraft.core.BlockPos;
+ import net.minecraft.core.Holder;
 @@ -14,8 +15,12 @@
  import net.minecraft.world.level.levelgen.feature.ConfiguredFeature;
  import net.minecraft.world.phys.shapes.CollisionContext;
@@ -29,7 +29,7 @@
      }
  
      @Override
-     public void randomTick(BlockState state, ServerLevel world, BlockPos pos, Random random) {
+     public void randomTick(BlockState state, ServerLevel world, BlockPos pos, RandomSource random) {
 -        if (random.nextInt(25) == 0) {
 +        if (random.nextInt(Math.max(1, (int) (100.0F / world.spigotConfig.mushroomModifier) * 25)) == 0) { // Spigot
              int i = 5;
@@ -68,7 +68,7 @@
 -            if (world.isEmptyBlock(blockPos2) && state.canSurvive(world, blockPos2)) {
 -                world.setBlock(blockPos2, state, 2);
 +            if (world.isEmptyBlock(blockposition2) && state.canSurvive(world, blockposition2)) {
-+                org.bukkit.craftbukkit.v1_18_R2.event.CraftEventFactory.handleBlockSpreadEvent(world, pos, blockposition2, state, 2); // CraftBukkit
++                org.bukkit.craftbukkit.v1_19_R1.event.CraftEventFactory.handleBlockSpreadEvent(world, pos, blockposition2, state, 2); // CraftBukkit
              }
          }
  
@@ -89,7 +89,7 @@
 +        return iblockdata1.is(BlockTags.MUSHROOM_GROW_BLOCK) ? true : world.getRawBrightness(pos, 0) < 13 && this.mayPlaceOn(iblockdata1, world, blockposition1);
      }
  
-     public boolean growMushroom(ServerLevel world, BlockPos pos, BlockState state, Random random) {
+     public boolean growMushroom(ServerLevel world, BlockPos pos, BlockState state, RandomSource random) {
          world.removeBlock(pos, false);
 -        if (this.featureSupplier.get().value().place(world, world.getChunkSource().getGenerator(), random, pos)) {
 +        SaplingBlock.treeType = (this == Blocks.BROWN_MUSHROOM) ? TreeType.BROWN_MUSHROOM : TreeType.RED_MUSHROOM; // CraftBukkit // Paper
@@ -100,7 +100,7 @@
 @@ -95,7 +101,7 @@
  
      @Override
-     public boolean isBonemealSuccess(Level world, Random random, BlockPos pos, BlockState state) {
+     public boolean isBonemealSuccess(Level world, RandomSource random, BlockPos pos, BlockState state) {
 -        return (double)random.nextFloat() < 0.4D;
 +        return (double) random.nextFloat() < 0.4D;
      }

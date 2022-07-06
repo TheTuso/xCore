@@ -5,7 +5,7 @@
  import com.mojang.brigadier.context.CommandContext;
  import net.minecraft.commands.CommandSourceStack;
 -import net.minecraft.commands.Commands;
- import net.minecraft.network.chat.TranslatableComponent;
+ import net.minecraft.network.chat.Component;
  import net.minecraft.world.level.GameRules;
  
  public class GameRuleCommand {
@@ -41,23 +41,23 @@
 -        CommandSourceStack commandSourceStack = context.getSource();
 -        T value = commandSourceStack.getServer().getGameRules().getRule(key);
 -        value.setFromArgument(context, "value");
--        commandSourceStack.sendSuccess(new TranslatableComponent("commands.gamerule.set", key.getId(), value.toString()), true);
+-        commandSourceStack.sendSuccess(Component.translatable("commands.gamerule.set", key.getId(), value.toString()), true);
 -        return value.getCommandResult();
 +        CommandSourceStack commandlistenerwrapper = (CommandSourceStack) context.getSource();
 +        T t0 = commandlistenerwrapper.getLevel().getGameRules().getRule(key); // CraftBukkit
 +
 +        t0.setFromArgument(context, "value", key); // Paper
-+        commandlistenerwrapper.sendSuccess(new TranslatableComponent("commands.gamerule.set", new Object[]{key.getId(), t0.toString()}), true);
++        commandlistenerwrapper.sendSuccess(Component.translatable("commands.gamerule.set", key.getId(), t0.toString()), true);
 +        return t0.getCommandResult();
      }
  
      static <T extends GameRules.Value<T>> int queryRule(CommandSourceStack source, GameRules.Key<T> key) {
 -        T value = source.getServer().getGameRules().getRule(key);
--        source.sendSuccess(new TranslatableComponent("commands.gamerule.query", key.getId(), value.toString()), false);
+-        source.sendSuccess(Component.translatable("commands.gamerule.query", key.getId(), value.toString()), false);
 -        return value.getCommandResult();
 +        T t0 = source.getLevel().getGameRules().getRule(key); // CraftBukkit
 +
-+        source.sendSuccess(new TranslatableComponent("commands.gamerule.query", new Object[]{key.getId(), t0.toString()}), false);
++        source.sendSuccess(Component.translatable("commands.gamerule.query", key.getId(), t0.toString()), false);
 +        return t0.getCommandResult();
      }
  }

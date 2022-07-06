@@ -1,13 +1,14 @@
 --- a/net/minecraft/world/entity/animal/Chicken.java
 +++ b/net/minecraft/world/entity/animal/Chicken.java
-@@ -28,12 +28,14 @@
+@@ -28,6 +28,7 @@
  import net.minecraft.world.item.ItemStack;
  import net.minecraft.world.item.Items;
  import net.minecraft.world.item.crafting.Ingredient;
 +import net.minecraft.world.level.ItemLike;
  import net.minecraft.world.level.Level;
  import net.minecraft.world.level.block.state.BlockState;
- import net.minecraft.world.level.pathfinder.BlockPathTypes;
+ import net.minecraft.world.level.gameevent.GameEvent;
+@@ -35,6 +36,7 @@
  import net.minecraft.world.phys.Vec3;
  
  public class Chicken extends Animal {
@@ -15,7 +16,7 @@
      private static final Ingredient FOOD_ITEMS = Ingredient.of(Items.WHEAT_SEEDS, Items.MELON_SEEDS, Items.PUMPKIN_SEEDS, Items.BEETROOT_SEEDS);
      public float flap;
      public float flapSpeed;
-@@ -41,11 +43,12 @@
+@@ -42,11 +44,12 @@
      public float oFlap;
      public float flapping = 1.0F;
      private float nextFlap = 1.0F;
@@ -29,7 +30,7 @@
          this.setPathfindingMalus(BlockPathTypes.WATER, 0.0F);
      }
  
-@@ -54,7 +57,7 @@
+@@ -55,7 +58,7 @@
          this.goalSelector.addGoal(0, new FloatGoal(this));
          this.goalSelector.addGoal(1, new PanicGoal(this, 1.4D));
          this.goalSelector.addGoal(2, new BreedGoal(this, 1.0D));
@@ -38,7 +39,7 @@
          this.goalSelector.addGoal(4, new FollowParentGoal(this, 1.1D));
          this.goalSelector.addGoal(5, new WaterAvoidingRandomStrollGoal(this, 1.0D));
          this.goalSelector.addGoal(6, new LookAtPlayerGoal(this, Player.class, 6.0F));
-@@ -82,15 +85,18 @@
+@@ -83,15 +86,18 @@
          }
  
          this.flapping *= 0.9F;
@@ -58,10 +59,10 @@
 +            this.forceDrops = true; // CraftBukkit
 +            this.spawnAtLocation((ItemLike) Items.EGG);
 +            this.forceDrops = false; // CraftBukkit
+             this.gameEvent(GameEvent.ENTITY_PLACE);
              this.eggTime = this.random.nextInt(6000) + 6000;
          }
- 
-@@ -132,13 +138,13 @@
+@@ -134,13 +140,13 @@
      }
  
      @Override
@@ -78,7 +79,7 @@
      }
  
      @Override
-@@ -171,13 +177,14 @@
+@@ -173,13 +179,14 @@
      @Override
      public void positionRider(Entity passenger) {
          super.positionRider(passenger);

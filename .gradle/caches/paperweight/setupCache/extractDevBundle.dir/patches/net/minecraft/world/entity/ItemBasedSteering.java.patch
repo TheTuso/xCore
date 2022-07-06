@@ -1,7 +1,7 @@
 --- a/net/minecraft/world/entity/ItemBasedSteering.java
 +++ b/net/minecraft/world/entity/ItemBasedSteering.java
 @@ -6,6 +6,7 @@
- import net.minecraft.network.syncher.SynchedEntityData;
+ import net.minecraft.util.RandomSource;
  
  public class ItemBasedSteering {
 +
@@ -16,7 +16,7 @@
 +        this.boostTimeTotal = (Integer) this.entityData.get(this.boostTimeAccessor);
      }
  
-     public boolean boost(Random random) {
+     public boolean boost(RandomSource random) {
 @@ -39,6 +40,15 @@
          }
      }

@@ -10,6 +10,13 @@
           </mappings>
         </serverdata>
       </paths>
+      <paths name="red">
+        <serverdata>
+          <mappings>
+            <mapping deploy="/plugins" local="$PROJECT_DIR$/build/libs" web="/" />
+          </mappings>
+        </serverdata>
+      </paths>
       <paths name="velocity">
         <serverdata>
           <mappings>

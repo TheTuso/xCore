@@ -15,7 +15,7 @@
 -        return !state.canSurvive(world, pos) ? Blocks.AIR.defaultBlockState() : super.updateShape(state, direction, neighborState, world, pos, neighborPos);
 +        // CraftBukkit start
 +        if (!state.canSurvive(world, pos)) {
-+            if (!(world instanceof net.minecraft.server.level.ServerLevel && ((net.minecraft.server.level.ServerLevel) world).hasPhysicsEvent) || !org.bukkit.craftbukkit.v1_18_R2.event.CraftEventFactory.callBlockPhysicsEvent(world, pos).isCancelled()) { // Paper
++            if (!(world instanceof net.minecraft.server.level.ServerLevel && ((net.minecraft.server.level.ServerLevel) world).hasPhysicsEvent) || !org.bukkit.craftbukkit.v1_19_R1.event.CraftEventFactory.callBlockPhysicsEvent(world, pos).isCancelled()) { // Paper
 +                return Blocks.AIR.defaultBlockState();
 +            }
 +        }

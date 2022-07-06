@@ -43,12 +43,12 @@
      }
  
      @Override
-@@ -132,50 +133,54 @@
+@@ -132,51 +133,55 @@
  
      @Override
      public boolean canBeAffected(MobEffectInstance effect) {
 -        return effect.getEffect() == MobEffects.POISON ? false : super.canBeAffected(effect);
-+        return effect.getEffect() == MobEffects.POISON && this.level.paperConfig.spidersImmuneToPoisonEffect ? false : super.canBeAffected(effect); // Paper
++        return effect.getEffect() == MobEffects.POISON && this.level.paperConfig().entities.mobEffects.spidersImmuneToPoisonEffect ? false : super.canBeAffected(effect); // Paper
      }
  
      public boolean isClimbing() {
@@ -76,13 +76,16 @@
      @Override
      public SpawnGroupData finalizeSpawn(ServerLevelAccessor world, DifficultyInstance difficulty, MobSpawnType spawnReason, @Nullable SpawnGroupData entityData, @Nullable CompoundTag entityNbt) {
 -        entityData = super.finalizeSpawn(world, difficulty, spawnReason, entityData, entityNbt);
-+        Object object = super.finalizeSpawn(world, difficulty, spawnReason, entityData, entityNbt);
-+
-         if (world.getRandom().nextInt(100) == 0) {
+-        RandomSource randomSource = world.getRandom();
+-        if (randomSource.nextInt(100) == 0) {
 -            Skeleton skeleton = EntityType.SKELETON.create(this.level);
 -            skeleton.moveTo(this.getX(), this.getY(), this.getZ(), this.getYRot(), 0.0F);
 -            skeleton.finalizeSpawn(world, difficulty, spawnReason, (SpawnGroupData)null, (CompoundTag)null);
 -            skeleton.startRiding(this);
++        Object object = super.finalizeSpawn(world, difficulty, spawnReason, entityData, entityNbt);
++        RandomSource randomsource = world.getRandom();
++
++        if (randomsource.nextInt(100) == 0) {
 +            Skeleton entityskeleton = (Skeleton) EntityType.SKELETON.create(this.level);
 +
 +            entityskeleton.moveTo(this.getX(), this.getY(), this.getZ(), this.getYRot(), 0.0F);
@@ -92,11 +95,12 @@
  
 -        if (entityData == null) {
 -            entityData = new Spider.SpiderEffectsGroupData();
+-            if (world.getDifficulty() == Difficulty.HARD && randomSource.nextFloat() < 0.1F * difficulty.getSpecialMultiplier()) {
+-                ((Spider.SpiderEffectsGroupData)entityData).setRandomEffect(randomSource);
 +        if (object == null) {
 +            object = new Spider.SpiderEffectsGroupData();
-             if (world.getDifficulty() == Difficulty.HARD && world.getRandom().nextFloat() < 0.1F * difficulty.getSpecialMultiplier()) {
--                ((Spider.SpiderEffectsGroupData)entityData).setRandomEffect(world.getRandom());
-+                ((Spider.SpiderEffectsGroupData) object).setRandomEffect(world.getRandom());
++            if (world.getDifficulty() == Difficulty.HARD && randomsource.nextFloat() < 0.1F * difficulty.getSpecialMultiplier()) {
++                ((Spider.SpiderEffectsGroupData) object).setRandomEffect(randomsource);
              }
          }
  
@@ -117,7 +121,7 @@
      }
  
      @Override
-@@ -183,7 +188,8 @@
+@@ -184,7 +189,8 @@
          return 0.65F;
      }
  
@@ -127,10 +131,10 @@
          public SpiderAttackGoal(Spider spider) {
              super(spider, 1.0D, true);
          }
-@@ -196,8 +202,9 @@
+@@ -197,8 +203,9 @@
          @Override
          public boolean canContinueToUse() {
-             float f = this.mob.getBrightness();
+             float f = this.mob.getLightLevelDependentMagicValue();
 +
              if (f >= 0.5F && this.mob.getRandom().nextInt(100) == 0) {
 -                this.mob.setTarget((LivingEntity)null);
@@ -138,7 +142,7 @@
                  return false;
              } else {
                  return super.canContinueToUse();
-@@ -206,16 +213,34 @@
+@@ -207,16 +214,34 @@
  
          @Override
          protected double getAttackReachSqr(LivingEntity entity) {
@@ -155,7 +159,7 @@
 +
 +        @Override
 +        public boolean canUse() {
-+            float f = this.mob.getBrightness();
++            float f = this.mob.getLightLevelDependentMagicValue();
 +
 +            return f >= 0.5F ? false : super.canUse();
          }
@@ -168,13 +172,13 @@
  
 +        public SpiderEffectsGroupData() {}
 +
-         public void setRandomEffect(Random random) {
+         public void setRandomEffect(RandomSource random) {
              int i = random.nextInt(5);
 +
              if (i <= 1) {
                  this.effect = MobEffects.MOVEMENT_SPEED;
              } else if (i <= 2) {
-@@ -228,16 +253,4 @@
+@@ -229,16 +254,4 @@
  
          }
      }
@@ -186,7 +190,7 @@
 -
 -        @Override
 -        public boolean canUse() {
--            float f = this.mob.getBrightness();
+-            float f = this.mob.getLightLevelDependentMagicValue();
 -            return f >= 0.5F ? false : super.canUse();
 -        }
 -    }

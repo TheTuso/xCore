@@ -6,10 +6,10 @@
  
 -public class UpgradeRecipe implements Recipe<Container> {
 +// CraftBukkit start
-+import org.bukkit.craftbukkit.v1_18_R2.inventory.CraftItemStack;
-+import org.bukkit.craftbukkit.v1_18_R2.inventory.CraftRecipe;
-+import org.bukkit.craftbukkit.v1_18_R2.inventory.CraftSmithingRecipe;
-+import org.bukkit.craftbukkit.v1_18_R2.util.CraftNamespacedKey;
++import org.bukkit.craftbukkit.v1_19_R1.inventory.CraftItemStack;
++import org.bukkit.craftbukkit.v1_19_R1.inventory.CraftRecipe;
++import org.bukkit.craftbukkit.v1_19_R1.inventory.CraftSmithingRecipe;
++import org.bukkit.craftbukkit.v1_19_R1.util.CraftNamespacedKey;
 +import org.bukkit.inventory.Recipe;
 +// CraftBukkit end
 +

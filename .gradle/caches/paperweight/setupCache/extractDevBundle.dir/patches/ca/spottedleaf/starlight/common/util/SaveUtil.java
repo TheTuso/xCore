@@ -16,7 +16,11 @@ public final class SaveUtil {
 
     private static final Logger LOGGER = LogUtils.getLogger();
 
-    private static final int STARLIGHT_LIGHT_VERSION = 6;
+    private static final int STARLIGHT_LIGHT_VERSION = 8;
+
+    public static int getLightVersion() {
+        return STARLIGHT_LIGHT_VERSION;
+    }
 
     private static final String BLOCKLIGHT_STATE_TAG = "starlight.blocklight_state";
     private static final String SKYLIGHT_STATE_TAG = "starlight.skylight_state";
@@ -25,9 +29,12 @@ public final class SaveUtil {
     public static void saveLightHook(final Level world, final ChunkAccess chunk, final CompoundTag nbt) {
         try {
             saveLightHookReal(world, chunk, nbt);
-        } catch (final Exception ex) {
+        } catch (final Throwable ex) {
             // failing to inject is not fatal so we catch anything here. if it fails, it will have correctly set lit to false
             // for Vanilla to relight on load and it will not set our lit tag so we will relight on load
+            if (ex instanceof ThreadDeath) {
+                throw (ThreadDeath)ex;
+            }
             LOGGER.warn("Failed to inject light data into save data for chunk " + chunk.getPos() + ", chunk light will be recalculated on its next load", ex);
         }
     }
@@ -119,9 +126,12 @@ public final class SaveUtil {
     public static void loadLightHook(final Level world, final ChunkPos pos, final CompoundTag tag, final ChunkAccess into) {
         try {
             loadLightHookReal(world, pos, tag, into);
-        } catch (final Exception ex) {
+        } catch (final Throwable ex) {
             // failing to inject is not fatal so we catch anything here. if it fails, then we simply relight. Not a problem, we get correct
             // lighting in both cases.
+            if (ex instanceof ThreadDeath) {
+                throw (ThreadDeath)ex;
+            }
             LOGGER.warn("Failed to load light for chunk " + pos + ", light will be recalculated", ex);
         }
     }
@@ -139,7 +149,7 @@ public final class SaveUtil {
         SWMRNibbleArray[] skyNibbles = StarLightEngine.getFilledEmptyLight(world);
 
 
-        // start copy from from the original method
+        // start copy from the original method
         boolean lit = tag.get("isLightOn") != null && tag.getInt(STARLIGHT_VERSION_TAG) == STARLIGHT_LIGHT_VERSION;
         boolean canReadSky = world.dimensionType().hasSkyLight();
         ChunkStatus status = ChunkStatus.byName(tag.getString("Status"));
@@ -179,5 +189,4 @@ public final class SaveUtil {
     }
 
     private SaveUtil() {}
-
 }

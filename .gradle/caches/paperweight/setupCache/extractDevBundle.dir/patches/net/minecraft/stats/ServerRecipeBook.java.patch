@@ -12,7 +12,7 @@
  import net.minecraft.world.item.crafting.RecipeManager;
  import org.slf4j.Logger;
  
-+import org.bukkit.craftbukkit.v1_18_R2.event.CraftEventFactory; // CraftBukkit
++import org.bukkit.craftbukkit.v1_19_R1.event.CraftEventFactory; // CraftBukkit
 +
  public class ServerRecipeBook extends RecipeBook {
 +

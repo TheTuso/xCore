@@ -8,7 +8,7 @@
  import java.util.Map;
  import java.util.function.Supplier;
  import net.minecraft.core.BlockPos;
-@@ -16,8 +17,10 @@
+@@ -14,8 +15,10 @@
  import net.minecraft.world.level.block.state.BlockBehaviour;
  import net.minecraft.world.level.block.state.BlockState;
  import net.minecraft.world.level.block.state.properties.Property;
@@ -19,7 +19,7 @@
      private final Block hostBlock;
      private static final Map<Block, Block> BLOCK_BY_HOST_BLOCK = Maps.newIdentityHashMap();
      private static final Map<BlockState, BlockState> HOST_TO_INFESTED_STATES = Maps.newIdentityHashMap();
-@@ -26,7 +29,7 @@
+@@ -24,7 +27,7 @@
      public InfestedBlock(Block regularBlock, BlockBehaviour.Properties settings) {
          super(settings.destroyTime(regularBlock.defaultDestroyTime() / 2.0F).explosionResistance(0.75F));
          this.hostBlock = regularBlock;
@@ -28,7 +28,7 @@
      }
  
      public Block getHostBlock() {
-@@ -34,14 +37,15 @@
+@@ -32,14 +35,15 @@
      }
  
      public static boolean isCompatibleHostBlock(BlockState block) {
@@ -49,14 +49,7 @@
      }
  
      @Override
-@@ -56,32 +60,34 @@
-     @Override
-     public void wasExploded(Level world, BlockPos pos, Explosion explosion) {
-         if (world instanceof ServerLevel) {
--            this.spawnInfestation((ServerLevel)world, pos);
-+            this.spawnInfestation((ServerLevel) world, pos);
-         }
- 
+@@ -52,26 +56,28 @@
      }
  
      public static BlockState infestedStateByHost(BlockState regularState) {

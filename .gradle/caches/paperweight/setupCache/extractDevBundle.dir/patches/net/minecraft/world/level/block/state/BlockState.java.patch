@@ -9,7 +9,7 @@
 +
 +    public final org.bukkit.Material getBukkitMaterial() {
 +        if (this.cachedMaterial == null) {
-+            this.cachedMaterial = org.bukkit.craftbukkit.v1_18_R2.util.CraftMagicNumbers.getMaterial(this.getBlock());
++            this.cachedMaterial = org.bukkit.craftbukkit.v1_19_R1.util.CraftMagicNumbers.getMaterial(this.getBlock());
 +        }
 +
 +        return this.cachedMaterial;

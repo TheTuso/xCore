@@ -64,7 +64,7 @@
 @@ -59,31 +71,60 @@
  
      @Override
-     public void tick(BlockState state, ServerLevel world, BlockPos pos, Random random) {
+     public void tick(BlockState state, ServerLevel world, BlockPos pos, RandomSource random) {
 -        boolean bl = this.hasNeighborSignal(world, pos, state);
 -        List<RedstoneTorchBlock.Toggle> list = RECENT_TOGGLES.get(world);
 -
@@ -127,7 +127,7 @@
      }
  
      @Override
-     public void neighborChanged(BlockState state, Level world, BlockPos pos, Block block, BlockPos fromPos, boolean notify) {
+     public void neighborChanged(BlockState state, Level world, BlockPos pos, Block sourceBlock, BlockPos sourcePos, boolean notify) {
 -        if (state.getValue(LIT) == this.hasNeighborSignal(world, pos, state) && !world.getBlockTicks().willTickThisTick(pos, this)) {
 -            world.scheduleTick(pos, this, 2);
 +        if ((Boolean) state.getValue(RedstoneTorchBlock.LIT) == this.hasNeighborSignal(world, pos, state) && !world.getBlockTicks().willTickThisTick(pos, this)) {
@@ -135,24 +135,10 @@
          }
  
      }
-@@ -98,34 +139,52 @@
-         return true;
-     }
+@@ -100,32 +141,38 @@
  
-+    // Paper start - optimize redstone (Alternate Current)
-+    @Override
-+    public boolean isSignalSourceTo(Level level, BlockPos pos, BlockState state, Direction dir) {
-+        return dir != Direction.UP;
-+    }
-+
-+    @Override
-+    public boolean isDirectSignalSourceTo(Level level, BlockPos pos, BlockState state, Direction dir) {
-+        return dir == Direction.DOWN;
-+    }
-+    // Paper end
-+
      @Override
-     public void animateTick(BlockState state, Level world, BlockPos pos, Random random) {
+     public void animateTick(BlockState state, Level world, BlockPos pos, RandomSource random) {
 -        if (state.getValue(LIT)) {
 -            double d = (double)pos.getX() + 0.5D + (random.nextDouble() - 0.5D) * 0.2D;
 -            double e = (double)pos.getY() + 0.7D + (random.nextDouble() - 0.5D) * 0.2D;
@@ -200,7 +186,7 @@
                  ++i;
                  if (i >= 8) {
                      return true;
-@@ -137,6 +196,7 @@
+@@ -137,6 +184,7 @@
      }
  
      public static class Toggle {

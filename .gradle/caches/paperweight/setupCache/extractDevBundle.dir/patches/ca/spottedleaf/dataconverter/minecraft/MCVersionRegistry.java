@@ -1,6 +1,7 @@
 package ca.spottedleaf.dataconverter.minecraft;
 
 import ca.spottedleaf.dataconverter.converters.DataConverter;
+import ca.spottedleaf.dataconverter.minecraft.versions.V3093;
 import com.mojang.logging.LogUtils;
 import it.unimi.dsi.fastutil.ints.Int2ObjectLinkedOpenHashMap;
 import it.unimi.dsi.fastutil.ints.IntArrayList;
@@ -185,8 +186,21 @@ public final class MCVersionRegistry {
                 2846,
                 2852,
                 2967,
-                2970
-                // All up to 1.18.2
+                2970,
+                3077,
+                3078,
+                3081,
+                3082,
+                3083,
+                3084,
+                3086,
+                3087,
+                3088,
+                3090,
+                3093,
+                3094,
+                3097
+                // All up to 1.19-pre1
         };
         Arrays.sort(converterVersions);
 
@@ -213,6 +227,9 @@ public final class MCVersionRegistry {
 
         // final release of major version
         registerBreakpoint(MCVersions.V1_17_1, Integer.MAX_VALUE);
+
+        // final release of major version
+        registerBreakpoint(MCVersions.V1_18_2, Integer.MAX_VALUE);
 
 
     }

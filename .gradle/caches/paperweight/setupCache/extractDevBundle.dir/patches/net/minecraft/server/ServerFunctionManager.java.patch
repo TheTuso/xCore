@@ -1,6 +1,6 @@
 --- a/net/minecraft/server/ServerFunctionManager.java
 +++ b/net/minecraft/server/ServerFunctionManager.java
-@@ -7,7 +7,9 @@
+@@ -7,16 +7,20 @@
  import com.mojang.brigadier.exceptions.CommandSyntaxException;
  import java.util.Collection;
  import java.util.Deque;
@@ -10,19 +10,18 @@
  import java.util.Optional;
  import javax.annotation.Nullable;
  import net.minecraft.commands.CommandFunction;
-@@ -16,9 +18,11 @@
- import net.minecraft.network.chat.TranslatableComponent;
+ import net.minecraft.commands.CommandSourceStack;
+ import net.minecraft.network.chat.Component;
  import net.minecraft.resources.ResourceLocation;
- import net.minecraft.tags.Tag;
 +import net.minecraft.util.profiling.ProfilerFiller;
  import net.minecraft.world.level.GameRules;
  
  public class ServerFunctionManager {
 +
-     private static final Component NO_RECURSIVE_TRACES = new TranslatableComponent("commands.debug.function.noRecursion");
+     private static final Component NO_RECURSIVE_TRACES = Component.translatable("commands.debug.function.noRecursion");
      private static final ResourceLocation TICK_FUNCTION_TAG = new ResourceLocation("tick");
      private static final ResourceLocation LOAD_FUNCTION_TAG = new ResourceLocation("load");
-@@ -40,52 +44,60 @@
+@@ -38,52 +42,60 @@
      }
  
      public CommandDispatcher<CommandSourceStack> getDispatcher() {
@@ -35,9 +34,9 @@
 +        this.executeTagFunctions(this.ticking, ServerFunctionManager.TICK_FUNCTION_TAG);
          if (this.postReload) {
              this.postReload = false;
--            Collection<CommandFunction> collection = this.library.getTag(LOAD_FUNCTION_TAG).getValues();
+-            Collection<CommandFunction> collection = this.library.getTag(LOAD_FUNCTION_TAG);
 -            this.executeTagFunctions(collection, LOAD_FUNCTION_TAG);
-+            Collection<CommandFunction> collection = this.library.getTag(ServerFunctionManager.LOAD_FUNCTION_TAG).getValues();
++            Collection<CommandFunction> collection = this.library.getTag(ServerFunctionManager.LOAD_FUNCTION_TAG);
 +
 +            this.executeTagFunctions(collection, ServerFunctionManager.LOAD_FUNCTION_TAG);
          }
@@ -96,16 +95,16 @@
          }
      }
  
-@@ -95,7 +107,7 @@
+@@ -93,7 +105,7 @@
      }
  
      private void postReload(ServerFunctionLibrary loader) {
--        this.ticking = ImmutableList.copyOf(loader.getTag(TICK_FUNCTION_TAG).getValues());
-+        this.ticking = ImmutableList.copyOf(loader.getTag(ServerFunctionManager.TICK_FUNCTION_TAG).getValues());
+-        this.ticking = ImmutableList.copyOf(loader.getTag(TICK_FUNCTION_TAG));
++        this.ticking = ImmutableList.copyOf(loader.getTag(ServerFunctionManager.TICK_FUNCTION_TAG));
          this.postReload = true;
      }
  
-@@ -119,19 +131,32 @@
+@@ -117,19 +129,32 @@
          return this.library.getAvailableTags();
      }
  
@@ -141,7 +140,7 @@
              if (this.commandQueue.size() + this.nestedCalls.size() < i) {
                  this.nestedCalls.add(new ServerFunctionManager.QueuedCommand(source, this.depth, new CommandFunction.FunctionEntry(function)));
              }
-@@ -141,20 +166,31 @@
+@@ -139,20 +164,31 @@
          int runTopCommand(CommandFunction function, CommandSourceStack source) {
              int i = ServerFunctionManager.this.getCommandLimit();
              int j = 0;
@@ -182,7 +181,7 @@
                          this.nestedCalls.clear();
                      }
                  } finally {
-@@ -162,10 +198,7 @@
+@@ -160,10 +196,7 @@
                  }
  
                  ++j;
@@ -194,7 +193,7 @@
  
              return j;
          }
-@@ -179,6 +212,7 @@
+@@ -177,6 +210,7 @@
      }
  
      public static class QueuedCommand {
@@ -202,7 +201,7 @@
          private final CommandSourceStack sender;
          final int depth;
          private final CommandFunction.Entry entry;
-@@ -192,31 +226,20 @@
+@@ -190,31 +224,20 @@
          public void execute(ServerFunctionManager manager, Deque<ServerFunctionManager.QueuedCommand> entries, int maxChainLength, @Nullable ServerFunctionManager.TraceCallbacks tracer) {
              try {
                  this.entry.execute(manager, this.sender, entries, maxChainLength, this.depth, tracer);

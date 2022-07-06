@@ -1,6 +1,6 @@
 package com.destroystokyo.paper.loottable;
 
-import com.destroystokyo.paper.PaperWorldConfig;
+import io.papermc.paper.configuration.WorldConfiguration;
 import org.bukkit.entity.Player;
 import org.bukkit.loot.LootTable;
 import javax.annotation.Nullable;
@@ -48,7 +48,7 @@ public class PaperLootableInventoryData {
         }
 
         // ALWAYS process the first fill or if the feature is disabled
-        if (this.lastFill == -1 || !this.lootable.getNMSWorld().paperConfig.autoReplenishLootables) {
+        if (this.lastFill == -1 || !this.lootable.getNMSWorld().paperConfig().lootables.autoReplenish) {
             return true;
         }
 
@@ -62,10 +62,10 @@ public class PaperLootableInventoryData {
             return false;
         }
 
-        final PaperWorldConfig paperConfig = this.lootable.getNMSWorld().paperConfig;
+        final WorldConfiguration paperConfig = this.lootable.getNMSWorld().paperConfig();
 
         // Check if max refills has been hit
-        if (paperConfig.maxLootableRefills != -1 && this.numRefills >= paperConfig.maxLootableRefills) {
+        if (paperConfig.lootables.maxRefills != -1 && this.numRefills >= paperConfig.lootables.maxRefills) {
             return false;
         }
 
@@ -77,20 +77,20 @@ public class PaperLootableInventoryData {
 
         final Player bukkitPlayer = (Player) player.getBukkitEntity();
         LootableInventoryReplenishEvent event = new LootableInventoryReplenishEvent(bukkitPlayer, lootable.getAPILootableInventory());
-        if (paperConfig.restrictPlayerReloot && hasPlayerLooted(player.getUUID())) {
+        if (paperConfig.lootables.restrictPlayerReloot && hasPlayerLooted(player.getUUID())) {
             event.setCancelled(true);
         }
         return event.callEvent();
     }
     public void processRefill(@Nullable net.minecraft.world.entity.player.Player player) {
         this.lastFill = System.currentTimeMillis();
-        final PaperWorldConfig paperConfig = this.lootable.getNMSWorld().paperConfig;
-        if (paperConfig.autoReplenishLootables) {
-            int min = paperConfig.lootableRegenMin;
-            int max = paperConfig.lootableRegenMax;
-            this.nextRefill = this.lastFill + (min + RANDOM.nextInt(max - min + 1)) * 1000L;
+        final WorldConfiguration paperConfig = this.lootable.getNMSWorld().paperConfig();
+        if (paperConfig.lootables.autoReplenish) {
+            long min = paperConfig.lootables.refreshMin.seconds();
+            long max = paperConfig.lootables.refreshMax.seconds();
+            this.nextRefill = this.lastFill + (min + RANDOM.nextLong(max - min + 1)) * 1000L;
             this.numRefills++;
-            if (paperConfig.changeLootTableSeedOnFill) {
+            if (paperConfig.lootables.resetSeedOnFill) {
                 this.lootable.setSeed(0);
             }
             if (player != null) { // This means that numRefills can be incremented without a player being in the lootedPlayers list - Seems to be EntityMinecartChest specific

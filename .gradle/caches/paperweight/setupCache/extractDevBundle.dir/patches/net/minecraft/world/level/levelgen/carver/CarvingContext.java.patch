@@ -1,13 +1,13 @@
 --- a/net/minecraft/world/level/levelgen/carver/CarvingContext.java
 +++ b/net/minecraft/world/level/levelgen/carver/CarvingContext.java
-@@ -18,8 +18,8 @@
-     private final RegistryAccess registryAccess;
-     private final NoiseChunk noiseChunk;
+@@ -21,8 +21,8 @@
+     private final RandomState randomState;
+     private final SurfaceRules.RuleSource surfaceRule;
  
--    public CarvingContext(NoiseBasedChunkGenerator chunkGenerator, RegistryAccess registryManager, LevelHeightAccessor heightLimitView, NoiseChunk chunkNoiseSampler) {
--        super(chunkGenerator, heightLimitView);
-+    public CarvingContext(NoiseBasedChunkGenerator chunkGenerator, RegistryAccess registryManager, LevelHeightAccessor heightLimitView, NoiseChunk chunkNoiseSampler, @org.jetbrains.annotations.Nullable net.minecraft.world.level.Level level) { // Paper
-+        super(chunkGenerator, heightLimitView, level); // Paper
-         this.generator = chunkGenerator;
+-    public CarvingContext(NoiseBasedChunkGenerator noiseChunkGenerator, RegistryAccess registryManager, LevelHeightAccessor heightLimitView, NoiseChunk chunkNoiseSampler, RandomState noiseConfig, SurfaceRules.RuleSource materialRule) {
+-        super(noiseChunkGenerator, heightLimitView);
++    public CarvingContext(NoiseBasedChunkGenerator noiseChunkGenerator, RegistryAccess registryManager, LevelHeightAccessor heightLimitView, NoiseChunk chunkNoiseSampler, RandomState noiseConfig, SurfaceRules.RuleSource materialRule, @javax.annotation.Nullable net.minecraft.world.level.Level level) { // Paper
++        super(noiseChunkGenerator, heightLimitView, level); // Paper
          this.registryAccess = registryManager;
          this.noiseChunk = chunkNoiseSampler;
+         this.randomState = noiseConfig;

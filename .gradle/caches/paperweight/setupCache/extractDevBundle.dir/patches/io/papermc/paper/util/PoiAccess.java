@@ -1,10 +1,13 @@
 package io.papermc.paper.util;
 
+import com.mojang.datafixers.util.Pair;
 import it.unimi.dsi.fastutil.doubles.Double2ObjectMap;
 import it.unimi.dsi.fastutil.doubles.Double2ObjectRBTreeMap;
 import it.unimi.dsi.fastutil.longs.LongArrayFIFOQueue;
 import it.unimi.dsi.fastutil.longs.LongOpenHashSet;
+import java.util.function.BiPredicate;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Holder;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.ai.village.poi.PoiManager;
 import net.minecraft.world.entity.ai.village.poi.PoiRecord;
@@ -76,7 +79,7 @@ public final class PoiAccess {
     // only includes x/z axis
     // finds the closest poi data by distance.
     public static BlockPos findClosestPoiDataPosition(final PoiManager poiStorage,
-                                                      final Predicate<PoiType> villagePlaceType,
+                                                      final Predicate<Holder<PoiType>> villagePlaceType,
                                                       // position predicate must not modify chunk POI
                                                       final Predicate<BlockPos> positionPredicate,
                                                       final BlockPos sourcePosition,
@@ -92,9 +95,27 @@ public final class PoiAccess {
     }
 
     // only includes x/z axis
+    // finds the closest poi data by distance.
+    public static Pair<Holder<PoiType>, BlockPos> findClosestPoiDataTypeAndPosition(final PoiManager poiStorage,
+                                                                             final Predicate<Holder<PoiType>> villagePlaceType,
+                                                                             // position predicate must not modify chunk POI
+                                                                             final Predicate<BlockPos> positionPredicate,
+                                                                             final BlockPos sourcePosition,
+                                                                             final int range, // distance on x y z axis
+                                                                             final double maxDistance,
+                                                                             final PoiManager.Occupancy occupancy,
+                                                                             final boolean load) {
+        final PoiRecord ret = findClosestPoiDataRecord(
+            poiStorage, villagePlaceType, positionPredicate, sourcePosition, range, maxDistance, occupancy, load
+        );
+
+        return ret == null ? null : Pair.of(ret.getPoiType(), ret.getPos());
+    }
+
+    // only includes x/z axis
     // finds the closest poi data by distance. if multiple match the same distance, then they all are returned.
     public static void findClosestPoiDataPositions(final PoiManager poiStorage,
-                                                   final Predicate<PoiType> villagePlaceType,
+                                                   final Predicate<Holder<PoiType>> villagePlaceType,
                                                    // position predicate must not modify chunk POI
                                                    final Predicate<BlockPos> positionPredicate,
                                                    final BlockPos sourcePosition,
@@ -125,7 +146,7 @@ public final class PoiAccess {
     // only includes x/z axis
     // finds the closest poi data by distance.
     public static PoiRecord findClosestPoiDataRecord(final PoiManager poiStorage,
-                                                     final Predicate<PoiType> villagePlaceType,
+                                                     final Predicate<Holder<PoiType>> villagePlaceType,
                                                      // position predicate must not modify chunk POI
                                                      final Predicate<BlockPos> positionPredicate,
                                                      final BlockPos sourcePosition,
@@ -135,7 +156,25 @@ public final class PoiAccess {
                                                      final boolean load) {
         final List<PoiRecord> ret = new ArrayList<>();
         findClosestPoiDataRecords(
-                poiStorage, villagePlaceType, positionPredicate, sourcePosition, range, maxDistance, occupancy, load, ret
+            poiStorage, villagePlaceType, positionPredicate, sourcePosition, range, maxDistance, occupancy, load, ret
+        );
+        return ret.isEmpty() ? null : ret.get(0);
+    }
+
+    // only includes x/z axis
+    // finds the closest poi data by distance.
+    public static PoiRecord findClosestPoiDataRecord(final PoiManager poiStorage,
+                                                     final Predicate<Holder<PoiType>> villagePlaceType,
+                                                     // position predicate must not modify chunk POI
+                                                     final BiPredicate<Holder<PoiType>, BlockPos> predicate,
+                                                     final BlockPos sourcePosition,
+                                                     final int range, // distance on x y z axis
+                                                     final double maxDistance,
+                                                     final PoiManager.Occupancy occupancy,
+                                                     final boolean load) {
+        final List<PoiRecord> ret = new ArrayList<>();
+        findClosestPoiDataRecords(
+                poiStorage, villagePlaceType, predicate, sourcePosition, range, maxDistance, occupancy, load, ret
         );
         return ret.isEmpty() ? null : ret.get(0);
     }
@@ -143,9 +182,23 @@ public final class PoiAccess {
     // only includes x/z axis
     // finds the closest poi data by distance. if multiple match the same distance, then they all are returned.
     public static void findClosestPoiDataRecords(final PoiManager poiStorage,
-                                                 final Predicate<PoiType> villagePlaceType,
+                                                 final Predicate<Holder<PoiType>> villagePlaceType,
                                                  // position predicate must not modify chunk POI
                                                  final Predicate<BlockPos> positionPredicate,
+                                                 final BlockPos sourcePosition,
+                                                 final int range, // distance on x y z axis
+                                                 final double maxDistance,
+                                                 final PoiManager.Occupancy occupancy,
+                                                 final boolean load,
+                                                 final List<PoiRecord> ret) {
+        final BiPredicate<Holder<PoiType>, BlockPos> predicate = positionPredicate != null ? (type, pos) -> positionPredicate.test(pos) : null;
+        findClosestPoiDataRecords(poiStorage, villagePlaceType, predicate, sourcePosition, range, maxDistance, occupancy, load, ret);
+    }
+
+    public static void findClosestPoiDataRecords(final PoiManager poiStorage,
+                                                 final Predicate<Holder<PoiType>> villagePlaceType,
+                                                 // position predicate must not modify chunk POI
+                                                 final BiPredicate<Holder<PoiType>, BlockPos> predicate,
                                                  final BlockPos sourcePosition,
                                                  final int range, // distance on x y z axis
                                                  final double maxDistance,
@@ -226,13 +279,13 @@ public final class PoiAccess {
 
             final PoiSection poiSection = poiSectionOptional.orElse(null);
 
-            final Map<PoiType, Set<PoiRecord>> sectionData = poiSection.getData();
+            final Map<Holder<PoiType>, Set<PoiRecord>> sectionData = poiSection.getData();
             if (sectionData.isEmpty()) {
                 continue;
             }
 
             // now we search the section data
-            for (final Map.Entry<PoiType, Set<PoiRecord>> entry : sectionData.entrySet()) {
+            for (final Map.Entry<Holder<PoiType>, Set<PoiRecord>> entry : sectionData.entrySet()) {
                 if (!villagePlaceType.test(entry.getKey())) {
                     // filter out by poi type
                     continue;
@@ -261,7 +314,7 @@ public final class PoiAccess {
                         continue;
                     }
 
-                    if (positionPredicate != null && !positionPredicate.test(poiPosition)) {
+                    if (predicate != null && !predicate.test(poiData.getPoiType(), poiPosition)) {
                         // filter by position
                         continue;
                     }
@@ -317,7 +370,7 @@ public final class PoiAccess {
 
     // finds the closest poi entry pos.
     public static BlockPos findNearestPoiPosition(final PoiManager poiStorage,
-                                                  final Predicate<PoiType> villagePlaceType,
+                                                  final Predicate<Holder<PoiType>> villagePlaceType,
                                                   // position predicate must not modify chunk POI
                                                   final Predicate<BlockPos> positionPredicate,
                                                   final BlockPos sourcePosition,
@@ -333,7 +386,7 @@ public final class PoiAccess {
 
     // finds the closest `max` poi entry positions.
     public static void findNearestPoiPositions(final PoiManager poiStorage,
-                                               final Predicate<PoiType> villagePlaceType,
+                                               final Predicate<Holder<PoiType>> villagePlaceType,
                                                // position predicate must not modify chunk POI
                                                final Predicate<BlockPos> positionPredicate,
                                                final BlockPos sourcePosition,
@@ -342,7 +395,7 @@ public final class PoiAccess {
                                                final PoiManager.Occupancy occupancy,
                                                final boolean load,
                                                final int max,
-                                               final List<BlockPos> ret) {
+                                               final List<Pair<Holder<PoiType>, BlockPos>> ret) {
         final Set<BlockPos> positions = new HashSet<>();
         // pos predicate is last thing that runs before adding to ret.
         final Predicate<BlockPos> newPredicate = (final BlockPos pos) -> {
@@ -358,13 +411,13 @@ public final class PoiAccess {
         );
 
         for (final PoiRecord record : toConvert) {
-            ret.add(record.getPos());
+            ret.add(Pair.of(record.getPoiType(), record.getPos()));
         }
     }
 
     // finds the closest poi entry.
     public static PoiRecord findNearestPoiRecord(final PoiManager poiStorage,
-                                                 final Predicate<PoiType> villagePlaceType,
+                                                 final Predicate<Holder<PoiType>> villagePlaceType,
                                                  // position predicate must not modify chunk POI
                                                  final Predicate<BlockPos> positionPredicate,
                                                  final BlockPos sourcePosition,
@@ -382,7 +435,7 @@ public final class PoiAccess {
 
     // finds the closest `max` poi entries.
     public static void findNearestPoiRecords(final PoiManager poiStorage,
-                                             final Predicate<PoiType> villagePlaceType,
+                                             final Predicate<Holder<PoiType>> villagePlaceType,
                                              // position predicate must not modify chunk POI
                                              final Predicate<BlockPos> positionPredicate,
                                              final BlockPos sourcePosition,
@@ -469,13 +522,13 @@ public final class PoiAccess {
 
             final PoiSection poiSection = poiSectionOptional.orElse(null);
 
-            final Map<PoiType, Set<PoiRecord>> sectionData = poiSection.getData();
+            final Map<Holder<PoiType>, Set<PoiRecord>> sectionData = poiSection.getData();
             if (sectionData.isEmpty()) {
                 continue;
             }
 
             // now we search the section data
-            for (final Map.Entry<PoiType, Set<PoiRecord>> entry : sectionData.entrySet()) {
+            for (final Map.Entry<Holder<PoiType>, Set<PoiRecord>> entry : sectionData.entrySet()) {
                 if (!villagePlaceType.test(entry.getKey())) {
                     // filter out by poi type
                     continue;
@@ -603,7 +656,7 @@ public final class PoiAccess {
     }
 
     public static BlockPos findAnyPoiPosition(final PoiManager poiStorage,
-                                              final Predicate<PoiType> villagePlaceType,
+                                              final Predicate<Holder<PoiType>> villagePlaceType,
                                               final Predicate<BlockPos> positionPredicate,
                                               final BlockPos sourcePosition,
                                               final int range, // distance on x y z axis
@@ -617,14 +670,14 @@ public final class PoiAccess {
     }
 
     public static void findAnyPoiPositions(final PoiManager poiStorage,
-                                           final Predicate<PoiType> villagePlaceType,
+                                           final Predicate<Holder<PoiType>> villagePlaceType,
                                            final Predicate<BlockPos> positionPredicate,
                                            final BlockPos sourcePosition,
                                            final int range, // distance on x y z axis
                                            final PoiManager.Occupancy occupancy,
                                            final boolean load,
                                            final int max,
-                                           final List<BlockPos> ret) {
+                                           final List<Pair<Holder<PoiType>, BlockPos>> ret) {
         final Set<BlockPos> positions = new HashSet<>();
         // pos predicate is last thing that runs before adding to ret.
         final Predicate<BlockPos> newPredicate = (final BlockPos pos) -> {
@@ -640,12 +693,12 @@ public final class PoiAccess {
         );
 
         for (final PoiRecord record : toConvert) {
-            ret.add(record.getPos());
+            ret.add(Pair.of(record.getPoiType(), record.getPos()));
         }
     }
 
     public static PoiRecord findAnyPoiRecord(final PoiManager poiStorage,
-                                             final Predicate<PoiType> villagePlaceType,
+                                             final Predicate<Holder<PoiType>> villagePlaceType,
                                              final Predicate<BlockPos> positionPredicate,
                                              final BlockPos sourcePosition,
                                              final int range, // distance on x y z axis
@@ -657,7 +710,7 @@ public final class PoiAccess {
     }
 
     public static void findAnyPoiRecords(final PoiManager poiStorage,
-                                         final Predicate<PoiType> villagePlaceType,
+                                         final Predicate<Holder<PoiType>> villagePlaceType,
                                          final Predicate<BlockPos> positionPredicate,
                                          final BlockPos sourcePosition,
                                          final int range, // distance on x y z axis
@@ -693,13 +746,13 @@ public final class PoiAccess {
                         continue;
                     }
 
-                    final Map<PoiType, Set<PoiRecord>> sectionData = poiSection.getData();
+                    final Map<Holder<PoiType>, Set<PoiRecord>> sectionData = poiSection.getData();
                     if (sectionData.isEmpty()) {
                         continue;
                     }
 
                     // now we search the section data
-                    for (final Map.Entry<PoiType, Set<PoiRecord>> entry : sectionData.entrySet()) {
+                    for (final Map.Entry<Holder<PoiType>, Set<PoiRecord>> entry : sectionData.entrySet()) {
                         if (!villagePlaceType.test(entry.getKey())) {
                             // filter out by poi type
                             continue;

@@ -1,13 +1,13 @@
 --- a/net/minecraft/world/level/block/TurtleEggBlock.java
 +++ b/net/minecraft/world/level/block/TurtleEggBlock.java
-@@ -27,8 +27,14 @@
- import net.minecraft.world.level.block.state.properties.IntegerProperty;
+@@ -28,8 +28,14 @@
+ import net.minecraft.world.level.gameevent.GameEvent;
  import net.minecraft.world.phys.shapes.CollisionContext;
  import net.minecraft.world.phys.shapes.VoxelShape;
 +// CraftBukkit start
 +import org.bukkit.event.entity.EntityInteractEvent;
-+import org.bukkit.craftbukkit.v1_18_R2.block.CraftBlock;
-+import org.bukkit.craftbukkit.v1_18_R2.event.CraftEventFactory;
++import org.bukkit.craftbukkit.v1_19_R1.block.CraftBlock;
++import org.bukkit.craftbukkit.v1_19_R1.event.CraftEventFactory;
 +// CraftBukkit end
  
  public class TurtleEggBlock extends Block {
@@ -15,7 +15,7 @@
      public static final int MAX_HATCH_LEVEL = 2;
      public static final int MIN_EGGS = 1;
      public static final int MAX_EGGS = 4;
-@@ -39,7 +45,7 @@
+@@ -40,7 +46,7 @@
  
      public TurtleEggBlock(BlockBehaviour.Properties settings) {
          super(settings);
@@ -24,7 +24,7 @@
      }
  
      @Override
-@@ -60,6 +66,19 @@
+@@ -64,6 +70,19 @@
      private void destroyEgg(Level world, BlockState state, BlockPos pos, Entity entity, int inverseChance) {
          if (this.canDestroyEgg(world, entity)) {
              if (!world.isClientSide && world.random.nextInt(inverseChance) == 0 && state.is(Blocks.TURTLE_EGG)) {
@@ -44,7 +44,7 @@
                  this.decreaseEggs(world, pos, state);
              }
  
-@@ -67,12 +86,13 @@
+@@ -71,12 +90,13 @@
      }
  
      private void decreaseEggs(Level world, BlockPos pos, BlockState state) {
@@ -58,13 +58,13 @@
          } else {
 -            world.setBlock(pos, state.setValue(EGGS, Integer.valueOf(i - 1)), 2);
 +            world.setBlock(pos, (BlockState) state.setValue(TurtleEggBlock.EGGS, i - 1), 2);
+             world.gameEvent(GameEvent.BLOCK_DESTROY, pos, GameEvent.Context.of(state));
              world.levelEvent(2001, pos, Block.getId(state));
          }
- 
-@@ -80,22 +100,34 @@
+@@ -85,22 +105,34 @@
  
      @Override
-     public void randomTick(BlockState state, ServerLevel world, BlockPos pos, Random random) {
+     public void randomTick(BlockState state, ServerLevel world, BlockPos pos, RandomSource random) {
 -        if (this.shouldUpdateHatchLevel(world) && onSand(world, pos)) {
 -            int i = state.getValue(HATCH);
 +        if (this.shouldUpdateHatchLevel(world) && TurtleEggBlock.onSand(world, pos)) {
@@ -107,7 +107,7 @@
                  }
              }
          }
-@@ -103,7 +135,7 @@
+@@ -108,7 +140,7 @@
      }
  
      public static boolean onSand(BlockGetter world, BlockPos pos) {
@@ -116,7 +116,7 @@
      }
  
      public static boolean isSand(BlockGetter world, BlockPos pos) {
-@@ -112,7 +144,7 @@
+@@ -117,7 +149,7 @@
  
      @Override
      public void onPlace(BlockState state, Level world, BlockPos pos, BlockState oldState, boolean notify) {
@@ -125,7 +125,7 @@
              world.levelEvent(2005, pos, 0);
          }
  
-@@ -120,11 +152,8 @@
+@@ -125,11 +157,8 @@
  
      private boolean shouldUpdateHatchLevel(Level world) {
          float f = world.getTimeOfDay(1.0F);
@@ -139,7 +139,7 @@
      }
  
      @Override
-@@ -135,35 +164,28 @@
+@@ -140,35 +169,28 @@
  
      @Override
      public boolean canBeReplaced(BlockState state, BlockPlaceContext context) {

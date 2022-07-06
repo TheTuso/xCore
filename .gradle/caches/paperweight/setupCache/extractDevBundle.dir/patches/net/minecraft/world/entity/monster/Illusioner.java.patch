@@ -120,7 +120,7 @@
 +
 +        entityarrow.shoot(d0, d1 + d3 * 0.20000000298023224D, d2, 1.6F, (float) (14 - this.level.getDifficulty().getId() * 4));
 +        // Paper start
-+        org.bukkit.event.entity.EntityShootBowEvent event = org.bukkit.craftbukkit.v1_18_R2.event.CraftEventFactory.callEntityShootBowEvent(this, this.getMainHandItem(), entityarrow.getPickupItem(), entityarrow, target.getUsedItemHand(), 0.8F, true);
++        org.bukkit.event.entity.EntityShootBowEvent event = org.bukkit.craftbukkit.v1_19_R1.event.CraftEventFactory.callEntityShootBowEvent(this, this.getMainHandItem(), entityarrow.getPickupItem(), entityarrow, target.getUsedItemHand(), 0.8F, true);
 +        if (event.isCancelled()) {
 +            event.getProjectile().remove();
 +            return;

@@ -8,9 +8,9 @@
  import java.util.List;
 +import java.util.Objects;
  import java.util.Optional;
- import java.util.Random;
  import java.util.function.BiPredicate;
-@@ -46,6 +48,7 @@
+ import java.util.function.Supplier;
+@@ -45,6 +47,7 @@
  import net.minecraft.world.level.block.state.properties.ChestType;
  import net.minecraft.world.level.block.state.properties.DirectionProperty;
  import net.minecraft.world.level.block.state.properties.EnumProperty;
@@ -18,7 +18,7 @@
  import net.minecraft.world.level.material.FluidState;
  import net.minecraft.world.level.material.Fluids;
  import net.minecraft.world.level.pathfinder.PathComputationType;
-@@ -55,6 +58,7 @@
+@@ -54,6 +57,7 @@
  import net.minecraft.world.phys.shapes.VoxelShape;
  
  public class ChestBlock extends AbstractChestBlock<ChestBlockEntity> implements SimpleWaterloggedBlock {
@@ -26,7 +26,7 @@
      public static final DirectionProperty FACING = HorizontalDirectionalBlock.FACING;
      public static final EnumProperty<ChestType> TYPE = BlockStateProperties.CHEST_TYPE;
      public static final BooleanProperty WATERLOGGED = BlockStateProperties.WATERLOGGED;
-@@ -67,12 +71,10 @@
+@@ -66,12 +70,10 @@
      protected static final VoxelShape EAST_AABB = Block.box(1.0D, 0.0D, 1.0D, 16.0D, 14.0D, 15.0D);
      protected static final VoxelShape AABB = Block.box(1.0D, 0.0D, 1.0D, 15.0D, 14.0D, 15.0D);
      private static final DoubleBlockCombiner.Combiner<ChestBlockEntity, Optional<Container>> CHEST_COMBINER = new DoubleBlockCombiner.Combiner<ChestBlockEntity, Optional<Container>>() {
@@ -39,7 +39,7 @@
          public Optional<Container> acceptSingle(ChestBlockEntity single) {
              return Optional.of(single);
          }
-@@ -83,34 +85,12 @@
+@@ -82,34 +84,12 @@
          }
      };
      private static final DoubleBlockCombiner.Combiner<ChestBlockEntity, Optional<MenuProvider>> MENU_PROVIDER_COMBINER = new DoubleBlockCombiner.Combiner<ChestBlockEntity, Optional<MenuProvider>>() {
@@ -65,7 +65,7 @@
 -                    if (first.hasCustomName()) {
 -                        return first.getDisplayName();
 -                    } else {
--                        return (Component)(second.hasCustomName() ? second.getDisplayName() : new TranslatableComponent("container.chestDouble"));
+-                        return (Component)(second.hasCustomName() ? second.getDisplayName() : Component.translatable("container.chestDouble"));
 -                    }
 -                }
 -            });
@@ -76,7 +76,7 @@
          public Optional<MenuProvider> acceptSingle(ChestBlockEntity single) {
              return Optional.of(single);
          }
-@@ -121,18 +101,47 @@
+@@ -120,18 +100,47 @@
          }
      };
  
@@ -107,7 +107,7 @@
 +
 +        @Override
 +        public Component getDisplayName() {
-+            return (Component) (this.tileentitychest.hasCustomName() ? this.tileentitychest.getDisplayName() : (this.tileentitychest1.hasCustomName() ? this.tileentitychest1.getDisplayName() : new TranslatableComponent("container.chestDouble")));
++            return (Component) (this.tileentitychest.hasCustomName() ? this.tileentitychest.getDisplayName() : (this.tileentitychest1.hasCustomName() ? this.tileentitychest1.getDisplayName() : Component.translatable("container.chestDouble")));
 +        }
 +    };
 +    // CraftBukkit end
@@ -131,7 +131,7 @@
      }
  
      @Override
-@@ -142,17 +151,18 @@
+@@ -141,17 +150,18 @@
  
      @Override
      public BlockState updateShape(BlockState state, Direction direction, BlockState neighborState, LevelAccessor world, BlockPos pos, BlockPos neighborPos) {
@@ -158,7 +158,7 @@
          }
  
          return super.updateShape(state, direction, neighborState, world, pos, neighborPos);
-@@ -160,71 +170,76 @@
+@@ -159,71 +169,76 @@
  
      @Override
      public VoxelShape getShape(BlockState state, BlockGetter world, BlockPos pos, CollisionContext context) {
@@ -266,7 +266,7 @@
              }
          }
  
-@@ -233,9 +248,10 @@
+@@ -232,9 +247,10 @@
      @Override
      public void onRemove(BlockState state, Level world, BlockPos pos, BlockState newState, boolean moved) {
          if (!state.is(newState.getBlock())) {
@@ -280,7 +280,7 @@
                  world.updateNeighbourForOutputSignal(pos, this);
              }
  
-@@ -248,9 +264,10 @@
+@@ -247,9 +263,10 @@
          if (world.isClientSide) {
              return InteractionResult.SUCCESS;
          } else {
@@ -294,7 +294,7 @@
                  player.awardStat(this.getOpenChestStat());
                  PiglinAi.angerNearbyPiglins(player, true);
              }
-@@ -264,51 +281,61 @@
+@@ -263,51 +280,61 @@
      }
  
      public BlockEntityType<? extends ChestBlockEntity> blockEntityType() {
@@ -368,7 +368,7 @@
              }
          };
      }
-@@ -325,19 +352,30 @@
+@@ -324,19 +351,30 @@
      }
  
      public static boolean isChestBlockedAt(LevelAccessor world, BlockPos pos) {
@@ -387,7 +387,7 @@
      private static boolean isCatSittingOnChest(LevelAccessor world, BlockPos pos) {
 -        List<Cat> list = world.getEntitiesOfClass(Cat.class, new AABB((double)pos.getX(), (double)(pos.getY() + 1), (double)pos.getZ(), (double)(pos.getX() + 1), (double)(pos.getY() + 2), (double)(pos.getZ() + 1)));
 +        // Paper start - Option to disable chest cat detection
-+        if (((Level) world).paperConfig.disableChestCatDetection) {
++        if (world.getMinecraftWorld().paperConfig().entities.behavior.disableChestCatDetection) {
 +            return false;
 +        }
 +        // Paper end
@@ -405,7 +405,7 @@
                      return true;
                  }
              }
-@@ -353,22 +391,22 @@
+@@ -352,22 +390,22 @@
  
      @Override
      public int getAnalogOutputSignal(BlockState state, Level world, BlockPos pos) {
@@ -432,10 +432,10 @@
      }
  
      @Override
-@@ -378,9 +416,10 @@
+@@ -377,9 +415,10 @@
  
      @Override
-     public void tick(BlockState state, ServerLevel world, BlockPos pos, Random random) {
+     public void tick(BlockState state, ServerLevel world, BlockPos pos, RandomSource random) {
 -        BlockEntity blockEntity = world.getBlockEntity(pos);
 -        if (blockEntity instanceof ChestBlockEntity) {
 -            ((ChestBlockEntity)blockEntity).recheckOpen();

@@ -46,7 +46,7 @@
 -                    this.horse.tameWithName((Player)entity);
 +
 +                // CraftBukkit - fire EntityTameEvent
-+                if (j > 0 && this.horse.getRandom().nextInt(j) < i && !org.bukkit.craftbukkit.v1_18_R2.event.CraftEventFactory.callEntityTameEvent(this.horse, ((org.bukkit.craftbukkit.v1_18_R2.entity.CraftHumanEntity) this.horse.getBukkitEntity().getPassenger()).getHandle()).isCancelled()) {
++                if (j > 0 && this.horse.getRandom().nextInt(j) < i && !org.bukkit.craftbukkit.v1_19_R1.event.CraftEventFactory.callEntityTameEvent(this.horse, ((org.bukkit.craftbukkit.v1_19_R1.entity.CraftHumanEntity) this.horse.getBukkitEntity().getPassenger()).getHandle()).isCancelled()) {
 +                    this.horse.tameWithName((Player) entity);
                      return;
                  }

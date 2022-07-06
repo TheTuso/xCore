@@ -27,8 +27,8 @@
  import net.minecraft.world.phys.Vec3;
 +// CraftBukkit start
 +import org.bukkit.inventory.EquipmentSlot;
-+import org.bukkit.craftbukkit.v1_18_R2.CraftEquipmentSlot;
-+import org.bukkit.craftbukkit.v1_18_R2.inventory.CraftItemStack;
++import org.bukkit.craftbukkit.v1_19_R1.CraftEquipmentSlot;
++import org.bukkit.craftbukkit.v1_19_R1.inventory.CraftItemStack;
 +import org.bukkit.entity.Player;
 +import org.bukkit.event.player.PlayerArmorStandManipulateEvent;
 +// CraftBukkit end
@@ -74,7 +74,7 @@
  
      public ArmorStand(EntityType<? extends ArmorStand> type, Level world) {
          super(type, world);
-+        if (world != null) this.canTick = world.paperConfig.armorStandTick; // Paper - armour stand ticking
++        if (world != null) this.canTick = world.paperConfig().entities.armorStands.tick; // Paper - armour stand ticking
 +        this.handItems = NonNullList.withSize(2, ItemStack.EMPTY);
 +        this.armorItems = NonNullList.withSize(4, ItemStack.EMPTY);
 +        this.headPose = ArmorStand.DEFAULT_HEAD_POSE;
@@ -133,7 +133,7 @@
      }
  
      @Override
-@@ -136,65 +167,78 @@
+@@ -136,63 +167,76 @@
      }
  
      @Override
@@ -166,16 +166,12 @@
 +        this.verifyEquippedItem(itemstack);
 +        switch (enumitemslot.getType()) {
              case HAND:
--                this.equipEventAndSound(stack);
--                this.handItems.set(slot.getIndex(), stack);
-+                this.equipEventAndSound(itemstack, silent); // CraftBukkit
-+                this.handItems.set(enumitemslot.getIndex(), itemstack);
+-                this.onEquipItem(slot, this.handItems.set(slot.getIndex(), stack), stack);
++                this.onEquipItem(enumitemslot, (ItemStack) this.handItems.set(enumitemslot.getIndex(), itemstack), itemstack, silent); // CraftBukkit
                  break;
              case ARMOR:
--                this.equipEventAndSound(stack);
--                this.armorItems.set(slot.getIndex(), stack);
-+                this.equipEventAndSound(itemstack, silent); // CraftBukkit
-+                this.armorItems.set(enumitemslot.getIndex(), itemstack);
+-                this.onEquipItem(slot, this.armorItems.set(slot.getIndex(), stack), stack);
++                this.onEquipItem(enumitemslot, (ItemStack) this.armorItems.set(enumitemslot.getIndex(), itemstack), itemstack, silent); // CraftBukkit
          }
  
 +        this.noTickEquipmentDirty = true; // Paper - Allow equipment to be updated even when tick disabled
@@ -240,7 +236,7 @@
          nbt.putBoolean("Invisible", this.isInvisible());
          nbt.putBoolean("Small", this.isSmall());
          nbt.putBoolean("ShowArms", this.isShowArms());
-@@ -205,24 +249,28 @@
+@@ -203,24 +247,28 @@
          }
  
          nbt.put("Pose", this.writePose());
@@ -275,7 +271,7 @@
              }
          }
  
-@@ -233,69 +281,84 @@
+@@ -231,69 +279,84 @@
          this.setNoBasePlate(nbt.getBoolean("NoBasePlate"));
          this.setMarker(nbt.getBoolean("Marker"));
          this.noPhysics = !this.hasPhysics();
@@ -383,7 +379,7 @@
      @Override
      protected void pushEntities() {
 -        List<Entity> list = this.level.getEntities(this, this.getBoundingBox(), RIDABLE_MINECARTS);
-+        if (!level.paperConfig.armorStandEntityLookups) return; // Paper
++        if (!level.paperConfig().entities.armorStands.doCollisionEntityLookups) return; // Paper
 +        List<Entity> list = this.level.getEntities((Entity) this, this.getBoundingBox(), ArmorStand.RIDABLE_MINECARTS);
 +
 +        for (int i = 0; i < list.size(); ++i) {
@@ -394,7 +390,7 @@
              if (this.distanceToSqr(entity) <= 0.2D) {
                  entity.push(this);
              }
-@@ -304,31 +367,34 @@
+@@ -302,31 +365,34 @@
      }
  
      @Override
@@ -440,7 +436,7 @@
                          return InteractionResult.SUCCESS;
                      }
                  }
-@@ -340,55 +406,76 @@
+@@ -338,55 +404,76 @@
          }
      }
  
@@ -555,12 +551,12 @@
          }
      }
  
-@@ -396,9 +483,19 @@
+@@ -394,9 +481,19 @@
      public boolean hurt(DamageSource source, float amount) {
          if (!this.level.isClientSide && !this.isRemoved()) {
              if (DamageSource.OUT_OF_WORLD.equals(source)) {
 +                // CraftBukkit start
-+                if (org.bukkit.craftbukkit.v1_18_R2.event.CraftEventFactory.handleNonLivingEntityDamageEvent(this, source, amount)) {
++                if (org.bukkit.craftbukkit.v1_19_R1.event.CraftEventFactory.handleNonLivingEntityDamageEvent(this, source, amount)) {
 +                    return false;
 +                }
 +                // CraftBukkit end
@@ -569,14 +565,14 @@
 -            } else if (!this.isInvulnerableTo(source) && !this.invisible && !this.isMarker()) {
 +            } else if (!this.isInvulnerableTo(source) && (true || !this.invisible) && !this.isMarker()) { // CraftBukkit
 +                // CraftBukkit start
-+                if (org.bukkit.craftbukkit.v1_18_R2.event.CraftEventFactory.handleNonLivingEntityDamageEvent(this, source, amount, true, this.invisible)) {
++                if (org.bukkit.craftbukkit.v1_19_R1.event.CraftEventFactory.handleNonLivingEntityDamageEvent(this, source, amount, true, this.invisible)) {
 +                    return false;
 +                }
 +                // CraftBukkit end
                  if (source.isExplosion()) {
                      this.brokenByAnything(source);
                      this.kill();
-@@ -415,28 +512,30 @@
+@@ -413,28 +510,30 @@
                      this.causeDamage(source, 4.0F);
                      return false;
                  } else {
@@ -607,7 +603,7 @@
 +
 +                        if (i - this.lastHit > 5L && !flag) {
 +                            this.level.broadcastEntityEvent(this, (byte) 32);
-                             this.gameEvent(GameEvent.ENTITY_DAMAGED, source.getEntity());
+                             this.gameEvent(GameEvent.ENTITY_DAMAGE, source.getEntity());
 -                            this.lastHit = l;
 +                            this.lastHit = i;
                          } else {
@@ -618,7 +614,7 @@
                          }
  
                          return true;
-@@ -465,64 +564,70 @@
+@@ -463,64 +562,70 @@
  
      @Override
      public boolean shouldRenderAtSqrDistance(double distance) {
@@ -658,14 +654,14 @@
          } else {
 -            this.setHealth(f);
 +            this.setHealth(f1);
-             this.gameEvent(GameEvent.ENTITY_DAMAGED, damageSource.getEntity());
+             this.gameEvent(GameEvent.ENTITY_DAMAGE, damageSource.getEntity());
          }
  
      }
  
      private void brokenByPlayer(DamageSource damageSource) {
 -        Block.popResource(this.level, this.blockPosition(), new ItemStack(Items.ARMOR_STAND));
-+        drops.add(org.bukkit.craftbukkit.v1_18_R2.inventory.CraftItemStack.asBukkitCopy(new ItemStack(Items.ARMOR_STAND))); // CraftBukkit - add to drops
++        drops.add(org.bukkit.craftbukkit.v1_19_R1.inventory.CraftItemStack.asBukkitCopy(new ItemStack(Items.ARMOR_STAND))); // CraftBukkit - add to drops
          this.brokenByAnything(damageSource);
      }
  
@@ -684,7 +680,7 @@
 +        for (i = 0; i < this.handItems.size(); ++i) {
 +            itemstack = (ItemStack) this.handItems.get(i);
 +            if (!itemstack.isEmpty()) {
-+                drops.add(org.bukkit.craftbukkit.v1_18_R2.inventory.CraftItemStack.asCraftMirror(itemstack)); // CraftBukkit - add to drops // Paper - mirror so we can destroy it later - though this call site was safe
++                drops.add(org.bukkit.craftbukkit.v1_19_R1.inventory.CraftItemStack.asCraftMirror(itemstack)); // CraftBukkit - add to drops // Paper - mirror so we can destroy it later - though this call site was safe
                  this.handItems.set(i, ItemStack.EMPTY);
              }
          }
@@ -697,7 +693,7 @@
 +        for (i = 0; i < this.armorItems.size(); ++i) {
 +            itemstack = (ItemStack) this.armorItems.get(i);
 +            if (!itemstack.isEmpty()) {
-+                drops.add(org.bukkit.craftbukkit.v1_18_R2.inventory.CraftItemStack.asCraftMirror(itemstack)); // CraftBukkit - add to drops // Paper - mirror so we can destroy it later - though this call site was safe
++                drops.add(org.bukkit.craftbukkit.v1_19_R1.inventory.CraftItemStack.asCraftMirror(itemstack)); // CraftBukkit - add to drops // Paper - mirror so we can destroy it later - though this call site was safe
 +                this.armorItems.set(i, ItemStack.EMPTY);
              }
          }
@@ -711,7 +707,7 @@
      }
  
      @Override
-@@ -539,7 +644,7 @@
+@@ -537,7 +642,7 @@
  
      @Override
      public double getMyRidingOffset() {
@@ -720,7 +716,7 @@
      }
  
      @Override
-@@ -563,35 +668,63 @@
+@@ -561,35 +666,63 @@
  
      @Override
      public void tick() {
@@ -802,25 +798,25 @@
          }
  
      }
-@@ -612,8 +745,17 @@
+@@ -610,8 +743,17 @@
          return this.isSmall();
      }
  
 +    // CraftBukkit start
 +    @Override
-+    protected boolean shouldDropExperience() {
++    public boolean shouldDropExperience() {
 +        return true; // MC-157395, SPIGOT-5193 even baby (small) armor stands should drop
 +    }
 +    // CraftBukkit end
 +
      @Override
      public void kill() {
-+        org.bukkit.event.entity.EntityDeathEvent event = org.bukkit.craftbukkit.v1_18_R2.event.CraftEventFactory.callEntityDeathEvent(this, drops); // CraftBukkit - call event // Paper - make cancellable
++        org.bukkit.event.entity.EntityDeathEvent event = org.bukkit.craftbukkit.v1_19_R1.event.CraftEventFactory.callEntityDeathEvent(this, drops); // CraftBukkit - call event // Paper - make cancellable
 +        if (event.isCancelled()) return; // Paper - make cancellable
          this.remove(Entity.RemovalReason.KILLED);
+         this.gameEvent(GameEvent.ENTITY_DIE);
      }
- 
-@@ -628,42 +770,42 @@
+@@ -627,42 +769,42 @@
      }
  
      public void setSmall(boolean small) {
@@ -873,7 +869,7 @@
          }
  
          return value;
-@@ -671,32 +813,38 @@
+@@ -670,32 +812,38 @@
  
      public void setHeadPose(Rotations angle) {
          this.headPose = angle;
@@ -918,7 +914,7 @@
      }
  
      public Rotations getHeadPose() {
-@@ -730,7 +878,7 @@
+@@ -729,7 +877,7 @@
  
      @Override
      public boolean skipAttackInteraction(Entity attacker) {
@@ -927,7 +923,7 @@
      }
  
      @Override
-@@ -756,8 +904,7 @@
+@@ -755,8 +903,7 @@
      }
  
      @Override
@@ -937,7 +933,7 @@
  
      @Override
      public boolean isAffectedByPotions() {
-@@ -766,7 +913,7 @@
+@@ -765,7 +912,7 @@
  
      @Override
      public void onSyncedDataUpdated(EntityDataAccessor<?> data) {
@@ -946,7 +942,7 @@
              this.refreshDimensions();
              this.blocksBuilding = !this.isMarker();
          }
-@@ -785,33 +932,32 @@
+@@ -784,33 +931,32 @@
      }
  
      private EntityDimensions getDimensionsMarker(boolean marker) {
@@ -991,7 +987,7 @@
          } else {
              return super.getLightProbePosition(tickDelta);
          }
-@@ -826,4 +972,20 @@
+@@ -825,4 +971,20 @@
      public boolean canBeSeenByAnyone() {
          return !this.isInvisible() && !this.isMarker();
      }

@@ -24,7 +24,7 @@
  import net.minecraft.world.phys.Vec3;
  import org.slf4j.Logger;
  
-+import org.bukkit.craftbukkit.v1_18_R2.event.CraftEventFactory; // CraftBukkit
++import org.bukkit.craftbukkit.v1_19_R1.event.CraftEventFactory; // CraftBukkit
 +
  public class FallingBlockEntity extends Entity {
 +
@@ -126,7 +126,7 @@
 +            // Paper end - fix sand duping
 +
 +            // Paper start - Configurable EntityFallingBlock height nerf
-+            if (this.level.paperConfig.fallingBlockHeightNerf != 0 && this.getY() > this.level.paperConfig.fallingBlockHeightNerf) {
++            if (this.level.paperConfig().fixes.fallingBlockHeightNerf != 0 && this.getY() > this.level.paperConfig().fixes.fallingBlockHeightNerf) {
 +                if (this.dropItem && this.level.getGameRules().getBoolean(GameRules.RULE_DOENTITYDROPS)) {
 +                    this.spawnAtLocation(block);
 +                }
@@ -338,7 +338,7 @@
          this.blockState = NbtUtils.readBlockState(nbt.getCompound("BlockState"));
 +        // Paper start - Block FallingBlocks with Command Blocks
 +        final Block b = this.blockState.getBlock();
-+        if (this.level.paperConfig.filterNBTFromSpawnEgg
++        if (this.level.paperConfig().entities.spawning.filterNbtDataFromSpawnEggsAndRelated
 +            && (b == Blocks.COMMAND_BLOCK
 +            || b == Blocks.REPEATING_COMMAND_BLOCK
 +            || b == Blocks.CHAIN_COMMAND_BLOCK

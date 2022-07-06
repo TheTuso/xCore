@@ -1,6 +1,6 @@
 package io.papermc.paper.util;
 
-import com.destroystokyo.paper.PaperConfig;
+import io.papermc.paper.configuration.GlobalConfiguration;
 import it.unimi.dsi.fastutil.ints.IntArrayList;
 import it.unimi.dsi.fastutil.ints.IntList;
 import java.io.IOException;
@@ -30,7 +30,7 @@ public enum StacktraceDeobfuscator {
     });
 
     public void deobfuscateThrowable(final Throwable throwable) {
-        if (!PaperConfig.deobfuscateStacktraces) {
+        if (GlobalConfiguration.get() != null && !GlobalConfiguration.get().logging.deobfuscateStacktraces) { // handle null as true
             return;
         }
 
@@ -45,7 +45,7 @@ public enum StacktraceDeobfuscator {
     }
 
     public StackTraceElement[] deobfuscateStacktrace(final StackTraceElement[] traceElements) {
-        if (!PaperConfig.deobfuscateStacktraces) {
+        if (GlobalConfiguration.get() != null && !GlobalConfiguration.get().logging.deobfuscateStacktraces) { // handle null as true
             return traceElements;
         }
 

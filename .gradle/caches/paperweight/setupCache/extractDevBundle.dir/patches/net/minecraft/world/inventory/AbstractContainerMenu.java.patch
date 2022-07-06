@@ -10,17 +10,16 @@
  import java.util.Optional;
  import java.util.OptionalInt;
  import java.util.Set;
-@@ -19,6 +21,9 @@
+@@ -19,6 +21,8 @@
  import net.minecraft.ReportedException;
  import net.minecraft.core.NonNullList;
  import net.minecraft.core.Registry;
 +import net.minecraft.network.chat.Component;
-+import net.minecraft.network.chat.TextComponent;
 +import net.minecraft.network.protocol.game.ClientboundContainerSetSlotPacket;
  import net.minecraft.server.level.ServerPlayer;
  import net.minecraft.util.Mth;
  import net.minecraft.world.Container;
-@@ -30,7 +35,20 @@
+@@ -30,7 +34,20 @@
  import net.minecraft.world.level.block.entity.BlockEntity;
  import org.slf4j.Logger;
  
@@ -28,8 +27,8 @@
 +import com.google.common.base.Preconditions;
 +import java.util.HashMap;
 +import java.util.Map;
-+import org.bukkit.craftbukkit.v1_18_R2.inventory.CraftInventory;
-+import org.bukkit.craftbukkit.v1_18_R2.inventory.CraftItemStack;
++import org.bukkit.craftbukkit.v1_19_R1.inventory.CraftInventory;
++import org.bukkit.craftbukkit.v1_19_R1.inventory.CraftItemStack;
 +import org.bukkit.event.Event.Result;
 +import org.bukkit.event.inventory.InventoryDragEvent;
 +import org.bukkit.event.inventory.InventoryType;
@@ -41,7 +40,7 @@
      private static Logger LOGGER = LogUtils.getLogger();
      public static final int SLOT_CLICKED_OUTSIDE = -999;
      public static final int QUICKCRAFT_TYPE_CHARITABLE = 0;
-@@ -43,30 +61,63 @@
+@@ -43,30 +60,63 @@
      public NonNullList<ItemStack> lastSlots = NonNullList.create();
      public NonNullList<Slot> slots = NonNullList.create();
      public List<DataSlot> dataSlots = Lists.newArrayList();
@@ -71,7 +70,7 @@
 +    // CraftBukkit start
 +    public boolean checkReachable = true;
 +    public abstract InventoryView getBukkitView();
-+    public void transferTo(AbstractContainerMenu other, org.bukkit.craftbukkit.v1_18_R2.entity.CraftHumanEntity player) {
++    public void transferTo(AbstractContainerMenu other, org.bukkit.craftbukkit.v1_19_R1.entity.CraftHumanEntity player) {
 +        InventoryView source = this.getBukkitView(), destination = other.getBukkitView();
 +        ((CraftInventory) source.getTopInventory()).getInventory().onClose(player);
 +        ((CraftInventory) source.getBottomInventory()).getInventory().onClose(player);
@@ -83,7 +82,7 @@
 +        // Paper start - return chat component with empty text instead of throwing error
 +        // Preconditions.checkState(this.title != null, "Title not set");
 +        if(this.title == null){
-+            return new TextComponent("");
++            return Component.literal("");
 +        }
 +        // Paper end
 +        return this.title;
@@ -114,7 +113,7 @@
          }, true);
      }
  
-@@ -79,16 +130,18 @@
+@@ -79,16 +129,18 @@
      }
  
      protected static void checkContainerSize(Container inventory, int expectedSize) {
@@ -139,7 +138,7 @@
          }
      }
  
-@@ -111,7 +164,7 @@
+@@ -111,7 +163,7 @@
      }
  
      protected void addDataSlots(ContainerData propertyDelegate) {
@@ -148,7 +147,7 @@
              this.addDataSlot(DataSlot.forContainer(propertyDelegate, i));
          }
  
-@@ -132,15 +185,17 @@
+@@ -132,15 +184,17 @@
      public void sendAllDataToRemote() {
          int i = 0;
  
@@ -170,7 +169,7 @@
          }
  
          if (this.synchronizer != null) {
-@@ -149,52 +204,75 @@
+@@ -149,52 +203,75 @@
  
      }
  
@@ -268,7 +267,7 @@
              }
          }
  
-@@ -202,20 +280,29 @@
+@@ -202,20 +279,29 @@
      }
  
      private void updateDataSlotListeners(int index, int value) {
@@ -306,7 +305,7 @@
              }
          }
  
-@@ -223,12 +310,14 @@
+@@ -223,12 +309,14 @@
  
      private void synchronizeSlotToRemote(int slot, ItemStack stack, Supplier<ItemStack> copySupplier) {
          if (!this.suppressRemoteUpdates) {
@@ -326,7 +325,7 @@
                  }
              }
  
-@@ -237,8 +326,9 @@
+@@ -237,8 +325,9 @@
  
      private void synchronizeDataSlotToRemote(int id, int value) {
          if (!this.suppressRemoteUpdates) {
@@ -338,7 +337,7 @@
                  this.remoteDataSlots.set(id, value);
                  if (this.synchronizer != null) {
                      this.synchronizer.sendDataChange(this, id, value);
-@@ -268,7 +358,7 @@
+@@ -268,7 +357,7 @@
          if (slot >= 0 && slot < this.remoteSlots.size()) {
              this.remoteSlots.set(slot, stack);
          } else {
@@ -347,7 +346,7 @@
          }
      }
  
-@@ -281,86 +371,136 @@
+@@ -281,7 +370,7 @@
      }
  
      public Slot getSlot(int index) {
@@ -355,11 +354,8 @@
 +        return (Slot) this.slots.get(index);
      }
  
-     public ItemStack quickMoveStack(Player player, int index) {
--        return this.slots.get(index).getItem();
-+        return ItemStack.EMPTY; // CraftBukkit - previous implementation was useless and broken
-     }
- 
+     public abstract ItemStack quickMoveStack(Player player, int index);
+@@ -289,76 +378,126 @@
      public void clicked(int slotIndex, int button, ClickType actionType, Player player) {
          try {
              this.doClick(slotIndex, button, actionType, player);
@@ -523,7 +519,7 @@
                  }
  
                  this.resetQuickCraft();
-@@ -369,136 +509,165 @@
+@@ -367,136 +506,165 @@
              }
          } else if (this.quickcraftStatus != 0) {
              this.resetQuickCraft();
@@ -610,8 +606,8 @@
 -                                int p = clickAction == ClickAction.PRIMARY ? itemStack7.getCount() : 1;
 -                                this.setCarried(slot4.safeInsert(itemStack7, p));
 -                            } else if (itemStack7.getCount() <= slot4.getMaxStackSize(itemStack7)) {
--                                slot4.set(itemStack7);
 -                                this.setCarried(itemStack6);
+-                                slot4.set(itemStack7);
 +                    slot = (Slot) this.slots.get(slotIndex);
 +                    itemstack = slot.getItem();
 +                    ItemStack itemstack4 = this.getCarried();
@@ -637,8 +633,8 @@
 +                                    l1 = clickaction == ClickAction.PRIMARY ? itemstack4.getCount() : 1;
 +                                    this.setCarried(slot.safeInsert(itemstack4, l1));
 +                                } else if (itemstack4.getCount() <= slot.getMaxStackSize(itemstack4)) {
-+                                    slot.set(itemstack4);
 +                                    this.setCarried(itemstack);
++                                    slot.set(itemstack4);
 +                                }
 +                            } else if (ItemStack.isSameItemSameTags(itemstack, itemstack4)) {
 +                                Optional<ItemStack> optional1 = slot.tryRemove(itemstack.getCount(), itemstack4.getMaxStackSize() - itemstack4.getCount(), player);
@@ -806,7 +802,7 @@
                              }
                          }
                      }
-@@ -529,32 +698,37 @@
+@@ -527,32 +695,37 @@
  
      public void removed(Player player) {
          if (player instanceof ServerPlayer) {
@@ -858,18 +854,18 @@
              }
  
          }
-@@ -570,8 +744,8 @@
+@@ -568,8 +741,8 @@
      }
  
      public void initializeContents(int revision, List<ItemStack> stacks, ItemStack cursorStack) {
 -        for(int i = 0; i < stacks.size(); ++i) {
--            this.getSlot(i).set(stacks.get(i));
+-            this.getSlot(i).initialize(stacks.get(i));
 +        for (int j = 0; j < stacks.size(); ++j) {
-+            this.getSlot(j).set((ItemStack) stacks.get(j));
++            this.getSlot(j).initialize((ItemStack) stacks.get(j));
          }
  
          this.carried = cursorStack;
-@@ -579,92 +753,133 @@
+@@ -577,92 +750,133 @@
      }
  
      public void setData(int id, int value) {
@@ -1039,7 +1035,7 @@
      }
  
      public static int getQuickcraftType(int quickCraftData) {
-@@ -680,13 +895,7 @@
+@@ -678,13 +892,7 @@
      }
  
      public static boolean isValidQuickcraftType(int stage, Player player) {
@@ -1054,7 +1050,7 @@
      }
  
      protected void resetQuickCraft() {
-@@ -695,18 +904,15 @@
+@@ -693,18 +901,15 @@
      }
  
      public static boolean canItemQuickReplace(@Nullable Slot slot, ItemStack stack, boolean allowOverflow) {
@@ -1077,7 +1073,7 @@
                  break;
              case 1:
                  stack.setCount(1);
-@@ -723,7 +929,7 @@
+@@ -721,7 +926,7 @@
      }
  
      public static int getRedstoneSignalFromBlockEntity(@Nullable BlockEntity entity) {
@@ -1086,7 +1082,7 @@
      }
  
      public static int getRedstoneSignalFromContainer(@Nullable Container inventory) {
-@@ -733,15 +939,16 @@
+@@ -731,15 +936,16 @@
              int i = 0;
              float f = 0.0F;
  
@@ -1108,7 +1104,7 @@
              return Mth.floor(f * 14.0F) + (i > 0 ? 1 : 0);
          }
      }
-@@ -751,6 +958,11 @@
+@@ -749,6 +955,11 @@
      }
  
      public ItemStack getCarried() {
@@ -1120,7 +1116,7 @@
          return this.carried;
      }
  
-@@ -765,27 +977,32 @@
+@@ -763,27 +974,32 @@
      public void transferState(AbstractContainerMenu handler) {
          Table<Container, Integer, Integer> table = HashBasedTable.create();
  

@@ -1,12 +1,12 @@
 --- a/net/minecraft/world/level/block/entity/ChestBlockEntity.java
 +++ b/net/minecraft/world/level/block/entity/ChestBlockEntity.java
-@@ -23,40 +23,80 @@
+@@ -22,40 +22,80 @@
  import net.minecraft.world.level.block.ChestBlock;
  import net.minecraft.world.level.block.state.BlockState;
  import net.minecraft.world.level.block.state.properties.ChestType;
 +// CraftBukkit start
 +import java.util.List;
-+import org.bukkit.craftbukkit.v1_18_R2.entity.CraftHumanEntity;
++import org.bukkit.craftbukkit.v1_19_R1.entity.CraftHumanEntity;
 +import org.bukkit.entity.HumanEntity;
 +// CraftBukkit end
  
@@ -106,7 +106,7 @@
      }
  
      public ChestBlockEntity(BlockPos pos, BlockState state) {
-@@ -97,18 +137,21 @@
+@@ -96,18 +136,21 @@
      }
  
      public static void playSound(Level world, BlockPos pos, BlockState state, SoundEvent soundEvent) {
@@ -138,7 +138,7 @@
          }
      }
  
-@@ -154,11 +197,13 @@
+@@ -153,11 +196,13 @@
      }
  
      public static int getOpenCount(BlockGetter world, BlockPos pos) {
@@ -157,7 +157,7 @@
              }
          }
  
-@@ -166,9 +211,10 @@
+@@ -165,9 +210,10 @@
      }
  
      public static void swapContents(ChestBlockEntity from, ChestBlockEntity to) {
@@ -170,7 +170,7 @@
      }
  
      @Override
-@@ -185,6 +231,14 @@
+@@ -184,6 +230,14 @@
  
      protected void signalOpenCount(Level world, BlockPos pos, BlockState state, int oldViewerCount, int newViewerCount) {
          Block block = state.getBlock();

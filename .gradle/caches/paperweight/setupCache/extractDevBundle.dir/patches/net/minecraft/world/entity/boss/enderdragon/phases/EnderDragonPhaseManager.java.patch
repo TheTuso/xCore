@@ -5,7 +5,7 @@
  import org.slf4j.Logger;
  
 +// CraftBukkit start
-+import org.bukkit.craftbukkit.v1_18_R2.entity.CraftEnderDragon;
++import org.bukkit.craftbukkit.v1_19_R1.entity.CraftEnderDragon;
 +import org.bukkit.event.entity.EnderDragonChangePhaseEvent;
 +// CraftBukkit end
 +

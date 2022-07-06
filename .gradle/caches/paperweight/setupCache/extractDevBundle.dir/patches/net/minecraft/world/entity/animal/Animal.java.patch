@@ -1,16 +1,16 @@
 --- a/net/minecraft/world/entity/animal/Animal.java
 +++ b/net/minecraft/world/entity/animal/Animal.java
-@@ -29,12 +29,17 @@
+@@ -28,12 +28,17 @@
+ import net.minecraft.world.level.LevelReader;
  import net.minecraft.world.level.block.Blocks;
- import net.minecraft.world.level.gameevent.GameEvent;
  import net.minecraft.world.level.pathfinder.BlockPathTypes;
-+import org.bukkit.craftbukkit.v1_18_R2.event.CraftEventFactory;
++import org.bukkit.craftbukkit.v1_19_R1.event.CraftEventFactory;
 +import org.bukkit.event.entity.EntityEnterLoveModeEvent;
 +// CraftBukkit end
  
  public abstract class Animal extends AgeableMob {
 +
-     static final int PARENT_AGE_AFTER_BREEDING = 6000;
+     protected static final int PARENT_AGE_AFTER_BREEDING = 6000;
      public int inLove;
      @Nullable
      public UUID loveCause;
@@ -18,7 +18,7 @@
  
      protected Animal(EntityType<? extends Animal> type, Level world) {
          super(type, world);
-@@ -61,24 +66,29 @@
+@@ -60,24 +65,29 @@
          if (this.inLove > 0) {
              --this.inLove;
              if (this.inLove % 10 == 0) {
@@ -55,16 +55,16 @@
  
      @Override
      public float getWalkTargetValue(BlockPos pos, LevelReader world) {
-@@ -108,7 +118,7 @@
+@@ -107,7 +117,7 @@
      }
  
-     public static boolean checkAnimalSpawnRules(EntityType<? extends Animal> type, LevelAccessor world, MobSpawnType spawnReason, BlockPos pos, Random random) {
+     public static boolean checkAnimalSpawnRules(EntityType<? extends Animal> type, LevelAccessor world, MobSpawnType spawnReason, BlockPos pos, RandomSource random) {
 -        return world.getBlockState(pos.below()).is(BlockTags.ANIMALS_SPAWNABLE_ON) && isBrightEnoughToSpawn(world, pos);
 +        return world.getBlockState(pos.below()).is(BlockTags.ANIMALS_SPAWNABLE_ON) && Animal.isBrightEnoughToSpawn(world, pos);
      }
  
      protected static boolean isBrightEnoughToSpawn(BlockAndTintGetter world, BlockPos pos) {
-@@ -136,19 +146,21 @@
+@@ -135,17 +145,19 @@
  
      @Override
      public InteractionResult mobInteract(Player player, InteractionHand hand) {
@@ -79,19 +79,16 @@
 -                this.usePlayerItem(player, hand, itemStack);
 +                this.usePlayerItem(player, hand, itemstack);
                  this.setInLove(player);
-                 this.gameEvent(GameEvent.MOB_INTERACT, this.eyeBlockPosition());
                  return InteractionResult.SUCCESS;
              }
  
              if (this.isBaby()) {
 -                this.usePlayerItem(player, hand, itemStack);
--                this.ageUp((int)((float)(-i / 20) * 0.1F), true);
 +                this.usePlayerItem(player, hand, itemstack);
-+                this.ageUp((int) ((float) (-i / 20) * 0.1F), true);
-                 this.gameEvent(GameEvent.MOB_INTERACT, this.eyeBlockPosition());
+                 this.ageUp(getSpeedUpSecondsWhenFeeding(-i), true);
                  return InteractionResult.sidedSuccess(this.level.isClientSide);
              }
-@@ -173,12 +185,19 @@
+@@ -170,12 +182,19 @@
      }
  
      public void setInLove(@Nullable Player player) {
@@ -113,7 +110,7 @@
      }
  
      public void setInLoveTime(int loveTicks) {
-@@ -194,8 +213,9 @@
+@@ -191,8 +210,9 @@
          if (this.loveCause == null) {
              return null;
          } else {
@@ -125,7 +122,7 @@
          }
      }
  
-@@ -208,38 +228,46 @@
+@@ -205,38 +225,46 @@
      }
  
      public boolean canMate(Animal other) {
@@ -157,7 +154,7 @@
 +            entityageable.setBaby(true);
 +            entityageable.moveTo(this.getX(), this.getY(), this.getZ(), 0.0F, 0.0F);
 +            int experience = this.getRandom().nextInt(7) + 1;
-+            org.bukkit.event.entity.EntityBreedEvent entityBreedEvent = org.bukkit.craftbukkit.v1_18_R2.event.CraftEventFactory.callEntityBreedEvent(entityageable, this, other, entityplayer, this.breedItem, experience);
++            org.bukkit.event.entity.EntityBreedEvent entityBreedEvent = org.bukkit.craftbukkit.v1_19_R1.event.CraftEventFactory.callEntityBreedEvent(entityageable, this, other, entityplayer, this.breedItem, experience);
 +            if (entityBreedEvent.isCancelled()) {
 +                return;
              }
@@ -192,7 +189,7 @@
              }
  
          }
-@@ -248,11 +276,12 @@
+@@ -245,11 +273,12 @@
      @Override
      public void handleEntityEvent(byte status) {
          if (status == 18) {

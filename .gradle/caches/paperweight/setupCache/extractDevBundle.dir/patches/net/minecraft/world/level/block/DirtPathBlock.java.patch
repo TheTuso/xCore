@@ -20,7 +20,7 @@
 @@ -42,18 +43,24 @@
  
      @Override
-     public void tick(BlockState state, ServerLevel world, BlockPos pos, Random random) {
+     public void tick(BlockState state, ServerLevel world, BlockPos pos, RandomSource random) {
 +        // CraftBukkit start - do not fade if the block is valid here
 +        if (state.canSurvive(world, pos)) {
 +            return;

@@ -34,7 +34,7 @@
      }
  
      @Override
-     public void randomTick(BlockState state, ServerLevel world, BlockPos pos, Random random) {
+     public void randomTick(BlockState state, ServerLevel world, BlockPos pos, RandomSource random) {
 -        if (state.getValue(AGE) < 25 && random.nextDouble() < this.growPerTickProbability) {
 -            BlockPos blockPos = pos.relative(this.growthDirection);
 -            if (this.canGrowInto(world.getBlockState(blockPos))) {
@@ -57,19 +57,19 @@
 +            BlockPos blockposition1 = pos.relative(this.growthDirection);
 +
 +            if (this.canGrowInto(world.getBlockState(blockposition1))) {
-+                org.bukkit.craftbukkit.v1_18_R2.event.CraftEventFactory.handleBlockSpreadEvent(world, pos, blockposition1, this.getGrowIntoState(state, world.random, world)); // CraftBukkit // Paper
++                org.bukkit.craftbukkit.v1_19_R1.event.CraftEventFactory.handleBlockSpreadEvent(world, pos, blockposition1, this.getGrowIntoState(state, world.random, world)); // CraftBukkit // Paper
              }
          }
  
      }
  
 +    // Paper start
-+    protected BlockState getGrowIntoState(BlockState state, Random random, Level level) {
++    protected BlockState getGrowIntoState(BlockState state, RandomSource random, @javax.annotation.Nullable Level level) {
 +        return this.getGrowIntoState(state, random);
 +    }
 +    // Paper end
 +
-     protected BlockState getGrowIntoState(BlockState state, Random random) {
+     protected BlockState getGrowIntoState(BlockState state, RandomSource random) {
 -        return state.cycle(AGE);
 +        return (BlockState) state.cycle(GrowingPlantHeadBlock.AGE);
      }
@@ -118,7 +118,7 @@
 @@ -97,13 +120,13 @@
  
      @Override
-     public void performBonemeal(ServerLevel world, Random random, BlockPos pos, BlockState state) {
+     public void performBonemeal(ServerLevel world, RandomSource random, BlockPos pos, BlockState state) {
 -        BlockPos blockPos = pos.relative(this.growthDirection);
 -        int i = Math.min(state.getValue(AGE) + 1, 25);
 +        BlockPos blockposition1 = pos.relative(this.growthDirection);

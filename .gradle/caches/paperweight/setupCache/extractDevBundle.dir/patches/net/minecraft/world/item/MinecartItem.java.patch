@@ -13,7 +13,7 @@
  import net.minecraft.world.level.gameevent.GameEvent;
  
 +// CraftBukkit start
-+import org.bukkit.craftbukkit.v1_18_R2.inventory.CraftItemStack;
++import org.bukkit.craftbukkit.v1_19_R1.inventory.CraftItemStack;
 +import org.bukkit.event.block.BlockDispenseEvent;
 +// CraftBukkit end
 +
@@ -165,14 +165,14 @@
                  }
  
 -                level.addFreshEntity(abstractMinecart);
--                level.gameEvent(context.getPlayer(), GameEvent.ENTITY_PLACE, blockPos);
+-                level.gameEvent(GameEvent.ENTITY_PLACE, blockPos, GameEvent.Context.of(context.getPlayer(), level.getBlockState(blockPos.below())));
 +                // CraftBukkit start
-+                if (org.bukkit.craftbukkit.v1_18_R2.event.CraftEventFactory.callEntityPlaceEvent(context, entityminecartabstract).isCancelled()) {
++                if (org.bukkit.craftbukkit.v1_19_R1.event.CraftEventFactory.callEntityPlaceEvent(context, entityminecartabstract).isCancelled()) {
 +                    return InteractionResult.FAIL;
 +                }
 +                // CraftBukkit end
 +                if (!world.addFreshEntity(entityminecartabstract)) return InteractionResult.PASS; // CraftBukkit
-+                world.gameEvent(context.getPlayer(), GameEvent.ENTITY_PLACE, blockposition);
++                world.gameEvent(GameEvent.ENTITY_PLACE, blockposition, GameEvent.Context.of(context.getPlayer(), world.getBlockState(blockposition.below())));
              }
  
 -            itemStack.shrink(1);

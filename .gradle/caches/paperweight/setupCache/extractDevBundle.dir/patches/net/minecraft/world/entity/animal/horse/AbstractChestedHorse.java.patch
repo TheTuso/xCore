@@ -1,6 +1,6 @@
 --- a/net/minecraft/world/entity/animal/horse/AbstractChestedHorse.java
 +++ b/net/minecraft/world/entity/animal/horse/AbstractChestedHorse.java
-@@ -68,11 +68,19 @@
+@@ -69,11 +69,19 @@
                  this.spawnAtLocation(Blocks.CHEST);
              }
  

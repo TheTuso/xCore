@@ -1,6 +1,6 @@
 --- a/net/minecraft/resources/ResourceKey.java
 +++ b/net/minecraft/resources/ResourceKey.java
-@@ -9,28 +9,30 @@
+@@ -8,28 +8,30 @@
  import net.minecraft.core.Registry;
  
  public class ResourceKey<T> {
@@ -39,7 +39,7 @@
          });
      }
  
-@@ -39,7 +41,6 @@
+@@ -38,7 +40,6 @@
          this.location = value;
      }
  
@@ -47,7 +47,7 @@
      public String toString() {
          return "ResourceKey[" + this.registryName + " / " + this.location + "]";
      }
-@@ -49,7 +50,7 @@
+@@ -48,7 +49,7 @@
      }
  
      public <E> Optional<ResourceKey<E>> cast(ResourceKey<? extends Registry<E>> registryRef) {
@@ -56,14 +56,3 @@
      }
  
      public ResourceLocation location() {
-@@ -61,8 +62,8 @@
-     }
- 
-     public static <T> Function<ResourceLocation, ResourceKey<T>> elementKey(ResourceKey<? extends Registry<T>> registry) {
--        return (id) -> {
--            return create(registry, id);
-+        return (minecraftkey) -> {
-+            return ResourceKey.create(registry, minecraftkey);
-         };
-     }
- }

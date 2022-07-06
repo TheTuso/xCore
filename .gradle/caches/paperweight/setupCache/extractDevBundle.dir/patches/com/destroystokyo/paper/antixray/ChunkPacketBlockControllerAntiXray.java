@@ -1,6 +1,6 @@
 package com.destroystokyo.paper.antixray;
 
-import com.destroystokyo.paper.PaperWorldConfig;
+import io.papermc.paper.configuration.WorldConfiguration;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.Registry;
@@ -20,11 +20,15 @@ import net.minecraft.world.level.block.EntityBlock;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.chunk.*;
 import org.bukkit.Bukkit;
+import org.spongepowered.configurate.serialize.ScalarSerializer;
+import org.spongepowered.configurate.serialize.SerializationException;
 
+import java.lang.reflect.Type;
 import java.util.*;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.function.IntSupplier;
+import java.util.function.Predicate;
 
 public final class ChunkPacketBlockControllerAntiXray extends ChunkPacketBlockController {
 
@@ -53,7 +57,7 @@ public final class ChunkPacketBlockControllerAntiXray extends ChunkPacketBlockCo
 
     public ChunkPacketBlockControllerAntiXray(Level level, Executor executor) {
         this.executor = executor;
-        PaperWorldConfig paperWorldConfig = level.paperConfig;
+        WorldConfiguration.AntiCheat.AntiXRay paperWorldConfig = level.paperConfig().anticheat.antiXray;
         engineMode = paperWorldConfig.engineMode;
         maxBlockHeight = paperWorldConfig.maxBlockHeight >> 4 << 4;
         updateRadius = paperWorldConfig.updateRadius;
@@ -637,6 +641,8 @@ public final class ChunkPacketBlockControllerAntiXray extends ChunkPacketBlockCo
         HIDE(1, "hide ores"),
         OBFUSCATE(2, "obfuscate");
 
+        public static final ScalarSerializer<EngineMode> SERIALIZER = new Serializer();
+
         private final int id;
         private final String description;
 
@@ -661,6 +667,26 @@ public final class ChunkPacketBlockControllerAntiXray extends ChunkPacketBlockCo
 
         public String getDescription() {
             return description;
+        }
+
+        static class Serializer extends ScalarSerializer<EngineMode> {
+
+            Serializer() {
+                super(EngineMode.class);
+            }
+
+            @Override
+            public EngineMode deserialize(Type type, Object obj) throws SerializationException {
+                if (obj instanceof Integer num) {
+                    return Objects.requireNonNullElse(EngineMode.getById(num), HIDE);
+                }
+                throw new SerializationException(obj + " is not of a valid type (" + type + ") for this node");
+            }
+
+            @Override
+            protected Object serialize(EngineMode item, Predicate<Class<?>> typeSupported) {
+                return item.getId();
+            }
         }
     }
 }

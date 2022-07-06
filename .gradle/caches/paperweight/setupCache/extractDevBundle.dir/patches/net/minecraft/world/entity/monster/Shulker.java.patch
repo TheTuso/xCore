@@ -246,7 +246,7 @@
              }
          }
  
-@@ -348,41 +373,57 @@
+@@ -348,42 +373,58 @@
          if (this.isPositionBlocked(pos)) {
              return false;
          } else {
@@ -314,15 +314,17 @@
 +                        this.setAttachFace(enumdirection);
                          this.playSound(SoundEvents.SHULKER_TELEPORT, 1.0F, 1.0F);
 -                        this.setPos((double)blockPos2.getX() + 0.5D, (double)blockPos2.getY(), (double)blockPos2.getZ() + 0.5D);
+-                        this.level.gameEvent(GameEvent.TELEPORT, blockPos, GameEvent.Context.of(this));
 -                        this.entityData.set(DATA_PEEK_ID, (byte)0);
 -                        this.setTarget((LivingEntity)null);
 +                        this.setPos((double) blockposition1.getX() + 0.5D, (double) blockposition1.getY(), (double) blockposition1.getZ() + 0.5D);
++                        this.level.gameEvent(GameEvent.TELEPORT, blockposition, GameEvent.Context.of((Entity) this));
 +                        this.entityData.set(Shulker.DATA_PEEK_ID, (byte) 0);
 +                        this.setTarget((LivingEntity) null);
                          return true;
                      }
                  }
-@@ -403,8 +444,10 @@
+@@ -404,8 +445,10 @@
  
      @Override
      public boolean hurt(DamageSource source, float amount) {
@@ -334,7 +336,7 @@
              if (entity instanceof AbstractArrow) {
                  return false;
              }
-@@ -413,11 +456,11 @@
+@@ -414,11 +457,11 @@
          if (!super.hurt(source, amount)) {
              return false;
          } else {
@@ -349,7 +351,7 @@
                      this.hitByShulkerBullet();
                  }
              }
-@@ -431,20 +474,23 @@
+@@ -432,20 +475,23 @@
      }
  
      private void hitByShulkerBullet() {
@@ -384,7 +386,7 @@
              }
          }
      }
-@@ -455,16 +501,16 @@
+@@ -456,16 +502,16 @@
      }
  
      public Direction getAttachFace() {
@@ -404,7 +406,7 @@
              this.setBoundingBox(this.makeBoundingBox());
          }
  
-@@ -472,14 +518,14 @@
+@@ -473,14 +519,14 @@
      }
  
      public int getRawPeekAmount() {
@@ -420,9 +422,9 @@
 -                this.getAttribute(Attributes.ARMOR).addPermanentModifier(COVERED_ARMOR_MODIFIER);
 +                this.getAttribute(Attributes.ARMOR).addPermanentModifier(Shulker.COVERED_ARMOR_MODIFIER);
                  this.playSound(SoundEvents.SHULKER_CLOSE, 1.0F, 1.0F);
-                 this.gameEvent(GameEvent.SHULKER_CLOSE);
+                 this.gameEvent(GameEvent.CONTAINER_CLOSE);
              } else {
-@@ -488,7 +534,7 @@
+@@ -489,7 +535,7 @@
              }
          }
  
@@ -431,7 +433,7 @@
      }
  
      public float getClientPeekAmount(float delta) {
-@@ -518,8 +564,7 @@
+@@ -519,8 +565,7 @@
      }
  
      @Override
@@ -441,7 +443,7 @@
  
      @Override
      public float getPickRadius() {
-@@ -528,29 +573,68 @@
+@@ -529,29 +574,68 @@
  
      public Optional<Vec3> getRenderPosition(float f) {
          if (this.clientOldAttachPosition != null && this.clientSideTeleportInterpolation > 0) {
@@ -521,7 +523,7 @@
          private int attackTime;
  
          public ShulkerAttackGoal() {
-@@ -559,12 +643,9 @@
+@@ -560,12 +644,9 @@
  
          @Override
          public boolean canUse() {
@@ -537,7 +539,7 @@
          }
  
          @Override
-@@ -587,18 +668,20 @@
+@@ -588,18 +669,20 @@
          public void tick() {
              if (Shulker.this.level.getDifficulty() != Difficulty.PEACEFUL) {
                  --this.attackTime;
@@ -565,7 +567,7 @@
                      }
  
                      super.tick();
-@@ -607,74 +690,46 @@
+@@ -608,74 +691,46 @@
          }
      }
  
@@ -660,7 +662,7 @@
          }
  
          @Override
-@@ -684,45 +739,40 @@
+@@ -685,45 +740,40 @@
  
          @Override
          protected AABB getTargetSearchArea(double distance) {

@@ -11,7 +11,7 @@
 @@ -30,14 +31,14 @@
  
      @Override
-     public void animateTick(BlockState state, Level world, BlockPos pos, Random random) {
+     public void animateTick(BlockState state, Level world, BlockPos pos, RandomSource random) {
 -        VoxelShape voxelShape = this.getShape(state, world, pos, CollisionContext.empty());
 -        Vec3 vec3 = voxelShape.bounds().getCenter();
 -        double d = (double)pos.getX() + vec3.x;
@@ -33,7 +33,7 @@
  
      @Override
      public void entityInside(BlockState state, Level world, BlockPos pos, Entity entity) {
-+        if (!new io.papermc.paper.event.entity.EntityInsideBlockEvent(entity.getBukkitEntity(), org.bukkit.craftbukkit.v1_18_R2.block.CraftBlock.at(world, pos)).callEvent()) { return; } // Paper
++        if (!new io.papermc.paper.event.entity.EntityInsideBlockEvent(entity.getBukkitEntity(), org.bukkit.craftbukkit.v1_19_R1.block.CraftBlock.at(world, pos)).callEvent()) { return; } // Paper
          if (!world.isClientSide && world.getDifficulty() != Difficulty.PEACEFUL) {
              if (entity instanceof LivingEntity) {
 -                LivingEntity livingEntity = (LivingEntity)entity;

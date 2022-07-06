@@ -5,8 +5,8 @@
  
 +import java.util.Iterator;
  import java.util.List;
- import java.util.Random;
  import java.util.function.Predicate;
+ import net.minecraft.core.BlockPos;
 @@ -23,15 +24,17 @@
  import net.minecraft.world.level.block.state.properties.Property;
  import net.minecraft.world.level.block.state.properties.RailShape;
@@ -30,7 +30,7 @@
  
      @Override
      public void entityInside(BlockState state, Level world, BlockPos pos, Entity entity) {
-+        if (!new io.papermc.paper.event.entity.EntityInsideBlockEvent(entity.getBukkitEntity(), org.bukkit.craftbukkit.v1_18_R2.block.CraftBlock.at(world, pos)).callEvent()) { return; } // Paper
++        if (!new io.papermc.paper.event.entity.EntityInsideBlockEvent(entity.getBukkitEntity(), org.bukkit.craftbukkit.v1_19_R1.block.CraftBlock.at(world, pos)).callEvent()) { return; } // Paper
          if (!world.isClientSide) {
 -            if (!state.getValue(POWERED)) {
 +            if (!(Boolean) state.getValue(DetectorRailBlock.POWERED)) {
@@ -40,7 +40,7 @@
 @@ -50,56 +54,66 @@
  
      @Override
-     public void tick(BlockState state, ServerLevel world, BlockPos pos, Random random) {
+     public void tick(BlockState state, ServerLevel world, BlockPos pos, RandomSource random) {
 -        if (state.getValue(POWERED)) {
 +        if ((Boolean) state.getValue(DetectorRailBlock.POWERED)) {
              this.checkPressed(world, pos, state);
@@ -137,12 +137,12 @@
  
 -        for(BlockPos blockPos : railState.getConnections()) {
 -            BlockState blockState = world.getBlockState(blockPos);
--            blockState.neighborChanged(world, blockPos, blockState.getBlock(), pos, false);
+-            world.neighborChanged(blockState, blockPos, blockState.getBlock(), pos, false);
 +        while (iterator.hasNext()) {
 +            BlockPos blockposition1 = (BlockPos) iterator.next();
 +            BlockState iblockdata1 = world.getBlockState(blockposition1);
 +
-+            iblockdata1.neighborChanged(world, blockposition1, iblockdata1.getBlock(), pos, false);
++            world.neighborChanged(iblockdata1, blockposition1, iblockdata1.getBlock(), pos, false);
          }
  
      }

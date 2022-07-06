@@ -4,7 +4,7 @@
  import net.minecraft.world.level.block.state.properties.EnumProperty;
  import net.minecraft.world.level.block.state.properties.Property;
  import net.minecraft.world.level.block.state.properties.RailShape;
-+import org.bukkit.craftbukkit.v1_18_R2.event.CraftEventFactory; // CraftBukkit
++import org.bukkit.craftbukkit.v1_19_R1.event.CraftEventFactory; // CraftBukkit
  
  public class PoweredRailBlock extends BaseRailBlock {
 +

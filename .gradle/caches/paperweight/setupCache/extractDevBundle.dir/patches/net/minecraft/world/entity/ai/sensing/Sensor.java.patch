@@ -28,7 +28,7 @@
          if (--this.timeToTick <= 0L) {
 -            this.timeToTick = (long)this.scanRate;
 +            // Paper start - configurable sensor tick rate and timings
-+            this.timeToTick = world.paperConfig.getSensorTickRate(this.configKey, entity.getType().id, this.scanRate);
++            this.timeToTick = java.util.Objects.requireNonNullElse(world.paperConfig().tickRates.sensor.get(entity.getType(), this.configKey), this.scanRate);
 +            this.timing.startTiming();
 +            // Paper end
              this.doTick(world, entity);

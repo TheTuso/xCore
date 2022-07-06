@@ -10,7 +10,7 @@
 +import java.util.Iterator;
  import net.minecraft.commands.CommandSourceStack;
 -import net.minecraft.commands.Commands;
- import net.minecraft.network.chat.TranslatableComponent;
+ import net.minecraft.network.chat.Component;
  import net.minecraft.server.MinecraftServer;
  import net.minecraft.server.packs.repository.PackRepository;
 @@ -13,11 +14,14 @@
@@ -27,7 +27,7 @@
 -            LOGGER.warn("Failed to execute reload", throwable);
 +        source.getServer().reloadResources(dataPacks, io.papermc.paper.event.server.ServerResourcesReloadedEvent.Cause.COMMAND).exceptionally((throwable) -> {
 +            ReloadCommand.LOGGER.warn("Failed to execute reload", throwable);
-             source.sendFailure(new TranslatableComponent("commands.reload.failure"));
+             source.sendFailure(Component.translatable("commands.reload.failure"));
              return null;
          });
 @@ -25,30 +29,44 @@
@@ -74,7 +74,7 @@
 -            WorldData worldData = minecraftServer.getWorldData();
 -            Collection<String> collection = packRepository.getSelectedIds();
 -            Collection<String> collection2 = discoverNewPacks(packRepository, worldData, collection);
--            commandSourceStack.sendSuccess(new TranslatableComponent("commands.reload.success"), true);
+-            commandSourceStack.sendSuccess(Component.translatable("commands.reload.success"), true);
 -            reloadPacks(collection2, commandSourceStack);
 +        dispatcher.register((LiteralArgumentBuilder) ((LiteralArgumentBuilder) net.minecraft.commands.Commands.literal("reload").requires((commandlistenerwrapper) -> {
 +            return commandlistenerwrapper.hasPermission(2);
@@ -86,7 +86,7 @@
 +            Collection<String> collection = resourcepackrepository.getSelectedIds();
 +            Collection<String> collection1 = ReloadCommand.discoverNewPacks(resourcepackrepository, savedata, collection);
 +
-+            commandlistenerwrapper.sendSuccess(new TranslatableComponent("commands.reload.success"), true);
++            commandlistenerwrapper.sendSuccess(Component.translatable("commands.reload.success"), true);
 +            ReloadCommand.reloadPacks(collection1, commandlistenerwrapper);
              return 0;
          }));

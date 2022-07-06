@@ -1,17 +1,15 @@
 --- a/net/minecraft/world/entity/animal/Cat.java
 +++ b/net/minecraft/world/entity/animal/Cat.java
-@@ -1,7 +1,10 @@
+@@ -1,5 +1,8 @@
  package net.minecraft.world.entity.animal;
  
- import com.google.common.collect.Maps;
 +import java.util.Iterator;
 +import java.util.List;
- import java.util.Map;
 +import java.util.Objects;
- import java.util.Random;
  import java.util.function.Predicate;
  import javax.annotation.Nullable;
-@@ -72,6 +75,7 @@
+ import net.minecraft.core.BlockPos;
+@@ -69,6 +72,7 @@
  import net.minecraft.world.phys.AABB;
  
  public class Cat extends TamableAnimal {
@@ -19,44 +17,7 @@
      public static final double TEMPT_SPEED_MOD = 0.6D;
      public static final double WALK_SPEED_MOD = 0.8D;
      public static final double SPRINT_SPEED_MOD = 1.33D;
-@@ -93,18 +97,18 @@
-     public static final int TYPE_ALL_BLACK = 10;
-     private static final int NUMBER_OF_CAT_TYPES = 11;
-     private static final int NUMBER_OF_CAT_TYPES_EXCEPT_ALL_BLACK = 10;
--    public static final Map<Integer, ResourceLocation> TEXTURE_BY_TYPE = Util.make(Maps.newHashMap(), (map) -> {
--        map.put(0, new ResourceLocation("textures/entity/cat/tabby.png"));
--        map.put(1, new ResourceLocation("textures/entity/cat/black.png"));
--        map.put(2, new ResourceLocation("textures/entity/cat/red.png"));
--        map.put(3, new ResourceLocation("textures/entity/cat/siamese.png"));
--        map.put(4, new ResourceLocation("textures/entity/cat/british_shorthair.png"));
--        map.put(5, new ResourceLocation("textures/entity/cat/calico.png"));
--        map.put(6, new ResourceLocation("textures/entity/cat/persian.png"));
--        map.put(7, new ResourceLocation("textures/entity/cat/ragdoll.png"));
--        map.put(8, new ResourceLocation("textures/entity/cat/white.png"));
--        map.put(9, new ResourceLocation("textures/entity/cat/jellie.png"));
--        map.put(10, new ResourceLocation("textures/entity/cat/all_black.png"));
-+    public static final Map<Integer, ResourceLocation> TEXTURE_BY_TYPE = (Map) Util.make(Maps.newHashMap(), (hashmap) -> {
-+        hashmap.put(0, new ResourceLocation("textures/entity/cat/tabby.png"));
-+        hashmap.put(1, new ResourceLocation("textures/entity/cat/black.png"));
-+        hashmap.put(2, new ResourceLocation("textures/entity/cat/red.png"));
-+        hashmap.put(3, new ResourceLocation("textures/entity/cat/siamese.png"));
-+        hashmap.put(4, new ResourceLocation("textures/entity/cat/british_shorthair.png"));
-+        hashmap.put(5, new ResourceLocation("textures/entity/cat/calico.png"));
-+        hashmap.put(6, new ResourceLocation("textures/entity/cat/persian.png"));
-+        hashmap.put(7, new ResourceLocation("textures/entity/cat/ragdoll.png"));
-+        hashmap.put(8, new ResourceLocation("textures/entity/cat/white.png"));
-+        hashmap.put(9, new ResourceLocation("textures/entity/cat/jellie.png"));
-+        hashmap.put(10, new ResourceLocation("textures/entity/cat/all_black.png"));
-     });
-     private Cat.CatAvoidEntityGoal<Player> avoidPlayersGoal;
-     @Nullable
-@@ -121,12 +125,12 @@
-     }
- 
-     public ResourceLocation getResourceLocation() {
--        return TEXTURE_BY_TYPE.getOrDefault(this.getCatType(), TEXTURE_BY_TYPE.get(0));
-+        return (ResourceLocation) Cat.TEXTURE_BY_TYPE.getOrDefault(this.getCatType(), (ResourceLocation) Cat.TEXTURE_BY_TYPE.get(0));
-     }
+@@ -97,7 +101,7 @@
  
      @Override
      protected void registerGoals() {
@@ -65,7 +26,7 @@
          this.goalSelector.addGoal(1, new FloatGoal(this));
          this.goalSelector.addGoal(1, new SitWhenOrderedToGoal(this));
          this.goalSelector.addGoal(2, new Cat.CatRelaxOnOwnerGoal(this));
-@@ -139,12 +143,12 @@
+@@ -110,64 +114,65 @@
          this.goalSelector.addGoal(10, new BreedGoal(this, 0.8D));
          this.goalSelector.addGoal(11, new WaterAvoidingRandomStrollGoal(this, 0.8D, 1.0000001E-5F));
          this.goalSelector.addGoal(12, new LookAtPlayerGoal(this, Player.class, 10.0F));
@@ -74,18 +35,14 @@
          this.targetSelector.addGoal(1, new NonTameRandomTargetGoal<>(this, Turtle.class, false, Turtle.BABY_ON_LAND_SELECTOR));
      }
  
-     public int getCatType() {
--        return this.entityData.get(DATA_TYPE_ID);
-+        return (Integer) this.entityData.get(Cat.DATA_TYPE_ID);
+     public CatVariant getCatVariant() {
+-        return this.entityData.get(DATA_VARIANT_ID);
++        return (CatVariant) this.entityData.get(Cat.DATA_VARIANT_ID);
      }
  
-     public void setCatType(int type) {
-@@ -152,47 +156,47 @@
-             type = this.random.nextInt(10);
-         }
- 
--        this.entityData.set(DATA_TYPE_ID, type);
-+        this.entityData.set(Cat.DATA_TYPE_ID, type);
+     public void setCatVariant(CatVariant variant) {
+-        this.entityData.set(DATA_VARIANT_ID, variant);
++        this.entityData.set(Cat.DATA_VARIANT_ID, variant);
      }
  
      public void setLying(boolean sleeping) {
@@ -121,11 +78,11 @@
      @Override
      protected void defineSynchedData() {
          super.defineSynchedData();
--        this.entityData.define(DATA_TYPE_ID, 1);
+-        this.entityData.define(DATA_VARIANT_ID, CatVariant.BLACK);
 -        this.entityData.define(IS_LYING, false);
 -        this.entityData.define(RELAX_STATE_ONE, false);
 -        this.entityData.define(DATA_COLLAR_COLOR, DyeColor.RED.getId());
-+        this.entityData.define(Cat.DATA_TYPE_ID, 1);
++        this.entityData.define(Cat.DATA_VARIANT_ID, CatVariant.BLACK);
 +        this.entityData.define(Cat.IS_LYING, false);
 +        this.entityData.define(Cat.RELAX_STATE_ONE, false);
 +        this.entityData.define(Cat.DATA_COLLAR_COLOR, DyeColor.RED.getId());
@@ -134,13 +91,25 @@
      @Override
      public void addAdditionalSaveData(CompoundTag nbt) {
          super.addAdditionalSaveData(nbt);
-         nbt.putInt("CatType", this.getCatType());
+         nbt.putString("variant", Registry.CAT_VARIANT.getKey(this.getCatVariant()).toString());
 -        nbt.putByte("CollarColor", (byte)this.getCollarColor().getId());
 +        nbt.putByte("CollarColor", (byte) this.getCollarColor().getId());
      }
  
      @Override
-@@ -208,11 +212,12 @@
+     public void readAdditionalSaveData(CompoundTag nbt) {
+         super.readAdditionalSaveData(nbt);
+-        CatVariant catVariant = Registry.CAT_VARIANT.get(ResourceLocation.tryParse(nbt.getString("variant")));
+-        if (catVariant != null) {
+-            this.setCatVariant(catVariant);
++        CatVariant catvariant = (CatVariant) Registry.CAT_VARIANT.get(ResourceLocation.tryParse(nbt.getString("variant")));
++
++        if (catvariant != null) {
++            this.setCatVariant(catvariant);
+         }
+ 
+         if (nbt.contains("CollarColor", 99)) {
+@@ -179,11 +184,12 @@
      @Override
      public void customServerAiStep() {
          if (this.getMoveControl().hasWanted()) {
@@ -156,7 +125,7 @@
                  this.setPose(Pose.STANDING);
                  this.setSprinting(true);
              } else {
-@@ -229,15 +234,7 @@
+@@ -200,15 +206,7 @@
      @Nullable
      @Override
      protected SoundEvent getAmbientSound() {
@@ -173,7 +142,7 @@
      }
  
      @Override
-@@ -260,7 +257,7 @@
+@@ -231,7 +229,7 @@
      }
  
      public static AttributeSupplier.Builder createAttributes() {
@@ -182,7 +151,7 @@
      }
  
      @Override
-@@ -278,7 +275,7 @@
+@@ -249,7 +247,7 @@
      }
  
      private float getAttackDamage() {
@@ -191,7 +160,7 @@
      }
  
      @Override
-@@ -341,27 +338,28 @@
+@@ -312,27 +310,28 @@
      }
  
      @Override
@@ -203,11 +172,11 @@
 +
 +        if (entity instanceof Cat) {
              if (this.random.nextBoolean()) {
--                cat.setCatType(this.getCatType());
-+                entitycat.setCatType(this.getCatType());
+-                cat.setCatVariant(this.getCatVariant());
++                entitycat.setCatVariant(this.getCatVariant());
              } else {
--                cat.setCatType(((Cat)ageableMob).getCatType());
-+                entitycat.setCatType(((Cat) entity).getCatType());
+-                cat.setCatVariant(((Cat)ageableMob).getCatVariant());
++                entitycat.setCatVariant(((Cat) entity).getCatVariant());
              }
  
              if (this.isTame()) {
@@ -230,7 +199,7 @@
      }
  
      @Override
-@@ -371,8 +369,9 @@
+@@ -342,8 +341,9 @@
          } else if (!(other instanceof Cat)) {
              return false;
          } else {
@@ -242,27 +211,33 @@
          }
      }
  
-@@ -386,11 +385,14 @@
-             this.setCatType(this.random.nextInt(10));
-         }
- 
--        Level level = world.getLevel();
--        if (level instanceof ServerLevel serverLevel) {
--            Registry<ConfiguredStructureFeature<?, ?>> registry = serverLevel.registryAccess().registryOrThrow(Registry.CONFIGURED_STRUCTURE_FEATURE_REGISTRY);
--            if (ChunkGenerator.allConfigurations(registry, StructureFeature.SWAMP_HUT).anyMatch((configuredStructureFeature) -> {
--                return serverLevel.structureFeatureManager().getStructureWithPieceAt(this.blockPosition(), configuredStructureFeature).isValid();
+@@ -351,15 +351,17 @@
+     @Override
+     public SpawnGroupData finalizeSpawn(ServerLevelAccessor world, DifficultyInstance difficulty, MobSpawnType spawnReason, @Nullable SpawnGroupData entityData, @Nullable CompoundTag entityNbt) {
+         entityData = super.finalizeSpawn(world, difficulty, spawnReason, entityData, entityNbt);
+-        boolean bl = world.getMoonBrightness() > 0.9F;
+-        TagKey<CatVariant> tagKey = bl ? CatVariantTags.FULL_MOON_SPAWNS : CatVariantTags.DEFAULT_SPAWNS;
+-        Registry.CAT_VARIANT.getTag(tagKey).flatMap((list) -> {
+-            return list.getRandomElement(world.getRandom());
+-        }).ifPresent((variant) -> {
+-            this.setCatVariant(variant.value());
++        boolean flag = world.getMoonBrightness() > 0.9F;
++        TagKey<CatVariant> tagkey = flag ? CatVariantTags.FULL_MOON_SPAWNS : CatVariantTags.DEFAULT_SPAWNS;
++
++        Registry.CAT_VARIANT.getTag(tagkey).flatMap((holderset_named) -> {
++            return holderset_named.getRandomElement(world.getRandom());
++        }).ifPresent((holder) -> {
++            this.setCatVariant((CatVariant) holder.value());
+         });
+-        ServerLevel serverLevel = world.getLevel();
+-        if (serverLevel.structureManager().getStructureWithPieceAt(this.blockPosition(), StructureTags.CATS_SPAWN_AS_BLACK).isValid()) {
 +        ServerLevel worldserver = world.getLevel();
 +
-+        if (worldserver instanceof ServerLevel) {
-+            ServerLevel worldserver1 = (ServerLevel) worldserver;
-+            Registry<ConfiguredStructureFeature<?, ?>> iregistry = worldserver1.registryAccess().registryOrThrow(Registry.CONFIGURED_STRUCTURE_FEATURE_REGISTRY);
-+
-+            if (ChunkGenerator.allConfigurations(iregistry, StructureFeature.SWAMP_HUT).anyMatch((structurefeature) -> {
-+                return worldserver1.structureFeatureManager().getStructureWithPieceAt(this.blockPosition(), structurefeature, world).isValid(); // Paper - fix deadlock
-             })) {
-                 this.setCatType(10);
-                 this.setPersistenceRequired();
-@@ -402,69 +404,76 @@
++        if (worldserver.structureManager().getStructureWithPieceAt(this.blockPosition(), StructureTags.CATS_SPAWN_AS_BLACK, world).isValid()) { // Paper - fix deadlock
+             this.setCatVariant(CatVariant.ALL_BLACK);
+             this.setPersistenceRequired();
+         }
+@@ -369,69 +371,76 @@
  
      @Override
      public InteractionResult mobInteract(Player player, InteractionHand hand) {
@@ -332,7 +307,7 @@
 -                if (this.random.nextInt(3) == 0) {
 +            } else if (this.isFood(itemstack)) {
 +                this.usePlayerItem(player, hand, itemstack);
-+                if (this.random.nextInt(3) == 0 && !org.bukkit.craftbukkit.v1_18_R2.event.CraftEventFactory.callEntityTameEvent(this, player).isCancelled()) { // CraftBukkit
++                if (this.random.nextInt(3) == 0 && !org.bukkit.craftbukkit.v1_19_R1.event.CraftEventFactory.callEntityTameEvent(this, player).isCancelled()) { // CraftBukkit
                      this.tame(player);
                      this.setOrderedToSit(true);
 -                    this.level.broadcastEntityEvent(this, (byte)7);
@@ -365,8 +340,8 @@
      }
  
      @Override
-@@ -495,26 +504,41 @@
-         return this.getPose() == Pose.CROUCHING || super.isSteppingCarefully();
+@@ -462,26 +471,41 @@
+         return this.isCrouching() || super.isSteppingCarefully();
      }
  
 -    static class CatAvoidEntityGoal<T extends LivingEntity> extends AvoidEntityGoal<T> {
@@ -415,7 +390,7 @@
          private final Cat cat;
          @Nullable
          private Player ownerPlayer;
-@@ -533,24 +557,26 @@
+@@ -500,24 +524,26 @@
              } else if (this.cat.isOrderedToSit()) {
                  return false;
              } else {
@@ -453,7 +428,7 @@
                          });
                          return !this.spaceIsOccupied();
                      }
-@@ -561,13 +587,22 @@
+@@ -528,13 +554,22 @@
          }
  
          private boolean spaceIsOccupied() {
@@ -482,7 +457,7 @@
          }
  
          @Override
-@@ -579,7 +614,7 @@
+@@ -546,7 +581,7 @@
          public void start() {
              if (this.goalPos != null) {
                  this.cat.setInSittingPose(false);
@@ -491,7 +466,7 @@
              }
  
          }
-@@ -588,7 +623,8 @@
+@@ -555,7 +590,8 @@
          public void stop() {
              this.cat.setLying(false);
              float f = this.cat.level.getTimeOfDay(1.0F);
@@ -501,25 +476,27 @@
                  this.giveMorningGift();
              }
  
-@@ -599,15 +635,28 @@
+@@ -565,16 +601,29 @@
+         }
  
          private void giveMorningGift() {
-             Random random = this.cat.getRandom();
+-            RandomSource randomSource = this.cat.getRandom();
 -            BlockPos.MutableBlockPos mutableBlockPos = new BlockPos.MutableBlockPos();
 -            mutableBlockPos.set(this.cat.blockPosition());
--            this.cat.randomTeleport((double)(mutableBlockPos.getX() + random.nextInt(11) - 5), (double)(mutableBlockPos.getY() + random.nextInt(5) - 2), (double)(mutableBlockPos.getZ() + random.nextInt(11) - 5), false);
+-            this.cat.randomTeleport((double)(mutableBlockPos.getX() + randomSource.nextInt(11) - 5), (double)(mutableBlockPos.getY() + randomSource.nextInt(5) - 2), (double)(mutableBlockPos.getZ() + randomSource.nextInt(11) - 5), false);
 -            mutableBlockPos.set(this.cat.blockPosition());
 -            LootTable lootTable = this.cat.level.getServer().getLootTables().get(BuiltInLootTables.CAT_MORNING_GIFT);
--            LootContext.Builder builder = (new LootContext.Builder((ServerLevel)this.cat.level)).withParameter(LootContextParams.ORIGIN, this.cat.position()).withParameter(LootContextParams.THIS_ENTITY, this.cat).withRandom(random);
+-            LootContext.Builder builder = (new LootContext.Builder((ServerLevel)this.cat.level)).withParameter(LootContextParams.ORIGIN, this.cat.position()).withParameter(LootContextParams.THIS_ENTITY, this.cat).withRandom(randomSource);
++            RandomSource randomsource = this.cat.getRandom();
 +            BlockPos.MutableBlockPos blockposition_mutableblockposition = new BlockPos.MutableBlockPos();
  
 -            for(ItemStack itemStack : lootTable.getRandomItems(builder.create(LootContextParamSets.GIFT))) {
 -                this.cat.level.addFreshEntity(new ItemEntity(this.cat.level, (double)mutableBlockPos.getX() - (double)Mth.sin(this.cat.yBodyRot * ((float)Math.PI / 180F)), (double)mutableBlockPos.getY(), (double)mutableBlockPos.getZ() + (double)Mth.cos(this.cat.yBodyRot * ((float)Math.PI / 180F)), itemStack));
 +            blockposition_mutableblockposition.set(this.cat.blockPosition());
-+            this.cat.randomTeleport((double) (blockposition_mutableblockposition.getX() + random.nextInt(11) - 5), (double) (blockposition_mutableblockposition.getY() + random.nextInt(5) - 2), (double) (blockposition_mutableblockposition.getZ() + random.nextInt(11) - 5), false);
++            this.cat.randomTeleport((double) (blockposition_mutableblockposition.getX() + randomsource.nextInt(11) - 5), (double) (blockposition_mutableblockposition.getY() + randomsource.nextInt(5) - 2), (double) (blockposition_mutableblockposition.getZ() + randomsource.nextInt(11) - 5), false);
 +            blockposition_mutableblockposition.set(this.cat.blockPosition());
 +            LootTable loottable = this.cat.level.getServer().getLootTables().get(BuiltInLootTables.CAT_MORNING_GIFT);
-+            LootContext.Builder loottableinfo_builder = (new LootContext.Builder((ServerLevel) this.cat.level)).withParameter(LootContextParams.ORIGIN, this.cat.position()).withParameter(LootContextParams.THIS_ENTITY, this.cat).withRandom(random);
++            LootContext.Builder loottableinfo_builder = (new LootContext.Builder((ServerLevel) this.cat.level)).withParameter(LootContextParams.ORIGIN, this.cat.position()).withParameter(LootContextParams.THIS_ENTITY, this.cat).withRandom(randomsource);
 +            List<ItemStack> list = loottable.getRandomItems(loottableinfo_builder.create(LootContextParamSets.GIFT));
 +            Iterator iterator = list.iterator();
 +
@@ -538,7 +515,7 @@
              }
  
          }
-@@ -616,8 +665,8 @@
+@@ -583,8 +632,8 @@
          public void tick() {
              if (this.ownerPlayer != null && this.goalPos != null) {
                  this.cat.setInSittingPose(false);
@@ -549,7 +526,7 @@
                      ++this.onBedTicks;
                      if (this.onBedTicks > this.adjustedTickDelay(16)) {
                          this.cat.setLying(true);
-@@ -634,35 +683,26 @@
+@@ -601,35 +650,26 @@
          }
      }
  

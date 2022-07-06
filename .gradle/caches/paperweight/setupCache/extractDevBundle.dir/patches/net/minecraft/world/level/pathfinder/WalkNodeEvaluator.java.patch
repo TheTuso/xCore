@@ -1,6 +1,6 @@
 --- a/net/minecraft/world/level/pathfinder/WalkNodeEvaluator.java
 +++ b/net/minecraft/world/level/pathfinder/WalkNodeEvaluator.java
-@@ -457,7 +457,12 @@
+@@ -477,7 +477,12 @@
                  for(int n = -1; n <= 1; ++n) {
                      if (l != 0 || n != 0) {
                          pos.set(i + l, j + m, k + n);
@@ -14,7 +14,7 @@
                          if (blockState.is(Blocks.CACTUS)) {
                              return BlockPathTypes.DANGER_CACTUS;
                          }
-@@ -470,9 +475,10 @@
+@@ -490,9 +495,10 @@
                              return BlockPathTypes.DANGER_FIRE;
                          }
  
@@ -26,7 +26,7 @@
                      }
                  }
              }
-@@ -482,7 +488,8 @@
+@@ -502,7 +508,8 @@
      }
  
      protected static BlockPathTypes getBlockPathTypeRaw(BlockGetter world, BlockPos pos) {
@@ -36,7 +36,7 @@
          Block block = blockState.getBlock();
          Material material = blockState.getMaterial();
          if (blockState.isAir()) {
-@@ -499,7 +506,7 @@
+@@ -519,7 +526,7 @@
              } else if (blockState.is(Blocks.COCOA)) {
                  return BlockPathTypes.COCOA;
              } else {

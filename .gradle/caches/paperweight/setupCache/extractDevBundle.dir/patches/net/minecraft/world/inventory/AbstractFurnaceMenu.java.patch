@@ -5,8 +5,8 @@
  import net.minecraft.world.level.Level;
  import net.minecraft.world.level.block.entity.AbstractFurnaceBlockEntity;
 +// CraftBukkit start
-+import org.bukkit.craftbukkit.v1_18_R2.inventory.CraftInventoryFurnace;
-+import org.bukkit.craftbukkit.v1_18_R2.inventory.CraftInventoryView;
++import org.bukkit.craftbukkit.v1_19_R1.inventory.CraftInventoryFurnace;
++import org.bukkit.craftbukkit.v1_19_R1.inventory.CraftInventoryView;
 +// CraftBukkit end
  
  public abstract class AbstractFurnaceMenu extends RecipeBookMenu<Container> {

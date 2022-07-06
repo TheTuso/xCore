@@ -1,7 +1,7 @@
 package com.destroystokyo.paper;
 
 import com.google.common.base.Preconditions;
-import org.bukkit.craftbukkit.v1_18_R2.scheduler.CraftTask;
+import org.bukkit.craftbukkit.v1_19_R1.scheduler.CraftTask;
 import com.destroystokyo.paper.event.server.ServerExceptionEvent;
 import com.destroystokyo.paper.exception.ServerSchedulerException;
 

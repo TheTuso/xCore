@@ -5,8 +5,8 @@
  import net.minecraft.world.level.block.state.BlockBehaviour;
  import net.minecraft.world.level.block.state.BlockState;
 +// CraftBukkit start
-+import org.bukkit.craftbukkit.v1_18_R2.block.CraftBlockState;
-+import org.bukkit.craftbukkit.v1_18_R2.block.CraftBlockStates;
++import org.bukkit.craftbukkit.v1_19_R1.block.CraftBlockState;
++import org.bukkit.craftbukkit.v1_19_R1.block.CraftBlockStates;
 +import org.bukkit.event.block.BlockFormEvent;
 +// CraftBukkit end
  
@@ -22,7 +22,7 @@
 -        if (shouldSolidify(world, pos, currentStateInPos)) {
 -            world.setBlock(pos, this.concrete, 3);
 +        if (ConcretePowderBlock.shouldSolidify(world, pos, currentStateInPos)) {
-+            org.bukkit.craftbukkit.v1_18_R2.event.CraftEventFactory.handleBlockFormEvent(world, pos, this.concrete, 3); // CraftBukkit
++            org.bukkit.craftbukkit.v1_19_R1.event.CraftEventFactory.handleBlockFormEvent(world, pos, this.concrete, 3); // CraftBukkit
          }
  
      }

@@ -18,9 +18,9 @@
  
  public class SummonCommand {
 +
-     private static final SimpleCommandExceptionType ERROR_FAILED = new SimpleCommandExceptionType(new TranslatableComponent("commands.summon.failed"));
-     private static final SimpleCommandExceptionType ERROR_DUPLICATE_UUID = new SimpleCommandExceptionType(new TranslatableComponent("commands.summon.failed.uuid"));
-     private static final SimpleCommandExceptionType INVALID_POSITION = new SimpleCommandExceptionType(new TranslatableComponent("commands.summon.invalidPosition"));
+     private static final SimpleCommandExceptionType ERROR_FAILED = new SimpleCommandExceptionType(Component.translatable("commands.summon.failed"));
+     private static final SimpleCommandExceptionType ERROR_DUPLICATE_UUID = new SimpleCommandExceptionType(Component.translatable("commands.summon.failed.uuid"));
+     private static final SimpleCommandExceptionType INVALID_POSITION = new SimpleCommandExceptionType(Component.translatable("commands.summon.invalidPosition"));
  
 +    public SummonCommand() {}
 +
@@ -84,8 +84,8 @@
 +                if (!worldserver.tryAddFreshEntityWithPassengers(entity1, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.COMMAND)) { // CraftBukkit - pass a spawn reason of "COMMAND"
 +                    throw SummonCommand.ERROR_DUPLICATE_UUID.create();
                  } else {
--                    source.sendSuccess(new TranslatableComponent("commands.summon.success", entity2.getDisplayName()), true);
-+                    source.sendSuccess(new TranslatableComponent("commands.summon.success", new Object[]{entity1.getDisplayName()}), true);
+-                    source.sendSuccess(Component.translatable("commands.summon.success", entity2.getDisplayName()), true);
++                    source.sendSuccess(Component.translatable("commands.summon.success", entity1.getDisplayName()), true);
                      return 1;
                  }
              }

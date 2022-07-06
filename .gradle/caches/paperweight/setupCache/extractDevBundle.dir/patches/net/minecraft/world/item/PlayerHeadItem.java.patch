@@ -1,6 +1,6 @@
 --- a/net/minecraft/world/item/PlayerHeadItem.java
 +++ b/net/minecraft/world/item/PlayerHeadItem.java
-@@ -11,6 +11,7 @@
+@@ -10,6 +10,7 @@
  import org.apache.commons.lang3.StringUtils;
  
  public class PlayerHeadItem extends StandingAndWallBlockItem {
@@ -8,7 +8,7 @@
      public static final String TAG_SKULL_OWNER = "SkullOwner";
  
      public PlayerHeadItem(Block standingBlock, Block wallBlock, Item.Properties settings) {
-@@ -20,19 +21,21 @@
+@@ -19,19 +20,21 @@
      @Override
      public Component getName(ItemStack stack) {
          if (stack.is(Items.PLAYER_HEAD) && stack.hasTag()) {
@@ -34,13 +34,13 @@
              }
  
 -            if (string != null) {
--                return new TranslatableComponent(this.getDescriptionId() + ".named", string);
+-                return Component.translatable(this.getDescriptionId() + ".named", string);
 +            if (s != null) {
-+                return new TranslatableComponent(this.getDescriptionId() + ".named", new Object[]{s});
++                return Component.translatable(this.getDescriptionId() + ".named", s);
              }
          }
  
-@@ -43,10 +46,33 @@
+@@ -42,10 +45,33 @@
      public void verifyTagAfterLoad(CompoundTag nbt) {
          super.verifyTagAfterLoad(nbt);
          if (nbt.contains("SkullOwner", 8) && !StringUtils.isBlank(nbt.getString("SkullOwner"))) {

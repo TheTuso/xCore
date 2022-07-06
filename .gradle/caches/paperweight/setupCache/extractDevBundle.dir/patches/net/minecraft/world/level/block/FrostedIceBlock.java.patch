@@ -3,8 +3,8 @@
 @@ -32,19 +32,21 @@
  
      @Override
-     public void tick(BlockState state, ServerLevel world, BlockPos pos, Random random) {
-+        if (!world.paperConfig.frostedIceEnabled) return; // Paper - add ability to disable frosted ice
+     public void tick(BlockState state, ServerLevel world, BlockPos pos, RandomSource random) {
++        if (!world.paperConfig().environment.frostedIce.enabled) return; // Paper - add ability to disable frosted ice
          if ((random.nextInt(3) == 0 || this.fewerNeigboursThan(world, pos, 4)) && world.getMaxLocalRawBrightness(pos) > 11 - state.getValue(AGE) - state.getLightBlock(world, pos) && this.slightlyMelt(state, world, pos)) {
              BlockPos.MutableBlockPos mutableBlockPos = new BlockPos.MutableBlockPos();
  
@@ -15,13 +15,13 @@
 +                if (blockState == null) { continue; } // Paper
                  if (blockState.is(this) && !this.slightlyMelt(blockState, world, mutableBlockPos)) {
 -                    world.scheduleTick(mutableBlockPos, this, Mth.nextInt(random, 20, 40));
-+                    world.scheduleTick(mutableBlockPos, this, Mth.nextInt(random, world.paperConfig.frostedIceDelayMin, world.paperConfig.frostedIceDelayMax)); // Paper - use configurable min/max delay
++                    world.scheduleTick(mutableBlockPos, this, Mth.nextInt(random, world.paperConfig().environment.frostedIce.delay.min, world.paperConfig().environment.frostedIce.delay.max)); // Paper - use configurable min/max delay
                  }
              }
  
          } else {
 -            world.scheduleTick(pos, this, Mth.nextInt(random, 20, 40));
-+            world.scheduleTick(pos, this, Mth.nextInt(random, world.paperConfig.frostedIceDelayMin, world.paperConfig.frostedIceDelayMax)); // Paper - use configurable min/max delay
++            world.scheduleTick(pos, this, Mth.nextInt(random, world.paperConfig().environment.frostedIce.delay.min, world.paperConfig().environment.frostedIce.delay.max)); // Paper - use configurable min/max delay
          }
      }
  

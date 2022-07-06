@@ -1,6 +1,14 @@
 --- a/net/minecraft/world/level/block/AbstractCandleBlock.java
 +++ b/net/minecraft/world/level/block/AbstractCandleBlock.java
-@@ -20,6 +20,7 @@
+@@ -7,6 +7,7 @@
+ import net.minecraft.sounds.SoundSource;
+ import net.minecraft.tags.BlockTags;
+ import net.minecraft.util.RandomSource;
++import net.minecraft.world.entity.Entity;
+ import net.minecraft.world.entity.player.Player;
+ import net.minecraft.world.entity.projectile.Projectile;
+ import net.minecraft.world.level.Level;
+@@ -20,6 +21,7 @@
  import net.minecraft.world.phys.Vec3;
  
  public abstract class AbstractCandleBlock extends Block {
@@ -8,7 +16,7 @@
      public static final int LIGHT_PER_CANDLE = 3;
      public static final BooleanProperty LIT = BlockStateProperties.LIT;
  
-@@ -30,32 +31,38 @@
+@@ -30,32 +32,38 @@
      protected abstract Iterable<Vec3> getParticleOffsets(BlockState state);
  
      public static boolean isLit(BlockState state) {
@@ -21,7 +29,7 @@
          if (!world.isClientSide && projectile.isOnFire() && this.canBeLit(state)) {
 -            setLit(world, state, hit.getBlockPos(), true);
 +            // CraftBukkit start
-+            if (org.bukkit.craftbukkit.v1_18_R2.event.CraftEventFactory.callBlockIgniteEvent(world, hit.getBlockPos(), projectile).isCancelled()) {
++            if (org.bukkit.craftbukkit.v1_19_R1.event.CraftEventFactory.callBlockIgniteEvent(world, hit.getBlockPos(), projectile).isCancelled()) {
 +                return;
 +            }
 +            // CraftBukkit end
@@ -36,7 +44,7 @@
      }
  
      @Override
-     public void animateTick(BlockState state, Level world, BlockPos pos, Random random) {
+     public void animateTick(BlockState state, Level world, BlockPos pos, RandomSource random) {
 -        if (state.getValue(LIT)) {
 -            this.getParticleOffsets(state).forEach((offset) -> {
 -                addParticlesAndSound(world, offset.add((double)pos.getX(), (double)pos.getY(), (double)pos.getZ()), random);
@@ -47,13 +55,13 @@
          }
      }
  
-     private static void addParticlesAndSound(Level world, Vec3 vec3d, Random random) {
+     private static void addParticlesAndSound(Level world, Vec3 vec3d, RandomSource random) {
          float f = random.nextFloat();
 +
          if (f < 0.3F) {
              world.addParticle(ParticleTypes.SMOKE, vec3d.x, vec3d.y, vec3d.z, 0.0D, 0.0D, 0.0D);
              if (f < 0.17F) {
-@@ -67,18 +74,18 @@
+@@ -67,18 +75,18 @@
      }
  
      public static void extinguish(@Nullable Player player, BlockState state, LevelAccessor world, BlockPos pos) {
@@ -68,8 +76,9 @@
          }
  
 -        world.playSound((Player)null, pos, SoundEvents.CANDLE_EXTINGUISH, SoundSource.BLOCKS, 1.0F, 1.0F);
+-        world.gameEvent(player, GameEvent.BLOCK_CHANGE, pos);
 +        world.playSound((Player) null, pos, SoundEvents.CANDLE_EXTINGUISH, SoundSource.BLOCKS, 1.0F, 1.0F);
-         world.gameEvent(player, GameEvent.BLOCK_CHANGE, pos);
++        world.gameEvent((Entity) player, GameEvent.BLOCK_CHANGE, pos);
      }
  
      private static void setLit(LevelAccessor world, BlockState state, BlockPos pos, boolean lit) {

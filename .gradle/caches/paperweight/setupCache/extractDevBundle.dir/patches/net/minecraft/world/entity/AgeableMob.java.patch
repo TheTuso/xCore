@@ -49,10 +49,10 @@
          }
  
 -        AgeableMob.AgeableMobGroupData ageableMobGroupData = (AgeableMob.AgeableMobGroupData)entityData;
--        if (ageableMobGroupData.isShouldSpawnBaby() && ageableMobGroupData.getGroupSize() > 0 && this.random.nextFloat() <= ageableMobGroupData.getBabySpawnChance()) {
+-        if (ageableMobGroupData.isShouldSpawnBaby() && ageableMobGroupData.getGroupSize() > 0 && world.getRandom().nextFloat() <= ageableMobGroupData.getBabySpawnChance()) {
 +        AgeableMob.AgeableMobGroupData entityageable_a = (AgeableMob.AgeableMobGroupData) entityData;
 +
-+        if (entityageable_a.isShouldSpawnBaby() && entityageable_a.getGroupSize() > 0 && this.random.nextFloat() <= entityageable_a.getBabySpawnChance()) {
++        if (entityageable_a.isShouldSpawnBaby() && entityageable_a.getGroupSize() > 0 && world.getRandom().nextFloat() <= entityageable_a.getBabySpawnChance()) {
              this.setAge(-24000);
          }
  
@@ -113,8 +113,8 @@
      }
  
      public void setAge(int age) {
--        int i = this.age;
-+        int j = this.age;
+-        int i = this.getAge();
++        int j = this.getAge();
 +
          this.age = age;
 -        if (i < 0 && age >= 0 || i >= 0 && age < 0) {
@@ -173,7 +173,12 @@
  
      @Override
      public boolean isBaby() {
-@@ -156,6 +187,7 @@
+@@ -156,10 +187,11 @@
+     }
+ 
+     public static int getSpeedUpSecondsWhenFeeding(int breedingAge) {
+-        return (int)((float)(breedingAge / 20) * 0.1F);
++        return (int) ((float) (breedingAge / 20) * 0.1F);
      }
  
      public static class AgeableMobGroupData implements SpawnGroupData {

@@ -8,6 +8,8 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
+import net.minecraft.core.Registry;
+import net.minecraft.resources.ResourceLocation;
 import com.google.gson.JsonObject;
 import com.google.gson.internal.Streams;
 import com.google.gson.stream.JsonWriter;
@@ -17,9 +19,6 @@ import net.kyori.adventure.text.JoinConfiguration;
 import net.kyori.adventure.text.TextComponent;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextColor;
-import net.minecraft.core.Registry;
-import net.minecraft.resources.ResourceLocation;
-import net.minecraft.server.MCUtil;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ChunkHolder;
 import net.minecraft.server.level.ServerChunkCache;
@@ -29,8 +28,6 @@ import net.minecraft.server.level.ThreadedLevelLightEngine;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.MobCategory;
 import net.minecraft.world.level.ChunkPos;
-import net.minecraft.network.protocol.game.ClientboundLightUpdatePacket;
-import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.MCUtil;
 import net.minecraft.world.level.NaturalSpawner;
 import org.apache.commons.lang3.tuple.MutablePair;
@@ -40,10 +37,10 @@ import org.bukkit.Location;
 import org.bukkit.World;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
-import org.bukkit.craftbukkit.v1_18_R2.CraftServer;
-import org.bukkit.craftbukkit.v1_18_R2.CraftWorld;
-import org.bukkit.craftbukkit.v1_18_R2.entity.CraftPlayer;
-import org.bukkit.craftbukkit.v1_18_R2.inventory.CraftItemStack;
+import org.bukkit.craftbukkit.v1_19_R1.CraftServer;
+import org.bukkit.craftbukkit.v1_19_R1.CraftWorld;
+import org.bukkit.craftbukkit.v1_19_R1.entity.CraftPlayer;
+import org.bukkit.craftbukkit.v1_19_R1.inventory.CraftItemStack;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 
@@ -88,7 +85,7 @@ public class PaperCommand extends Command {
 
     private static boolean testPermission(CommandSender commandSender, String permission) {
         if (commandSender.hasPermission(BASE_PERM + permission) || commandSender.hasPermission("bukkit.command.paper")) return true;
-        commandSender.sendMessage(Bukkit.getPermissionMessage()); // Sorry, kashike
+        commandSender.sendMessage(Bukkit.permissionMessage());
         return false;
     }
 
@@ -103,7 +100,7 @@ public class PaperCommand extends Command {
                 if (args.length == 2)
                     return getListMatchingLast(sender, args, "help", "list");
                 if (args.length == 3)
-                    return getListMatchingLast(sender, args, EntityType.getEntityNameList().stream().map(ResourceLocation::toString).sorted().toArray(String[]::new));
+                    return getListMatchingLast(sender, args, Registry.ENTITY_TYPE.keySet().stream().map(ResourceLocation::toString).sorted().toArray(String[]::new));
                 break;
             case "debug":
                 if (args.length == 2) {
@@ -389,7 +386,7 @@ public class PaperCommand extends Command {
         final ServerPlayer serverPlayer = ((CraftPlayer) player).getHandle();
         final ServerLevel level = serverPlayer.getLevel();
 
-        if (!level.paperConfig.perPlayerMobSpawns) {
+        if (!level.paperConfig().entities.spawning.perPlayerMobSpawns) {
             sender.sendMessage(Component.text("Use '/paper mobcaps' for worlds where per-player mob spawning is disabled.", NamedTextColor.RED));
             return;
         }
@@ -397,7 +394,7 @@ public class PaperCommand extends Command {
         sender.sendMessage(Component.join(JoinConfiguration.noSeparators(), Component.text("Mobcaps for player: "), Component.text(player.getName(), NamedTextColor.GREEN)));
         sender.sendMessage(this.buildMobcapsComponent(
             category -> level.chunkSource.chunkMap.getMobCountNear(serverPlayer, category),
-            category -> level.getWorld().getSpawnLimitUnsafe(org.bukkit.craftbukkit.v1_18_R2.util.CraftSpawnCategory.toBukkit(category))
+            category -> level.getWorld().getSpawnLimitUnsafe(org.bukkit.craftbukkit.v1_19_R1.util.CraftSpawnCategory.toBukkit(category))
         ));
     }
 
@@ -588,7 +585,7 @@ public class PaperCommand extends Command {
                     filter = args[2];
                 }
                 final String cleanfilter = filter.replace("?", ".?").replace("*", ".*?");
-                Set<ResourceLocation> names = EntityType.getEntityNameList().stream()
+                Set<ResourceLocation> names = Registry.ENTITY_TYPE.keySet().stream()
                         .filter(n -> n.toString().matches(cleanfilter))
                         .collect(Collectors.toSet());
 
@@ -689,12 +686,9 @@ public class PaperCommand extends Command {
         Command.broadcastCommandMessage(sender, text("Please note that this command is not supported and may cause issues.", RED));
         Command.broadcastCommandMessage(sender, text("If you encounter any issues please use the /stop command to restart your server.", RED));
 
-        MinecraftServer console = MinecraftServer.getServer();
-        com.destroystokyo.paper.PaperConfig.init((File) console.options.valueOf("paper-settings"));
-        for (ServerLevel world : console.getAllLevels()) {
-            world.paperConfig.init();
-        }
-        console.server.reloadCount++;
+        MinecraftServer server = ((CraftServer) sender.getServer()).getServer();
+        server.paperConfigurations.reloadConfigs(server);
+        server.server.reloadCount++;
 
         Command.broadcastCommandMessage(sender, text("Paper config reload complete.", GREEN));
     }
@@ -805,7 +799,7 @@ public class PaperCommand extends Command {
                 updateLight(sender, world, lightengine, queue);
                 return;
             }
-            lightengine.setTaskPerBatch(world.paperConfig.lightQueueSize + 16 * 256); // ensure full chunk can fit into queue
+            lightengine.setTaskPerBatch(world.paperConfig().misc.lightQueueSize + 16 * 256); // ensure full chunk can fit into queue
             sender.sendMessage("Updating Light " + coord);
             int cx = chunk.getPos().x << 4;
             int cz = chunk.getPos().z << 4;
@@ -829,7 +823,7 @@ public class PaperCommand extends Command {
             } else {
                 updateLight(sender, world, lightengine, queue);
             }
-            lightengine.setTaskPerBatch(world.paperConfig.lightQueueSize);
+            lightengine.setTaskPerBatch(world.paperConfig().misc.lightQueueSize);
         }, MinecraftServer.getServer());
     }
 }

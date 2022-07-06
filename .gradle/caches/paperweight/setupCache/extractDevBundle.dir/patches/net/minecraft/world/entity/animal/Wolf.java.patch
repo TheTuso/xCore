@@ -5,7 +5,7 @@
  import net.minecraft.world.level.pathfinder.BlockPathTypes;
  import net.minecraft.world.phys.Vec3;
 +// CraftBukkit start
-+import org.bukkit.craftbukkit.v1_18_R2.event.CraftEventFactory;
++import org.bukkit.craftbukkit.v1_19_R1.event.CraftEventFactory;
 +import org.bukkit.event.entity.EntityTargetEvent.TargetReason;
 +// CraftBukkit end
  
@@ -209,7 +209,7 @@
          } else {
              this.getAttribute(Attributes.MAX_HEALTH).setBaseValue(8.0D);
          }
-@@ -335,58 +357,70 @@
+@@ -335,57 +357,69 @@
  
      @Override
      public InteractionResult mobInteract(Player player, InteractionHand hand) {
@@ -235,7 +235,6 @@
  
 -                    this.heal((float)item.getFoodProperties().getNutrition());
 +                    this.heal((float) item.getFoodProperties().getNutrition(), org.bukkit.event.entity.EntityRegainHealthEvent.RegainReason.EATING); // CraftBukkit
-                     this.gameEvent(GameEvent.MOB_INTERACT, this.eyeBlockPosition());
                      return InteractionResult.SUCCESS;
                  }
  
@@ -301,7 +300,7 @@
                  }
  
                  return InteractionResult.SUCCESS;
-@@ -411,16 +445,13 @@
+@@ -410,16 +444,13 @@
      }
  
      public float getTailAngle() {
@@ -320,7 +319,7 @@
          return item.isEdible() && item.getFoodProperties().isMeat();
      }
  
-@@ -431,17 +462,17 @@
+@@ -430,17 +461,17 @@
  
      @Override
      public int getRemainingPersistentAngerTime() {
@@ -341,7 +340,7 @@
      }
  
      @Nullable
-@@ -456,27 +487,28 @@
+@@ -455,27 +486,28 @@
      }
  
      public DyeColor getCollarColor() {
@@ -380,7 +379,7 @@
      }
  
      @Override
-@@ -488,33 +520,25 @@
+@@ -487,33 +519,25 @@
          } else if (!(other instanceof Wolf)) {
              return false;
          } else {
@@ -422,7 +421,7 @@
              }
          } else {
              return false;
-@@ -528,28 +552,37 @@
+@@ -527,28 +551,37 @@
  
      @Override
      public Vec3 getLeashOffset() {
@@ -430,7 +429,7 @@
 +        return new Vec3(0.0D, (double) (0.6F * this.getEyeHeight()), (double) (this.getBbWidth() * 0.4F));
      }
  
-     public static boolean checkWolfSpawnRules(EntityType<Wolf> type, LevelAccessor world, MobSpawnType spawnReason, BlockPos pos, Random random) {
+     public static boolean checkWolfSpawnRules(EntityType<Wolf> type, LevelAccessor world, MobSpawnType spawnReason, BlockPos pos, RandomSource random) {
          return world.getBlockState(pos.below()).is(BlockTags.WOLVES_SPAWNABLE_ON) && isBrightEnoughToSpawn(world, pos);
      }
  
@@ -470,7 +469,7 @@
          }
  
          private boolean avoidLlama(Llama llama) {
-@@ -558,25 +591,14 @@
+@@ -557,25 +590,14 @@
  
          @Override
          public void start() {

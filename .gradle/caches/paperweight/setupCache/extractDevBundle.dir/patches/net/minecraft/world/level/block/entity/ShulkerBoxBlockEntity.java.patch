@@ -1,11 +1,11 @@
 --- a/net/minecraft/world/level/block/entity/ShulkerBoxBlockEntity.java
 +++ b/net/minecraft/world/level/block/entity/ShulkerBoxBlockEntity.java
-@@ -31,8 +31,13 @@
+@@ -30,8 +30,13 @@
  import net.minecraft.world.level.material.PushReaction;
  import net.minecraft.world.phys.AABB;
  import net.minecraft.world.phys.Vec3;
 +// CraftBukkit start
-+import org.bukkit.craftbukkit.v1_18_R2.entity.CraftHumanEntity;
++import org.bukkit.craftbukkit.v1_19_R1.entity.CraftHumanEntity;
 +import org.bukkit.entity.HumanEntity;
 +// CraftBukkit end
  
@@ -14,7 +14,7 @@
      public static final int COLUMNS = 9;
      public static final int ROWS = 3;
      public static final int CONTAINER_SIZE = 27;
-@@ -42,21 +47,56 @@
+@@ -41,21 +46,56 @@
      public static final float MAX_LID_ROTATION = 270.0F;
      public static final String ITEMS_TAG = "Items";
      private static final int[] SLOTS = IntStream.range(0, 27).toArray();
@@ -73,7 +73,7 @@
          this.color = ShulkerBoxBlock.getColorFromBlock(state.getBlock());
      }
  
-@@ -75,7 +115,7 @@
+@@ -74,7 +114,7 @@
                  if (this.progress >= 1.0F) {
                      this.animationStatus = ShulkerBoxBlockEntity.AnimationStatus.OPENED;
                      this.progress = 1.0F;
@@ -82,7 +82,7 @@
                  }
  
                  this.moveCollidedEntities(world, pos, state);
-@@ -85,7 +125,7 @@
+@@ -84,7 +124,7 @@
                  if (this.progress <= 0.0F) {
                      this.animationStatus = ShulkerBoxBlockEntity.AnimationStatus.CLOSED;
                      this.progress = 0.0F;
@@ -91,7 +91,7 @@
                  }
                  break;
              case OPENED:
-@@ -99,19 +139,21 @@
+@@ -98,19 +138,21 @@
      }
  
      public AABB getBoundingBox(BlockState state) {
@@ -120,7 +120,7 @@
                      }
                  }
  
-@@ -130,12 +172,12 @@
+@@ -129,12 +171,12 @@
              this.openCount = data;
              if (data == 0) {
                  this.animationStatus = ShulkerBoxBlockEntity.AnimationStatus.CLOSING;
@@ -135,33 +135,35 @@
              }
  
              return true;
-@@ -156,10 +198,11 @@
+@@ -155,10 +197,11 @@
              }
  
              ++this.openCount;
 +            if (this.opened) return; // CraftBukkit - only animate if the ShulkerBox hasn't been forced open already by an API call.
              this.level.blockEvent(this.worldPosition, this.getBlockState().getBlock(), 1, this.openCount);
              if (this.openCount == 1) {
-                 this.level.gameEvent(player, GameEvent.CONTAINER_OPEN, this.worldPosition);
+-                this.level.gameEvent(player, GameEvent.CONTAINER_OPEN, this.worldPosition);
 -                this.level.playSound((Player)null, this.worldPosition, SoundEvents.SHULKER_BOX_OPEN, SoundSource.BLOCKS, 0.5F, this.level.random.nextFloat() * 0.1F + 0.9F);
++                this.level.gameEvent((Entity) player, GameEvent.CONTAINER_OPEN, this.worldPosition);
 +                this.level.playSound((Player) null, this.worldPosition, SoundEvents.SHULKER_BOX_OPEN, SoundSource.BLOCKS, 0.5F, this.level.random.nextFloat() * 0.1F + 0.9F);
              }
          }
  
-@@ -169,10 +212,11 @@
+@@ -168,10 +211,11 @@
      public void stopOpen(Player player) {
          if (!player.isSpectator()) {
              --this.openCount;
 +            if (this.opened) return; // CraftBukkit - only animate if the ShulkerBox hasn't been forced open already by an API call.
              this.level.blockEvent(this.worldPosition, this.getBlockState().getBlock(), 1, this.openCount);
              if (this.openCount <= 0) {
-                 this.level.gameEvent(player, GameEvent.CONTAINER_CLOSE, this.worldPosition);
+-                this.level.gameEvent(player, GameEvent.CONTAINER_CLOSE, this.worldPosition);
 -                this.level.playSound((Player)null, this.worldPosition, SoundEvents.SHULKER_BOX_CLOSE, SoundSource.BLOCKS, 0.5F, this.level.random.nextFloat() * 0.1F + 0.9F);
++                this.level.gameEvent((Entity) player, GameEvent.CONTAINER_CLOSE, this.worldPosition);
 +                this.level.playSound((Player) null, this.worldPosition, SoundEvents.SHULKER_BOX_CLOSE, SoundSource.BLOCKS, 0.5F, this.level.random.nextFloat() * 0.1F + 0.9F);
              }
          }
  
-@@ -218,7 +262,7 @@
+@@ -217,7 +261,7 @@
  
      @Override
      public int[] getSlotsForFace(Direction side) {
@@ -170,7 +172,7 @@
      }
  
      @Override
-@@ -250,9 +294,9 @@
+@@ -249,9 +293,9 @@
      }
  
      public static enum AnimationStatus {

@@ -4,9 +4,11 @@
  import net.minecraft.util.datafix.schemas.NamespacedSchema;
  
  public class ItemStackMapIdFix extends DataFix {
+-    public ItemStackMapIdFix(Schema schema, boolean bl) {
+-        super(schema, bl);
 +
-     public ItemStackMapIdFix(Schema outputSchema, boolean changesType) {
-         super(outputSchema, changesType);
++    public ItemStackMapIdFix(Schema schema, boolean flag) {
++        super(schema, flag);
      }
  
      public TypeRewriteRule makeRule() {

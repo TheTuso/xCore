@@ -20,7 +20,7 @@
 +                // Paper start
 +                PlayerNameEntityEvent event = new PlayerNameEntityEvent(((net.minecraft.server.level.ServerPlayer) user).getBukkitEntity(), entity.getBukkitLivingEntity(), PaperAdventure.asAdventure(stack.getHoverName()), true);
 +                if (!event.callEvent()) return InteractionResult.PASS;
-+                LivingEntity newEntityLiving = ((org.bukkit.craftbukkit.v1_18_R2.entity.CraftLivingEntity) event.getEntity()).getHandle();
++                LivingEntity newEntityLiving = ((org.bukkit.craftbukkit.v1_19_R1.entity.CraftLivingEntity) event.getEntity()).getHandle();
 +                newEntityLiving.setCustomName(event.getName() != null ? PaperAdventure.asVanilla(event.getName()) : null);
 +                if (event.isPersistent() && newEntityLiving instanceof Mob) {
 +                    ((Mob) newEntityLiving).setPersistenceRequired();

@@ -2,7 +2,7 @@ package com.destroystokyo.paper.entity;
 
 import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.monster.RangedAttackMob;
-import org.bukkit.craftbukkit.v1_18_R2.entity.CraftLivingEntity;
+import org.bukkit.craftbukkit.v1_19_R1.entity.CraftLivingEntity;
 import org.bukkit.entity.LivingEntity;
 
 public interface CraftRangedEntity<T extends Mob & RangedAttackMob> extends RangedEntity {

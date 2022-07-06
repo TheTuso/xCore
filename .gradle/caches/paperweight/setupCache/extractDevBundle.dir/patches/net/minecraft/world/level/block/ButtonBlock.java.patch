@@ -23,7 +23,7 @@
          this.sensitive = wooden;
      }
  
-@@ -63,42 +68,52 @@
+@@ -63,53 +68,63 @@
  
      @Override
      public VoxelShape getShape(BlockState state, BlockGetter world, BlockPos pos, CollisionContext context) {
@@ -92,8 +92,10 @@
 +            // CraftBukkit end
              this.press(state, world, pos);
              this.playSound(player, world, pos, true);
-             world.gameEvent(player, GameEvent.BLOCK_PRESS, pos);
-@@ -107,9 +122,9 @@
+-            world.gameEvent(player, GameEvent.BLOCK_ACTIVATE, pos);
++            world.gameEvent((Entity) player, GameEvent.BLOCK_ACTIVATE, pos);
+             return InteractionResult.sidedSuccess(world.isClientSide);
+         }
      }
  
      public void press(BlockState state, Level world, BlockPos pos) {
@@ -129,24 +131,10 @@
      }
  
      @Override
-@@ -144,15 +159,37 @@
-         return true;
-     }
+@@ -146,14 +161,24 @@
  
-+    // Paper start - optimize redstone (Alternate Current)
-+    @Override
-+    public boolean isSignalSourceTo(Level level, BlockPos pos, BlockState state, Direction dir) {
-+        return true;
-+    }
-+
-+    @Override
-+    public boolean isDirectSignalSourceTo(Level level, BlockPos pos, BlockState state, Direction dir) {
-+        return getConnectedDirection(state) == dir;
-+    }
-+    // Paper end
-+
      @Override
-     public void tick(BlockState state, ServerLevel world, BlockPos pos, Random random) {
+     public void tick(BlockState state, ServerLevel world, BlockPos pos, RandomSource random) {
 -        if (state.getValue(POWERED)) {
 +        if ((Boolean) state.getValue(ButtonBlock.POWERED)) {
              if (this.sensitive) {
@@ -166,16 +154,18 @@
 +                world.setBlock(pos, (BlockState) state.setValue(ButtonBlock.POWERED, false), 3);
                  this.updateNeighbours(state, world, pos);
 -                this.playSound((Player)null, world, pos, false);
+-                world.gameEvent((Entity)null, GameEvent.BLOCK_DEACTIVATE, pos);
 +                this.playSound((Player) null, world, pos, false);
-                 world.gameEvent(GameEvent.BLOCK_UNPRESS, pos);
++                world.gameEvent((Entity) null, GameEvent.BLOCK_DEACTIVATE, pos);
              }
  
-@@ -161,24 +198,63 @@
+         }
+@@ -161,24 +186,63 @@
  
      @Override
      public void entityInside(BlockState state, Level world, BlockPos pos, Entity entity) {
 -        if (!world.isClientSide && this.sensitive && !state.getValue(POWERED)) {
-+        if (!new io.papermc.paper.event.entity.EntityInsideBlockEvent(entity.getBukkitEntity(), org.bukkit.craftbukkit.v1_18_R2.block.CraftBlock.at(world, pos)).callEvent()) { return; } // Paper
++        if (!new io.papermc.paper.event.entity.EntityInsideBlockEvent(entity.getBukkitEntity(), org.bukkit.craftbukkit.v1_19_R1.block.CraftBlock.at(world, pos)).callEvent()) { return; } // Paper
 +        if (!world.isClientSide && this.sensitive && !(Boolean) state.getValue(ButtonBlock.POWERED)) {
              this.checkPressed(state, world, pos);
          }
@@ -231,9 +221,9 @@
 +            world.setBlock(pos, (BlockState) state.setValue(ButtonBlock.POWERED, flag), 3);
              this.updateNeighbours(state, world, pos);
 -            this.playSound((Player)null, world, pos, bl);
--            world.gameEvent(list.stream().findFirst().orElse((Entity)null), bl ? GameEvent.BLOCK_PRESS : GameEvent.BLOCK_UNPRESS, pos);
+-            world.gameEvent(list.stream().findFirst().orElse((Entity)null), bl ? GameEvent.BLOCK_ACTIVATE : GameEvent.BLOCK_DEACTIVATE, pos);
 +            this.playSound((Player) null, world, pos, flag);
-+            world.gameEvent((Entity) list.stream().findFirst().orElse(null), flag ? GameEvent.BLOCK_PRESS : GameEvent.BLOCK_UNPRESS, pos); // CraftBukkit - decompile error
++            world.gameEvent((Entity) list.stream().findFirst().orElse(null), flag ? GameEvent.BLOCK_ACTIVATE : GameEvent.BLOCK_DEACTIVATE, pos); // CraftBukkit - decompile error
          }
  
 -        if (bl) {
@@ -243,7 +233,7 @@
          }
  
      }
-@@ -190,6 +266,6 @@
+@@ -190,6 +254,6 @@
  
      @Override
      protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {

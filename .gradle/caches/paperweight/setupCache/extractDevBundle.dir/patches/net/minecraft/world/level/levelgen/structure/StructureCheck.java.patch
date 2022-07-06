@@ -1,23 +1,23 @@
 --- a/net/minecraft/world/level/levelgen/structure/StructureCheck.java
 +++ b/net/minecraft/world/level/levelgen/structure/StructureCheck.java
-@@ -45,7 +45,7 @@
+@@ -43,7 +43,7 @@
      private final Registry<Biome> biomes;
-     private final Registry<ConfiguredStructureFeature<?, ?>> structureConfigs;
-     private final StructureManager structureManager;
+     private final Registry<Structure> structureConfigs;
+     private final StructureTemplateManager structureTemplateManager;
 -    private final ResourceKey<Level> dimension;
 +    private final ResourceKey<net.minecraft.world.level.dimension.LevelStem> dimension; // Paper - fix missing CB diff
      private final ChunkGenerator chunkGenerator;
+     private final RandomState randomState;
      private final LevelHeightAccessor heightAccessor;
-     private final BiomeSource biomeSource;
-@@ -54,7 +54,7 @@
-     private final Long2ObjectMap<Object2IntMap<ConfiguredStructureFeature<?, ?>>> loadedChunks = new Long2ObjectOpenHashMap<>();
-     private final Map<ConfiguredStructureFeature<?, ?>, Long2BooleanMap> featureChecks = new HashMap<>();
+@@ -53,7 +53,7 @@
+     private final Long2ObjectMap<Object2IntMap<Structure>> loadedChunks = new Long2ObjectOpenHashMap<>();
+     private final Map<Structure, Long2BooleanMap> featureChecks = new HashMap<>();
  
--    public StructureCheck(ChunkScanAccess chunkIoWorker, RegistryAccess registryManager, StructureManager structureManager, ResourceKey<Level> worldKey, ChunkGenerator chunkGenerator, LevelHeightAccessor world, BiomeSource biomeSource, long seed, DataFixer dataFixer) {
-+    public StructureCheck(ChunkScanAccess chunkIoWorker, RegistryAccess registryManager, StructureManager structureManager, ResourceKey<net.minecraft.world.level.dimension.LevelStem> worldKey, ChunkGenerator chunkGenerator, LevelHeightAccessor world, BiomeSource biomeSource, long seed, DataFixer dataFixer) { // Paper - fix missing CB diff
+-    public StructureCheck(ChunkScanAccess chunkIoWorker, RegistryAccess registryManager, StructureTemplateManager structureTemplateManager, ResourceKey<Level> worldKey, ChunkGenerator chunkGenerator, RandomState noiseConfig, LevelHeightAccessor world, BiomeSource biomeSource, long seed, DataFixer dataFixer) {
++    public StructureCheck(ChunkScanAccess chunkIoWorker, RegistryAccess registryManager, StructureTemplateManager structureTemplateManager, ResourceKey<net.minecraft.world.level.dimension.LevelStem> worldKey, ChunkGenerator chunkGenerator, RandomState noiseConfig, LevelHeightAccessor world, BiomeSource biomeSource, long seed, DataFixer dataFixer) { // Paper - fix missing CB diff
          this.storageAccess = chunkIoWorker;
          this.registryAccess = registryManager;
-         this.structureManager = structureManager;
+         this.structureTemplateManager = structureTemplateManager;
 @@ -115,7 +115,7 @@
  
                  CompoundTag compoundTag2;

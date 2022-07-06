@@ -22,8 +22,8 @@
  import net.minecraft.world.phys.Vec3;
 +// CraftBukkit start
 +import org.bukkit.Location;
-+import org.bukkit.craftbukkit.v1_18_R2.inventory.CraftInventoryGrindstone;
-+import org.bukkit.craftbukkit.v1_18_R2.inventory.CraftInventoryView;
++import org.bukkit.craftbukkit.v1_19_R1.inventory.CraftInventoryGrindstone;
++import org.bukkit.craftbukkit.v1_19_R1.inventory.CraftInventoryView;
 +import org.bukkit.entity.Player;
 +// CraftBukkit end
  
@@ -176,7 +176,7 @@
          super.slotsChanged(inventory);
          if (inventory == this.repairSlots) {
              this.createResult();
-+            org.bukkit.craftbukkit.v1_18_R2.event.CraftEventFactory.callPrepareResultEvent(this, 2); // Paper
++            org.bukkit.craftbukkit.v1_19_R1.event.CraftEventFactory.callPrepareResultEvent(this, RESULT_SLOT); // Paper
          }
  
      }

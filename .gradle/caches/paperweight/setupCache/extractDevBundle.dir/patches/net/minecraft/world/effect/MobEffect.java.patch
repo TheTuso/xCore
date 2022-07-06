@@ -1,28 +1,29 @@
 --- a/net/minecraft/world/effect/MobEffect.java
 +++ b/net/minecraft/world/effect/MobEffect.java
-@@ -1,13 +1,17 @@
+@@ -1,7 +1,9 @@
  package net.minecraft.world.effect;
  
  import com.google.common.collect.Maps;
 +import java.util.Iterator;
  import java.util.Map;
 +import java.util.Map.Entry;
+ import java.util.Optional;
  import java.util.UUID;
- import javax.annotation.Nullable;
+ import java.util.function.Supplier;
+@@ -9,6 +11,8 @@
  import net.minecraft.Util;
  import net.minecraft.core.Registry;
  import net.minecraft.network.chat.Component;
- import net.minecraft.network.chat.TranslatableComponent;
 +import net.minecraft.network.protocol.game.ClientboundSetHealthPacket;
 +import net.minecraft.server.level.ServerPlayer;
  import net.minecraft.world.damagesource.DamageSource;
  import net.minecraft.world.entity.Entity;
  import net.minecraft.world.entity.LivingEntity;
-@@ -16,8 +20,12 @@
+@@ -17,8 +21,12 @@
  import net.minecraft.world.entity.ai.attributes.AttributeMap;
  import net.minecraft.world.entity.ai.attributes.AttributeModifier;
  import net.minecraft.world.entity.player.Player;
-+import org.bukkit.craftbukkit.v1_18_R2.event.CraftEventFactory;
++import org.bukkit.craftbukkit.v1_19_R1.event.CraftEventFactory;
 +import org.bukkit.event.entity.EntityRegainHealthEvent.RegainReason;
 +// CraftBukkit end
  
@@ -31,7 +32,7 @@
      private final Map<Attribute, AttributeModifier> attributeModifiers = Maps.newHashMap();
      private final MobEffectCategory category;
      private final int color;
-@@ -26,7 +34,7 @@
+@@ -30,94 +38,97 @@
  
      @Nullable
      public static MobEffect byId(int rawId) {
@@ -40,7 +41,27 @@
      }
  
      public static int getId(MobEffect type) {
-@@ -41,71 +49,74 @@
+         return Registry.MOB_EFFECT.getId(type);
+     }
+ 
+-    public static int getIdFromNullable(@Nullable MobEffect mobEffect) {
+-        return Registry.MOB_EFFECT.getId(mobEffect);
++    public static int getIdFromNullable(@Nullable MobEffect mobeffectlist) {
++        return Registry.MOB_EFFECT.getId(mobeffectlist);
+     }
+ 
+-    protected MobEffect(MobEffectCategory mobEffectCategory, int color) {
+-        this.category = mobEffectCategory;
++    protected MobEffect(MobEffectCategory mobeffectinfo, int color) {
++        this.category = mobeffectinfo;
+         this.color = color;
+     }
+ 
+     public Optional<MobEffectInstance.FactorData> createFactorData() {
+-        return Optional.ofNullable(this.factorDataFactory.get());
++        return Optional.ofNullable((MobEffectInstance.FactorData) this.factorDataFactory.get());
+     }
+ 
      public void applyEffectTick(LivingEntity entity, int amplifier) {
          if (this == MobEffects.REGENERATION) {
              if (entity.getHealth() < entity.getMaxHealth()) {
@@ -147,7 +168,7 @@
          } else {
              return this == MobEffects.HUNGER;
          }
-@@ -140,8 +151,9 @@
+@@ -152,8 +163,9 @@
      }
  
      public MobEffect addAttributeModifier(Attribute attribute, String uuid, double amount, AttributeModifier.Operation operation) {
@@ -159,7 +180,7 @@
          return this;
      }
  
-@@ -150,29 +162,38 @@
+@@ -167,29 +179,38 @@
      }
  
      public void removeAttributeModifiers(LivingEntity entity, AttributeMap attributes, int amplifier) {

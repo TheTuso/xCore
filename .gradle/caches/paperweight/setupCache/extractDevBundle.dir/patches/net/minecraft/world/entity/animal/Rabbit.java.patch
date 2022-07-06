@@ -1,6 +1,6 @@
 --- a/net/minecraft/world/entity/animal/Rabbit.java
 +++ b/net/minecraft/world/entity/animal/Rabbit.java
-@@ -61,6 +61,7 @@
+@@ -62,6 +62,7 @@
  import net.minecraft.world.phys.Vec3;
  
  public class Rabbit extends Animal {
@@ -8,7 +8,7 @@
      public static final double STROLL_SPEED_MOD = 0.6D;
      public static final double BREED_SPEED_MOD = 0.8D;
      public static final double FOLLOW_SPEED_MOD = 1.0D;
-@@ -88,8 +89,14 @@
+@@ -89,8 +90,14 @@
          super(type, world);
          this.jumpControl = new Rabbit.RabbitJumpControl(this);
          this.moveControl = new Rabbit.RabbitMoveControl(this);
@@ -23,7 +23,7 @@
  
      @Override
      public void registerGoals() {
-@@ -108,11 +115,13 @@
+@@ -109,11 +116,13 @@
  
      @Override
      protected float getJumpPower() {
@@ -42,7 +42,7 @@
                      return 0.5F;
                  }
              }
-@@ -126,22 +135,24 @@
+@@ -127,22 +136,24 @@
      @Override
      protected void jumpFromGround() {
          super.jumpFromGround();
@@ -73,7 +73,7 @@
      }
  
      public void setSpeedModifier(double speed) {
-@@ -167,7 +178,7 @@
+@@ -168,7 +179,7 @@
      @Override
      protected void defineSynchedData() {
          super.defineSynchedData();
@@ -82,7 +82,7 @@
      }
  
      @Override
-@@ -190,28 +201,31 @@
+@@ -191,28 +202,31 @@
              }
  
              if (this.getRabbitType() == 99 && this.jumpDelayTicks == 0) {
@@ -126,7 +126,7 @@
                  this.enableJumpControl();
              }
          }
-@@ -225,15 +239,15 @@
+@@ -226,15 +240,15 @@
      }
  
      private void facePoint(double x, double z) {
@@ -145,7 +145,7 @@
      }
  
      private void setLandingDelay() {
-@@ -264,7 +278,7 @@
+@@ -265,7 +279,7 @@
      }
  
      public static AttributeSupplier.Builder createAttributes() {
@@ -154,7 +154,7 @@
      }
  
      @Override
-@@ -320,69 +334,66 @@
+@@ -321,69 +335,66 @@
      }
  
      @Override
@@ -201,8 +201,8 @@
              this.targetSelector.addGoal(2, new NearestAttackableTargetGoal<>(this, Player.class, true));
              this.targetSelector.addGoal(2, new NearestAttackableTargetGoal<>(this, Wolf.class, true));
              if (!this.hasCustomName()) {
--                this.setCustomName(new TranslatableComponent(Util.makeDescriptionId("entity", KILLER_BUNNY)));
-+                this.setCustomName(new TranslatableComponent(Util.makeDescriptionId("entity", Rabbit.KILLER_BUNNY)));
+-                this.setCustomName(Component.translatable(Util.makeDescriptionId("entity", KILLER_BUNNY)));
++                this.setCustomName(Component.translatable(Util.makeDescriptionId("entity", Rabbit.KILLER_BUNNY)));
              }
          }
  
@@ -229,20 +229,20 @@
  
      private int getRandomRabbitType(LevelAccessor world) {
          Holder<Biome> holder = world.getBiome(this.blockPosition());
-         int i = this.random.nextInt(100);
+         int i = world.getRandom().nextInt(100);
 -        if (holder.value().getPrecipitation() == Biome.Precipitation.SNOW) {
 -            return i < 80 ? 1 : 3;
--        } else if (Biome.getBiomeCategory(holder) == Biome.BiomeCategory.DESERT) {
+-        } else if (holder.is(BiomeTags.ONLY_ALLOWS_SNOW_AND_GOLD_RABBITS)) {
 -            return 4;
 -        } else {
 -            return i < 50 ? 0 : (i < 90 ? 5 : 2);
 -        }
 +
-+        return ((Biome) holder.value()).getPrecipitation() == Biome.Precipitation.SNOW ? (i < 80 ? 1 : 3) : (Biome.getBiomeCategory(holder) == Biome.BiomeCategory.DESERT ? 4 : (i < 50 ? 0 : (i < 90 ? 5 : 2)));
++        return ((Biome) holder.value()).getPrecipitation() == Biome.Precipitation.SNOW ? (i < 80 ? 1 : 3) : (holder.is(BiomeTags.ONLY_ALLOWS_SNOW_AND_GOLD_RABBITS) ? 4 : (i < 50 ? 0 : (i < 90 ? 5 : 2)));
      }
  
-     public static boolean checkRabbitSpawnRules(EntityType<Rabbit> entity, LevelAccessor world, MobSpawnType spawnReason, BlockPos pos, Random random) {
-@@ -407,44 +418,11 @@
+     public static boolean checkRabbitSpawnRules(EntityType<Rabbit> entity, LevelAccessor world, MobSpawnType spawnReason, BlockPos pos, RandomSource random) {
+@@ -408,44 +419,11 @@
  
      @Override
      public Vec3 getLeashOffset() {
@@ -289,7 +289,7 @@
          private final Rabbit rabbit;
          private boolean canJump;
  
-@@ -475,7 +453,8 @@
+@@ -476,7 +454,8 @@
          }
      }
  
@@ -299,7 +299,7 @@
          private final Rabbit rabbit;
          private double nextJumpSpeed;
  
-@@ -486,7 +465,7 @@
+@@ -487,7 +466,7 @@
  
          @Override
          public void tick() {
@@ -308,7 +308,7 @@
                  this.rabbit.setSpeedModifier(0.0D);
              } else if (this.hasWanted()) {
                  this.rabbit.setSpeedModifier(this.nextJumpSpeed);
-@@ -509,7 +488,8 @@
+@@ -510,7 +489,8 @@
          }
      }
  
@@ -318,7 +318,7 @@
          private final Rabbit rabbit;
  
          public RabbitPanicGoal(Rabbit rabbit, double speed) {
-@@ -524,13 +504,29 @@
+@@ -525,13 +505,29 @@
          }
      }
  
@@ -350,7 +350,7 @@
              this.rabbit = rabbit;
          }
  
-@@ -557,20 +553,36 @@
+@@ -558,20 +554,36 @@
          @Override
          public void tick() {
              super.tick();
@@ -374,7 +374,7 @@
 -                        level.setBlock(blockPos, Blocks.AIR.defaultBlockState(), 2);
 -                        level.destroyBlock(blockPos, true, this.rabbit);
 +                        // CraftBukkit start
-+                        if (org.bukkit.craftbukkit.v1_18_R2.event.CraftEventFactory.callEntityChangeBlockEvent(this.rabbit, blockposition, Blocks.AIR.defaultBlockState()).isCancelled()) {
++                        if (org.bukkit.craftbukkit.v1_19_R1.event.CraftEventFactory.callEntityChangeBlockEvent(this.rabbit, blockposition, Blocks.AIR.defaultBlockState()).isCancelled()) {
 +                            return;
 +                        }
 +                        // CraftBukkit end
@@ -384,7 +384,7 @@
 -                        level.setBlock(blockPos, blockState.setValue(CarrotBlock.AGE, Integer.valueOf(i - 1)), 2);
 -                        level.levelEvent(2001, blockPos, Block.getId(blockState));
 +                        // CraftBukkit start
-+                        if (org.bukkit.craftbukkit.v1_18_R2.event.CraftEventFactory.callEntityChangeBlockEvent(
++                        if (org.bukkit.craftbukkit.v1_19_R1.event.CraftEventFactory.callEntityChangeBlockEvent(
 +                                this.rabbit,
 +                                blockposition,
 +                                iblockdata.setValue(CarrotBlock.AGE, i - 1)
@@ -397,7 +397,7 @@
                      }
  
                      this.rabbit.moreCarrotTicks = 40;
-@@ -584,10 +596,11 @@
+@@ -585,10 +597,11 @@
  
          @Override
          protected boolean isValidTarget(LevelReader world, BlockPos pos) {
@@ -413,7 +413,7 @@
                      this.canRaid = true;
                      return true;
                  }
-@@ -596,4 +609,26 @@
+@@ -597,4 +610,26 @@
              return false;
          }
      }

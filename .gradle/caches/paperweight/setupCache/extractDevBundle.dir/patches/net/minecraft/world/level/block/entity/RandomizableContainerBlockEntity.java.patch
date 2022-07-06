@@ -15,7 +15,7 @@
 +        this.lootableData.loadNbt(nbt); // Paper
          if (nbt.contains("LootTable", 8)) {
              this.lootTable = new ResourceLocation(nbt.getString("LootTable"));
-+            try { org.bukkit.craftbukkit.v1_18_R2.util.CraftNamespacedKey.fromMinecraft(this.lootTable); } catch (IllegalArgumentException ex) { this.lootTable = null; } // Paper - validate
++            try { org.bukkit.craftbukkit.v1_19_R1.util.CraftNamespacedKey.fromMinecraft(this.lootTable); } catch (IllegalArgumentException ex) { this.lootTable = null; } // Paper - validate
              this.lootTableSeed = nbt.getLong("LootTableSeed");
 -            return true;
 +            return false; // Paper - always load the items, table may still remain

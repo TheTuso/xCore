@@ -73,11 +73,9 @@
          }
  
      }
-@@ -152,7 +182,9 @@
-         static ClientboundLevelChunkPacketData.BlockEntityInfo create(BlockEntity blockEntity) {
+@@ -152,6 +182,7 @@
              CompoundTag compoundTag = blockEntity.getUpdateTag();
              BlockPos blockPos = blockEntity.getBlockPos();
-+            if (blockEntity instanceof net.minecraft.world.level.block.entity.SkullBlockEntity) { net.minecraft.world.level.block.entity.SkullBlockEntity.sanitizeTileEntityUUID(compoundTag); } // Paper
              int i = SectionPos.sectionRelative(blockPos.getX()) << 4 | SectionPos.sectionRelative(blockPos.getZ());
 +            blockEntity.sanitizeSentNbt(compoundTag); // Paper - Sanitize sent data
              return new ClientboundLevelChunkPacketData.BlockEntityInfo(i, blockPos.getY(), blockEntity.getType(), compoundTag.isEmpty() ? null : compoundTag);

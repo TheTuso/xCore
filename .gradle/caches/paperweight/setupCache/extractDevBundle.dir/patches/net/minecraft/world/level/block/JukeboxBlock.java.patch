@@ -1,6 +1,6 @@
 --- a/net/minecraft/world/level/block/JukeboxBlock.java
 +++ b/net/minecraft/world/level/block/JukeboxBlock.java
-@@ -24,28 +24,30 @@
+@@ -26,28 +26,30 @@
  import net.minecraft.world.phys.BlockHitResult;
  
  public class JukeboxBlock extends BaseEntityBlock {
@@ -35,12 +35,12 @@
 -            state = state.setValue(HAS_RECORD, Boolean.valueOf(false));
 +            state = (BlockState) state.setValue(JukeboxBlock.HAS_RECORD, false);
              world.setBlock(pos, state, 2);
+             world.gameEvent(GameEvent.BLOCK_CHANGE, pos, GameEvent.Context.of(player, state));
              return InteractionResult.sidedSuccess(world.isClientSide);
-         } else {
-@@ -54,30 +56,40 @@
+@@ -57,31 +59,41 @@
      }
  
-     public void setRecord(LevelAccessor world, BlockPos pos, BlockState state, ItemStack stack) {
+     public void setRecord(@Nullable Entity user, LevelAccessor world, BlockPos pos, BlockState state, ItemStack stack) {
 -        BlockEntity blockEntity = world.getBlockEntity(pos);
 -        if (blockEntity instanceof JukeboxBlockEntity) {
 -            ((JukeboxBlockEntity)blockEntity).setRecord(stack.copy());
@@ -56,6 +56,7 @@
 +            ((JukeboxBlockEntity) tileentity).setRecord(stack);
 +            // CraftBukkit end
 +            world.setBlock(pos, (BlockState) state.setValue(JukeboxBlock.HAS_RECORD, true), 2);
+             world.gameEvent(GameEvent.BLOCK_CHANGE, pos, GameEvent.Context.of(user, state));
          }
      }
  
@@ -95,7 +96,7 @@
                  }
              }
          }
-@@ -103,11 +115,13 @@
+@@ -107,11 +119,13 @@
  
      @Override
      public int getAnalogOutputSignal(BlockState state, Level world, BlockPos pos) {
@@ -113,7 +114,7 @@
              }
          }
  
-@@ -121,6 +135,6 @@
+@@ -125,6 +139,6 @@
  
      @Override
      protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {

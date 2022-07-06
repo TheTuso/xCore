@@ -142,9 +142,9 @@
                  this.setIsInterested(false);
              }
 @@ -243,22 +250,23 @@
-     protected void populateDefaultEquipmentSlots(DifficultyInstance difficulty) {
-         if (this.random.nextFloat() < 0.2F) {
-             float f = this.random.nextFloat();
+     protected void populateDefaultEquipmentSlots(RandomSource random, DifficultyInstance localDifficulty) {
+         if (random.nextFloat() < 0.2F) {
+             float f = random.nextFloat();
 -            ItemStack itemStack;
 +            ItemStack itemstack;
 +
@@ -155,8 +155,8 @@
 -                itemStack = new ItemStack(Items.EGG);
 +                itemstack = new ItemStack(Items.EGG);
              } else if (f < 0.4F) {
--                itemStack = this.random.nextBoolean() ? new ItemStack(Items.RABBIT_FOOT) : new ItemStack(Items.RABBIT_HIDE);
-+                itemstack = this.random.nextBoolean() ? new ItemStack(Items.RABBIT_FOOT) : new ItemStack(Items.RABBIT_HIDE);
+-                itemStack = random.nextBoolean() ? new ItemStack(Items.RABBIT_FOOT) : new ItemStack(Items.RABBIT_HIDE);
++                itemstack = random.nextBoolean() ? new ItemStack(Items.RABBIT_FOOT) : new ItemStack(Items.RABBIT_HIDE);
              } else if (f < 0.6F) {
 -                itemStack = new ItemStack(Items.WHEAT);
 +                itemstack = new ItemStack(Items.WHEAT);
@@ -212,22 +212,25 @@
 +        return entityfox;
      }
  
-     public static boolean checkFoxSpawnRules(EntityType<Fox> type, LevelAccessor world, MobSpawnType spawnReason, BlockPos pos, Random random) {
-@@ -298,19 +309,20 @@
+     public static boolean checkFoxSpawnRules(EntityType<Fox> type, LevelAccessor world, MobSpawnType spawnReason, BlockPos pos, RandomSource random) {
+@@ -298,19 +309,22 @@
      @Override
      public SpawnGroupData finalizeSpawn(ServerLevelAccessor world, DifficultyInstance difficulty, MobSpawnType spawnReason, @Nullable SpawnGroupData entityData, @Nullable CompoundTag entityNbt) {
          Holder<Biome> holder = world.getBiome(this.blockPosition());
 -        Fox.Type type = Fox.Type.byBiome(holder);
 -        boolean bl = false;
+-        if (entityData instanceof Fox.FoxGroupData foxGroupData) {
+-            type = foxGroupData.type;
+-            if (foxGroupData.getGroupSize() >= 2) {
+-                bl = true;
 +        Fox.Type entityfox_type = Fox.Type.byBiome(holder);
 +        boolean flag = false;
 +
-         if (entityData instanceof Fox.FoxGroupData) {
--            type = ((Fox.FoxGroupData)entityData).type;
--            if (((Fox.FoxGroupData)entityData).getGroupSize() >= 2) {
--                bl = true;
-+            entityfox_type = ((Fox.FoxGroupData) entityData).type;
-+            if (((Fox.FoxGroupData) entityData).getGroupSize() >= 2) {
++        if (entityData instanceof Fox.FoxGroupData) {
++            Fox.FoxGroupData entityfox_i = (Fox.FoxGroupData) entityData;
++
++            entityfox_type = entityfox_i.type;
++            if (entityfox_i.getGroupSize() >= 2) {
 +                flag = true;
              }
          } else {
@@ -242,16 +245,16 @@
              this.setAge(-24000);
          }
  
-@@ -319,7 +331,7 @@
+@@ -319,7 +333,7 @@
          }
  
-         this.populateDefaultEquipmentSlots(difficulty);
+         this.populateDefaultEquipmentSlots(world.getRandom(), difficulty);
 -        return super.finalizeSpawn(world, difficulty, spawnReason, entityData, entityNbt);
 +        return super.finalizeSpawn(world, difficulty, spawnReason, (SpawnGroupData) entityData, entityNbt);
      }
  
      private void setTargetGoals() {
-@@ -350,25 +362,26 @@
+@@ -350,25 +364,26 @@
      }
  
      public Fox.Type getFoxType() {
@@ -285,7 +288,7 @@
          }
  
      }
-@@ -377,15 +390,18 @@
+@@ -377,15 +392,18 @@
      public void addAdditionalSaveData(CompoundTag nbt) {
          super.addAdditionalSaveData(nbt);
          List<UUID> list = this.getTrustedUUIDs();
@@ -309,7 +312,7 @@
          nbt.putBoolean("Sleeping", this.isSleeping());
          nbt.putString("Type", this.getFoxType().getName());
          nbt.putBoolean("Sitting", this.isSitting());
-@@ -395,10 +411,10 @@
+@@ -395,10 +413,10 @@
      @Override
      public void readAdditionalSaveData(CompoundTag nbt) {
          super.readAdditionalSaveData(nbt);
@@ -323,7 +326,7 @@
          }
  
          this.setSleeping(nbt.getBoolean("Sleeping"));
-@@ -446,63 +462,66 @@
+@@ -446,63 +464,66 @@
  
      private void setFlag(int mask, boolean value) {
          if (value) {
@@ -375,7 +378,7 @@
 +            entityitem.setThrower(this.getUUID());
              this.playSound(SoundEvents.FOX_SPIT, 1.0F, 1.0F);
 -            this.level.addFreshEntity(itemEntity);
-+            this.level.addFreshEntity(entityitem);
++            this.spawnAtLocation(entityitem); // Paper - call EntityDropItemEvent
          }
      }
  
@@ -384,7 +387,7 @@
 -        this.level.addFreshEntity(itemEntity);
 +        ItemEntity entityitem = new ItemEntity(this.level, this.getX(), this.getY(), this.getZ(), stack);
 +
-+        this.level.addFreshEntity(entityitem);
++        this.spawnAtLocation(entityitem); // Paper - call EntityDropItemEvent
      }
  
      @Override
@@ -394,7 +397,7 @@
 -            int i = itemStack.getCount();
 +        ItemStack itemstack = item.getItem();
 +
-+        if (!org.bukkit.craftbukkit.v1_18_R2.event.CraftEventFactory.callEntityPickupItemEvent(this, item, itemstack.getCount() - 1, !this.canHoldItem(itemstack)).isCancelled()) { // CraftBukkit - call EntityPickupItemEvent
++        if (!org.bukkit.craftbukkit.v1_19_R1.event.CraftEventFactory.callEntityPickupItemEvent(this, item, itemstack.getCount() - 1, !this.canHoldItem(itemstack)).isCancelled()) { // CraftBukkit - call EntityPickupItemEvent
 +            itemstack = item.getItem(); // CraftBukkit - update ItemStack from event
 +            int i = itemstack.getCount();
 +
@@ -407,13 +410,13 @@
              this.onItemPickup(item);
 -            this.setItemSlot(EquipmentSlot.MAINHAND, itemStack.split(1));
 +            this.setItemSlot(EquipmentSlot.MAINHAND, itemstack.split(1));
-             this.handDropChances[EquipmentSlot.MAINHAND.getIndex()] = 2.0F;
+             this.setGuaranteedDrop(EquipmentSlot.MAINHAND);
 -            this.take(item, itemStack.getCount());
 +            this.take(item, itemstack.getCount());
              item.discard();
              this.ticksSinceEaten = 0;
          }
-@@ -513,19 +532,21 @@
+@@ -513,19 +534,21 @@
      public void tick() {
          super.tick();
          if (this.isEffectiveAi()) {
@@ -441,7 +444,7 @@
              }
          }
  
-@@ -555,7 +576,7 @@
+@@ -555,7 +578,7 @@
  
      @Override
      protected void onOffspringSpawnedFromEgg(Player player, Mob child) {
@@ -450,7 +453,7 @@
      }
  
      public boolean isPouncing() {
-@@ -592,7 +613,7 @@
+@@ -592,7 +615,7 @@
      }
  
      public float getHeadRollAngle(float tickDelta) {
@@ -459,7 +462,7 @@
      }
  
      public float getCrouchAmount(float tickDelta) {
-@@ -632,9 +653,10 @@
+@@ -632,9 +655,10 @@
  
      @Override
      public void playAmbientSound() {
@@ -473,7 +476,7 @@
          } else {
              super.playAmbientSound();
          }
-@@ -649,6 +671,7 @@
+@@ -649,6 +673,7 @@
          } else {
              if (!this.level.isDay() && this.random.nextFloat() < 0.1F) {
                  List<Player> list = this.level.getEntitiesOfClass(Player.class, this.getBoundingBox().inflate(16.0D, 16.0D, 16.0D), EntitySelector.NO_SPECTATORS);
@@ -481,7 +484,7 @@
                  if (list.isEmpty()) {
                      return SoundEvents.FOX_SCREECH;
                  }
-@@ -675,28 +698,39 @@
+@@ -675,28 +700,39 @@
      }
  
      @Override
@@ -535,7 +538,7 @@
                      return false;
                  }
              }
-@@ -707,58 +741,64 @@
+@@ -707,58 +743,64 @@
  
      @Override
      public Vec3 getLeashOffset() {
@@ -636,7 +639,7 @@
          int countdown;
  
          public FaceplantGoal() {
-@@ -791,414 +831,511 @@
+@@ -791,414 +833,511 @@
          }
      }
  
@@ -734,7 +737,7 @@
 +                entityfox.setAge(-24000);
 +                entityfox.moveTo(this.animal.getX(), this.animal.getY(), this.animal.getZ(), 0.0F, 0.0F);
 +                int experience = this.animal.getRandom().nextInt(7) + 1;
-+                org.bukkit.event.entity.EntityBreedEvent entityBreedEvent = org.bukkit.craftbukkit.v1_18_R2.event.CraftEventFactory.callEntityBreedEvent(entityfox, animal, partner, entityplayer, this.animal.breedItem, experience);
++                org.bukkit.event.entity.EntityBreedEvent entityBreedEvent = org.bukkit.craftbukkit.v1_19_R1.event.CraftEventFactory.callEntityBreedEvent(entityfox, animal, partner, entityplayer, this.animal.breedItem, experience);
 +                if (entityBreedEvent.isCancelled()) {
 +                    return;
 +                }
@@ -858,9 +861,9 @@
 -                    this.pickGlowBerry(blockState);
 -                }
 +    public class FoxPounceGoal extends JumpGoal {
- 
-+        public FoxPounceGoal() {}
 +
++        public FoxPounceGoal() {}
+ 
 +        @Override
 +        public boolean canUse() {
 +            if (!Fox.this.isFullyCrouched()) {
@@ -1014,8 +1017,8 @@
 -            return !this.fox.isDefending() && super.canUse();
 -        }
 +            if (!Fox.this.isSleeping() && this.mob.getTarget() == null) {
-+                if (Fox.this.level.isThundering()) {
-+                    return true;
++                if (Fox.this.level.isThundering() && Fox.this.level.canSeeSky(this.mob.blockPosition())) {
++                    return this.setWantedPos();
 +                } else if (this.interval > 0) {
 +                    --this.interval;
 +                    return false;
@@ -1353,7 +1356,7 @@
 +
 +            state.setValue(SweetBerryBushBlock.AGE, 1);
 +            // CraftBukkit start - call EntityChangeBlockEvent
-+            if (org.bukkit.craftbukkit.v1_18_R2.event.CraftEventFactory.callEntityChangeBlockEvent(Fox.this, this.blockPos, state.setValue(SweetBerryBushBlock.AGE, 1)).isCancelled()) {
++            if (org.bukkit.craftbukkit.v1_19_R1.event.CraftEventFactory.callEntityChangeBlockEvent(Fox.this, this.blockPos, state.setValue(SweetBerryBushBlock.AGE, 1)).isCancelled()) {
 +                return;
 +            }
 +            // CraftBukkit end
@@ -1363,12 +1366,12 @@
 +            if (itemstack.isEmpty()) {
 +                Fox.this.setItemSlot(EquipmentSlot.MAINHAND, new ItemStack(Items.SWEET_BERRIES));
 +                --j;
-+            }
-+
-+            if (j > 0) {
-+                Block.popResource(Fox.this.level, this.blockPos, new ItemStack(Items.SWEET_BERRIES, j));
              }
  
++            if (j > 0) {
++                Block.popResource(Fox.this.level, this.blockPos, new ItemStack(Items.SWEET_BERRIES, j));
++            }
++
 +            Fox.this.playSound(SoundEvents.SWEET_BERRY_BUSH_PICK_BERRIES, 1.0F, 1.0F);
 +            Fox.this.level.setBlock(this.blockPos, (BlockState) state.setValue(SweetBerryBushBlock.AGE, 1), 2);
 +        }
@@ -1392,7 +1395,7 @@
          public FoxSearchForItemsGoal() {
              this.setFlags(EnumSet.of(Goal.Flag.MOVE));
          }
-@@ -1214,6 +1351,7 @@
+@@ -1214,6 +1353,7 @@
                      return false;
                  } else {
                      List<ItemEntity> list = Fox.this.level.getEntitiesOfClass(ItemEntity.class, Fox.this.getBoundingBox().inflate(8.0D, 8.0D, 8.0D), Fox.ALLOWED_ITEMS);
@@ -1400,7 +1403,7 @@
                      return !list.isEmpty() && Fox.this.getItemBySlot(EquipmentSlot.MAINHAND).isEmpty();
                  }
              } else {
-@@ -1224,9 +1362,10 @@
+@@ -1224,9 +1364,10 @@
          @Override
          public void tick() {
              List<ItemEntity> list = Fox.this.level.getEntitiesOfClass(ItemEntity.class, Fox.this.getBoundingBox().inflate(8.0D, 8.0D, 8.0D), Fox.ALLOWED_ITEMS);
@@ -1414,7 +1417,7 @@
              }
  
          }
-@@ -1234,46 +1373,40 @@
+@@ -1234,46 +1375,40 @@
          @Override
          public void start() {
              List<ItemEntity> list = Fox.this.level.getEntitiesOfClass(ItemEntity.class, Fox.this.getBoundingBox().inflate(8.0D, 8.0D, 8.0D), Fox.ALLOWED_ITEMS);
@@ -1471,7 +1474,7 @@
              this.setFlags(EnumSet.of(Goal.Flag.MOVE, Goal.Flag.LOOK));
          }
  
-@@ -1308,167 +1441,90 @@
+@@ -1308,167 +1443,90 @@
                  this.resetLook();
              }
  
@@ -1501,8 +1504,8 @@
 -        @Override
 -        public boolean canUse() {
 -            if (!Fox.this.isSleeping() && this.mob.getTarget() == null) {
--                if (Fox.this.level.isThundering()) {
--                    return true;
+-                if (Fox.this.level.isThundering() && Fox.this.level.canSeeSky(this.mob.blockPosition())) {
+-                    return this.setWantedPos();
 -                } else if (this.interval > 0) {
 -                    --this.interval;
 -                    return false;
@@ -1684,7 +1687,7 @@
          }
  
          public String getName() {
-@@ -1480,19 +1536,55 @@
+@@ -1480,19 +1538,55 @@
          }
  
          public static Fox.Type byName(String name) {

@@ -5,12 +5,16 @@ import com.destroystokyo.paper.io.PaperFileIOThread;
 import com.destroystokyo.paper.io.IOUtil;
 import java.util.ArrayDeque;
 import java.util.function.Consumer;
+import com.mojang.logging.LogUtils;
 import net.minecraft.server.level.ChunkMap;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.chunk.storage.ChunkSerializer;
+import org.slf4j.Logger;
 
 public final class ChunkLoadTask extends ChunkTask {
+
+    private static final Logger LOGGER = LogUtils.getLogger();
 
     public boolean cancelled;
 
@@ -37,7 +41,7 @@ public final class ChunkLoadTask extends ChunkTask {
         try {
             this.executeTask();
         } catch (final Throwable ex) {
-            PaperFileIOThread.LOGGER.error("Failed to execute chunk load task: " + this.toString(), ex);
+            LOGGER.error("Failed to execute chunk load task: " + this.toString(), ex);
             if (!this.hasCompleted) {
                 this.complete(ChunkLoadTask.createEmptyHolder());
             }
@@ -70,7 +74,7 @@ public final class ChunkLoadTask extends ChunkTask {
         final PaperFileIOThread.ChunkData chunkData = this.chunkData;
 
         if (chunkData.poiData == PaperFileIOThread.FAILURE_VALUE || chunkData.chunkData == PaperFileIOThread.FAILURE_VALUE) {
-            PaperFileIOThread.LOGGER.error("Could not load chunk for task: " + this.toString() + ", file IO thread has dumped the relevant exception above");
+            LOGGER.error("Could not load chunk for task: " + this.toString() + ", file IO thread has dumped the relevant exception above");
             this.complete(ChunkLoadTask.createEmptyHolder());
             return;
         }
@@ -94,7 +98,13 @@ public final class ChunkLoadTask extends ChunkTask {
                 chunkData.chunkData = chunkManager.upgradeChunkTag(this.world.getTypeKey(),
                     chunkManager.overworldDataStorage, chunkData.chunkData, chunkManager.generator.getTypeNameForDataFixer(), chunkPos, this.world); // clone data for safety, file IO thread does not clone
             } catch (final Throwable ex) {
-                PaperFileIOThread.LOGGER.error("Could not apply datafixers for chunk task: " + this.toString(), ex);
+                LOGGER.error("Could not apply datafixers for chunk task: " + this.toString(), ex);
+                this.complete(ChunkLoadTask.createEmptyHolder());
+                return;
+            }
+
+            if (!ChunkMap.isChunkDataValid(chunkData.chunkData)) {
+                LOGGER.error("Chunk file at {} is missing level data, skipping", new ChunkPos(this.chunkX, this.chunkZ));
                 this.complete(ChunkLoadTask.createEmptyHolder());
                 return;
             }
@@ -107,7 +117,7 @@ public final class ChunkLoadTask extends ChunkTask {
                 chunkHolder = ChunkSerializer.loadChunk(this.world, chunkManager.getPoiManager(), chunkPos,
                     chunkData.chunkData, true);
             } catch (final Throwable ex) {
-                PaperFileIOThread.LOGGER.error("Could not de-serialize chunk data for task: " + this.toString(), ex);
+                LOGGER.error("Could not de-serialize chunk data for task: " + this.toString(), ex);
                 this.complete(ChunkLoadTask.createEmptyHolder());
                 return;
             }
@@ -130,7 +140,7 @@ public final class ChunkLoadTask extends ChunkTask {
             try {
                 ChunkLoadTask.this.onComplete.accept(holder);
             } catch (final Throwable thr) {
-                PaperFileIOThread.LOGGER.error("Failed to complete chunk data for task: " + this.toString(), thr);
+                LOGGER.error("Failed to complete chunk data for task: " + this.toString(), thr);
             }
             return null;
         });

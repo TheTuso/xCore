@@ -3,7 +3,7 @@ package io.papermc.paper.util;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.phys.AABB;
 import org.bukkit.Bukkit;
-import org.bukkit.craftbukkit.v1_18_R2.util.UnsafeList;
+import org.bukkit.craftbukkit.v1_19_R1.util.UnsafeList;
 import java.util.List;
 
 public final class CachedLists {

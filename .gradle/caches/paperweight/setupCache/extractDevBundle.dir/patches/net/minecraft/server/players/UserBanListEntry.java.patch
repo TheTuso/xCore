@@ -5,8 +5,8 @@
  package net.minecraft.server.players;
  
  import com.google.gson.JsonObject;
-@@ -10,8 +11,9 @@
- import net.minecraft.network.chat.TextComponent;
+@@ -9,8 +10,9 @@
+ import net.minecraft.network.chat.Component;
  
  public class UserBanListEntry extends BanListEntry<GameProfile> {
 +
@@ -16,7 +16,7 @@
      }
  
      public UserBanListEntry(GameProfile profile, @Nullable Date created, @Nullable String source, @Nullable Date expiry, @Nullable String reason) {
-@@ -19,38 +21,49 @@
+@@ -18,38 +20,49 @@
      }
  
      public UserBanListEntry(JsonObject json) {
@@ -38,10 +38,10 @@
      @Override
      public Component getDisplayName() {
 -        GameProfile gameProfile = this.getUser();
--        return new TextComponent(gameProfile.getName() != null ? gameProfile.getName() : Objects.toString(gameProfile.getId(), "(Unknown)"));
+-        return Component.literal(gameProfile.getName() != null ? gameProfile.getName() : Objects.toString(gameProfile.getId(), "(Unknown)"));
 +        GameProfile gameprofile = (GameProfile) this.getUser();
 +
-+        return new TextComponent(gameprofile.getName() != null ? gameprofile.getName() : Objects.toString(gameprofile.getId(), "(Unknown)"));
++        return Component.literal(gameprofile.getName() != null ? gameprofile.getName() : Objects.toString(gameprofile.getId(), "(Unknown)"));
      }
  
      private static GameProfile createGameProfile(JsonObject json) {

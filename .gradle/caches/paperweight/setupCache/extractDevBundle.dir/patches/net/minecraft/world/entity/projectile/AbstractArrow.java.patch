@@ -9,15 +9,15 @@
  import java.util.List;
  import javax.annotation.Nullable;
  import net.minecraft.advancements.CriteriaTriggers;
-@@ -27,6 +29,7 @@
- import net.minecraft.world.entity.LivingEntity;
+@@ -28,6 +30,7 @@
  import net.minecraft.world.entity.MoverType;
  import net.minecraft.world.entity.Pose;
+ import net.minecraft.world.entity.ai.attributes.Attributes;
 +import net.minecraft.world.entity.item.ItemEntity;
  import net.minecraft.world.entity.player.Player;
  import net.minecraft.world.item.ItemStack;
  import net.minecraft.world.item.enchantment.EnchantmentHelper;
-@@ -41,8 +44,12 @@
+@@ -42,8 +45,12 @@
  import net.minecraft.world.phys.HitResult;
  import net.minecraft.world.phys.Vec3;
  import net.minecraft.world.phys.shapes.VoxelShape;
@@ -30,7 +30,7 @@
      private static final double ARROW_BASE_DAMAGE = 2.0D;
      private static final EntityDataAccessor<Byte> ID_FLAGS = SynchedEntityData.defineId(AbstractArrow.class, EntityDataSerializers.BYTE);
      private static final EntityDataAccessor<Byte> PIERCE_LEVEL = SynchedEntityData.defineId(AbstractArrow.class, EntityDataSerializers.BYTE);
-@@ -53,19 +60,34 @@
+@@ -54,19 +61,34 @@
      private BlockState lastState;
      public boolean inGround;
      protected int inGroundTime;
@@ -68,7 +68,7 @@
      }
  
      protected AbstractArrow(EntityType<? extends AbstractArrow> type, double x, double y, double z, Level world) {
-@@ -74,7 +96,7 @@
+@@ -75,7 +97,7 @@
      }
  
      protected AbstractArrow(EntityType<? extends AbstractArrow> type, LivingEntity owner, Level world) {
@@ -77,7 +77,7 @@
          this.setOwner(owner);
          if (owner instanceof Player) {
              this.pickup = AbstractArrow.Pickup.ALLOWED;
-@@ -88,19 +110,20 @@
+@@ -89,19 +111,20 @@
  
      @Override
      public boolean shouldRenderAtSqrDistance(double distance) {
@@ -105,7 +105,7 @@
      }
  
      @Override
-@@ -124,25 +147,33 @@
+@@ -125,25 +148,33 @@
      @Override
      public void tick() {
          super.tick();
@@ -152,7 +152,7 @@
                          this.inGround = true;
                          break;
                      }
-@@ -154,12 +185,12 @@
+@@ -155,12 +186,12 @@
              --this.shakeTime;
          }
  
@@ -168,7 +168,7 @@
                  this.startFalling();
              } else if (!this.level.isClientSide) {
                  this.tickDespawn();
-@@ -167,94 +198,129 @@
+@@ -168,94 +199,129 @@
  
              ++this.inGroundTime;
          } else {
@@ -220,7 +220,7 @@
 +                // Paper start - Call ProjectileCollideEvent
 +                // TODO: flag - noclip - call cancelled?
 +                if (object instanceof EntityHitResult) {
-+                    com.destroystokyo.paper.event.entity.ProjectileCollideEvent event = org.bukkit.craftbukkit.v1_18_R2.event.CraftEventFactory.callProjectileCollideEvent(this, (EntityHitResult)object);
++                    com.destroystokyo.paper.event.entity.ProjectileCollideEvent event = org.bukkit.craftbukkit.v1_19_R1.event.CraftEventFactory.callProjectileCollideEvent(this, (EntityHitResult)object);
 +                    if (event.isCancelled()) {
 +                        object = null;
 +                        movingobjectpositionentity = null;
@@ -344,16 +344,16 @@
          this.life = 0;
      }
  
-@@ -269,7 +335,7 @@
+@@ -270,7 +336,7 @@
  
      protected void tickDespawn() {
          ++this.life;
 -        if (this.life >= 1200) {
-+        if (this.life >= (pickup == Pickup.CREATIVE_ONLY ? level.paperConfig.creativeArrowDespawnRate : (pickup == Pickup.DISALLOWED ? level.paperConfig.nonPlayerArrowDespawnRate : ((this instanceof ThrownTrident) ? level.spigotConfig.tridentDespawnRate : level.spigotConfig.arrowDespawnRate)))) { // Spigot // Paper - TODO: Extract this to init?
++        if (this.life >= (pickup == Pickup.CREATIVE_ONLY ? level.paperConfig().entities.spawning.creativeArrowDespawnRate.value() : (pickup == Pickup.DISALLOWED ? level.paperConfig().entities.spawning.nonPlayerArrowDespawnRate.value() : ((this instanceof ThrownTrident) ? level.spigotConfig.tridentDespawnRate : level.spigotConfig.arrowDespawnRate)))) { // Spigot // Paper - TODO: Extract this to init?
              this.discard();
          }
  
-@@ -290,8 +356,9 @@
+@@ -291,8 +357,9 @@
      protected void onHitEntity(EntityHitResult entityHitResult) {
          super.onHitEntity(entityHitResult);
          Entity entity = entityHitResult.getEntity();
@@ -365,7 +365,7 @@
          if (this.getPierceLevel() > 0) {
              if (this.piercingIgnoreEntityIds == null) {
                  this.piercingIgnoreEntityIds = new IntOpenHashSet(5);
-@@ -310,65 +377,78 @@
+@@ -311,66 +378,79 @@
          }
  
          if (this.isCritArrow()) {
@@ -430,10 +430,12 @@
                  }
  
                  if (this.knockback > 0) {
--                    Vec3 vec3 = this.getDeltaMovement().multiply(1.0D, 0.0D, 1.0D).normalize().scale((double)this.knockback * 0.6D);
+-                    double d = Math.max(0.0D, 1.0D - livingEntity.getAttributeValue(Attributes.KNOCKBACK_RESISTANCE));
+-                    Vec3 vec3 = this.getDeltaMovement().multiply(1.0D, 0.0D, 1.0D).normalize().scale((double)this.knockback * 0.6D * d);
 -                    if (vec3.lengthSqr() > 0.0D) {
 -                        livingEntity.push(vec3.x, 0.1D, vec3.z);
-+                    Vec3 vec3d = this.getDeltaMovement().multiply(1.0D, 0.0D, 1.0D).normalize().scale((double) this.knockback * 0.6D);
++                    double d0 = Math.max(0.0D, 1.0D - entityliving.getAttributeValue(Attributes.KNOCKBACK_RESISTANCE));
++                    Vec3 vec3d = this.getDeltaMovement().multiply(1.0D, 0.0D, 1.0D).normalize().scale((double) this.knockback * 0.6D * d0);
 +
 +                    if (vec3d.lengthSqr() > 0.0D) {
 +                        entityliving.push(vec3d.x, 0.1D, vec3d.z);
@@ -475,7 +477,7 @@
                      }
                  }
              }
-@@ -378,7 +458,7 @@
+@@ -380,7 +460,7 @@
                  this.discard();
              }
          } else {
@@ -484,7 +486,7 @@
              this.setDeltaMovement(this.getDeltaMovement().scale(-0.1D));
              this.setYRot(this.getYRot() + 180.0F);
              this.yRotO += 180.0F;
-@@ -397,15 +477,17 @@
+@@ -399,15 +479,17 @@
      protected void onHitBlock(BlockHitResult blockHitResult) {
          this.lastState = this.level.getBlockState(blockHitResult.getBlockPos());
          super.onHitBlock(blockHitResult);
@@ -507,7 +509,7 @@
          this.setSoundEvent(SoundEvents.ARROW_HIT);
          this.setShotFromCrossbow(false);
          this.resetPiercedEntities();
-@@ -419,8 +501,7 @@
+@@ -421,8 +503,7 @@
          return this.soundEvent;
      }
  
@@ -517,7 +519,7 @@
  
      @Nullable
      protected EntityHitResult findHitEntity(Vec3 currentPosition, Vec3 nextPosition) {
-@@ -435,14 +516,14 @@
+@@ -437,14 +518,14 @@
      @Override
      public void addAdditionalSaveData(CompoundTag nbt) {
          super.addAdditionalSaveData(nbt);
@@ -535,7 +537,7 @@
          nbt.putDouble("damage", this.baseDamage);
          nbt.putBoolean("crit", this.isCritArrow());
          nbt.putByte("PierceLevel", this.getPierceLevel());
-@@ -468,7 +549,7 @@
+@@ -470,7 +551,7 @@
          this.setCritArrow(nbt.getBoolean("crit"));
          this.setPierceLevel(nbt.getByte("PierceLevel"));
          if (nbt.contains("SoundEvent", 8)) {
@@ -544,7 +546,7 @@
          }
  
          this.setShotFromCrossbow(nbt.getBoolean("ShotFromCrossbow"));
-@@ -478,7 +559,7 @@
+@@ -480,7 +561,7 @@
      public void setOwner(@Nullable Entity entity) {
          super.setOwner(entity);
          if (entity instanceof Player) {
@@ -553,7 +555,7 @@
          }
  
      }
-@@ -486,7 +567,22 @@
+@@ -488,7 +569,22 @@
      @Override
      public void playerTouch(Player player) {
          if (!this.level.isClientSide && (this.inGround || this.isNoPhysics()) && this.shakeTime <= 0) {
@@ -562,7 +564,7 @@
 +            ItemStack itemstack = this.getPickupItem();
 +            if (this.pickup == Pickup.ALLOWED && !itemstack.isEmpty() && player.getInventory().canHold(itemstack) > 0) {
 +                ItemEntity item = new ItemEntity(this.level, this.getX(), this.getY(), this.getZ(), itemstack);
-+                PlayerPickupArrowEvent event = new PlayerPickupArrowEvent((org.bukkit.entity.Player) player.getBukkitEntity(), new org.bukkit.craftbukkit.v1_18_R2.entity.CraftItem(this.level.getCraftServer(), this, item), (org.bukkit.entity.AbstractArrow) this.getBukkitEntity());
++                PlayerPickupArrowEvent event = new PlayerPickupArrowEvent((org.bukkit.entity.Player) player.getBukkitEntity(), new org.bukkit.craftbukkit.v1_19_R1.entity.CraftItem(this.level.getCraftServer(), this, item), (org.bukkit.entity.AbstractArrow) this.getBukkitEntity());
 +                // event.setCancelled(!entityhuman.canPickUpLoot); TODO
 +                this.level.getCraftServer().getPluginManager().callEvent(event);
 +
@@ -577,7 +579,7 @@
                  player.take(this, 1);
                  this.discard();
              }
-@@ -543,39 +639,43 @@
+@@ -545,39 +641,43 @@
      }
  
      public void setPierceLevel(byte level) {
@@ -623,16 +625,16 @@
      public void setEnchantmentEffectsFromEntity(LivingEntity entity, float damageModifier) {
          int i = EnchantmentHelper.getEnchantmentLevel(Enchantments.POWER_ARROWS, entity);
          int j = EnchantmentHelper.getEnchantmentLevel(Enchantments.PUNCH_ARROWS, entity);
--        this.setBaseDamage((double)(damageModifier * 2.0F) + this.random.nextGaussian() * 0.25D + (double)((float)this.level.getDifficulty().getId() * 0.11F));
+-        this.setBaseDamage((double)(damageModifier * 2.0F) + this.random.triangle((double)this.level.getDifficulty().getId() * 0.11D, 0.57425D));
 +
-+        this.setBaseDamage((double) (damageModifier * 2.0F) + this.random.nextGaussian() * 0.25D + (double) ((float) this.level.getDifficulty().getId() * 0.11F));
++        this.setBaseDamage((double) (damageModifier * 2.0F) + this.random.triangle((double) this.level.getDifficulty().getId() * 0.11D, 0.57425D));
          if (i > 0) {
 -            this.setBaseDamage(this.getBaseDamage() + (double)i * 0.5D + 0.5D);
 +            this.setBaseDamage(this.getBaseDamage() + (double) i * 0.5D + 0.5D);
          }
  
          if (j > 0) {
-@@ -598,11 +698,7 @@
+@@ -600,11 +700,7 @@
      }
  
      public boolean isNoPhysics() {
@@ -645,7 +647,7 @@
      }
  
      public void setShotFromCrossbow(boolean shotFromCrossbow) {
-@@ -610,9 +706,10 @@
+@@ -612,9 +708,10 @@
      }
  
      public static enum Pickup {

@@ -8,7 +8,7 @@
      protected static final float SAPLING_AABB_OFFSET = 4.0F;
      protected static final VoxelShape SAPLING_SHAPE = Block.box(4.0D, 0.0D, 4.0D, 12.0D, 12.0D, 12.0D);
  
-@@ -35,8 +36,9 @@
+@@ -30,8 +31,9 @@
  
      @Override
      public VoxelShape getShape(BlockState state, BlockGetter world, BlockPos pos, CollisionContext context) {
@@ -20,11 +20,11 @@
      }
  
      @Override
-@@ -91,6 +93,6 @@
+@@ -86,6 +88,6 @@
      }
  
      protected void growBamboo(Level world, BlockPos pos) {
 -        world.setBlock(pos.above(), Blocks.BAMBOO.defaultBlockState().setValue(BambooBlock.LEAVES, BambooLeaves.SMALL), 3);
-+        org.bukkit.craftbukkit.v1_18_R2.event.CraftEventFactory.handleBlockSpreadEvent(world, pos, pos.above(), (BlockState) Blocks.BAMBOO.defaultBlockState().setValue(BambooBlock.LEAVES, BambooLeaves.SMALL), 3); // CraftBukkit - BlockSpreadEvent
++        org.bukkit.craftbukkit.v1_19_R1.event.CraftEventFactory.handleBlockSpreadEvent(world, pos, pos.above(), (BlockState) Blocks.BAMBOO.defaultBlockState().setValue(BambooBlock.LEAVES, BambooLeaves.SMALL), 3); // CraftBukkit - BlockSpreadEvent
      }
  }

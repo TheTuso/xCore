@@ -7,8 +7,8 @@
 +import java.util.Iterator;
  import java.util.List;
  import java.util.Map;
- import java.util.Random;
-@@ -66,50 +67,50 @@
+ import java.util.Set;
+@@ -66,51 +67,51 @@
  import net.minecraft.world.phys.Vec3;
  
  public class Parrot extends ShoulderRidingEntity implements FlyingAnimal {
@@ -54,6 +54,7 @@
 -        map.put(EntityType.STRAY, SoundEvents.PARROT_IMITATE_STRAY);
 -        map.put(EntityType.VEX, SoundEvents.PARROT_IMITATE_VEX);
 -        map.put(EntityType.VINDICATOR, SoundEvents.PARROT_IMITATE_VINDICATOR);
+-        map.put(EntityType.WARDEN, SoundEvents.PARROT_IMITATE_WARDEN);
 -        map.put(EntityType.WITCH, SoundEvents.PARROT_IMITATE_WITCH);
 -        map.put(EntityType.WITHER, SoundEvents.PARROT_IMITATE_WITHER);
 -        map.put(EntityType.WITHER_SKELETON, SoundEvents.PARROT_IMITATE_WITHER_SKELETON);
@@ -88,6 +89,7 @@
 +        hashmap.put(EntityType.STRAY, SoundEvents.PARROT_IMITATE_STRAY);
 +        hashmap.put(EntityType.VEX, SoundEvents.PARROT_IMITATE_VEX);
 +        hashmap.put(EntityType.VINDICATOR, SoundEvents.PARROT_IMITATE_VINDICATOR);
++        hashmap.put(EntityType.WARDEN, SoundEvents.PARROT_IMITATE_WARDEN);
 +        hashmap.put(EntityType.WITCH, SoundEvents.PARROT_IMITATE_WITCH);
 +        hashmap.put(EntityType.WITHER, SoundEvents.PARROT_IMITATE_WITHER);
 +        hashmap.put(EntityType.WITHER_SKELETON, SoundEvents.PARROT_IMITATE_WITHER_SKELETON);
@@ -97,7 +99,7 @@
      });
      public float flap;
      public float flapSpeed;
-@@ -137,7 +138,7 @@
+@@ -138,7 +139,7 @@
              entityData = new AgeableMob.AgeableMobGroupData(false);
          }
  
@@ -106,7 +108,7 @@
      }
  
      @Override
-@@ -158,16 +159,17 @@
+@@ -159,16 +160,17 @@
      }
  
      public static AttributeSupplier.Builder createAttributes() {
@@ -130,7 +132,7 @@
      }
  
      @Override
-@@ -183,7 +185,7 @@
+@@ -184,7 +186,7 @@
          }
  
          if (this.level.random.nextInt(400) == 0) {
@@ -139,7 +141,7 @@
          }
  
          super.aiStep();
-@@ -203,16 +205,17 @@
+@@ -204,16 +206,17 @@
      private void calculateFlapping() {
          this.oFlap = this.flap;
          this.oFlapSpeed = this.flapSpeed;
@@ -161,7 +163,7 @@
          }
  
          this.flap += this.flapping * 2.0F;
-@@ -220,12 +223,15 @@
+@@ -221,12 +224,15 @@
  
      public static boolean imitateNearbyMobs(Level world, Entity parrot) {
          if (parrot.isAlive() && !parrot.isSilent() && world.random.nextInt(2) == 0) {
@@ -182,7 +184,7 @@
                      return true;
                  }
              }
-@@ -238,32 +244,33 @@
+@@ -239,32 +245,33 @@
  
      @Override
      public InteractionResult mobInteract(Player player, InteractionHand hand) {
@@ -203,7 +205,7 @@
  
              if (!this.level.isClientSide) {
 -                if (this.random.nextInt(10) == 0) {
-+                if (this.random.nextInt(10) == 0 && !org.bukkit.craftbukkit.v1_18_R2.event.CraftEventFactory.callEntityTameEvent(this, player).isCancelled()) { // CraftBukkit
++                if (this.random.nextInt(10) == 0 && !org.bukkit.craftbukkit.v1_19_R1.event.CraftEventFactory.callEntityTameEvent(this, player).isCancelled()) { // CraftBukkit
                      this.tame(player);
 -                    this.level.broadcastEntityEvent(this, (byte)7);
 +                    this.level.broadcastEntityEvent(this, (byte) 7);
@@ -226,17 +228,17 @@
              if (player.isCreative() || !this.isInvulnerable()) {
                  this.hurt(DamageSource.playerAttack(player), Float.MAX_VALUE);
              }
-@@ -295,8 +302,7 @@
+@@ -296,8 +303,7 @@
      }
  
      @Override
--    protected void checkFallDamage(double heightDifference, boolean onGround, BlockState landedState, BlockPos landedPosition) {
+-    protected void checkFallDamage(double heightDifference, boolean onGround, BlockState state, BlockPos landedPosition) {
 -    }
-+    protected void checkFallDamage(double heightDifference, boolean onGround, BlockState landedState, BlockPos landedPosition) {}
++    protected void checkFallDamage(double heightDifference, boolean onGround, BlockState state, BlockPos landedPosition) {}
  
      @Override
      public boolean canMate(Animal other) {
-@@ -317,20 +323,21 @@
+@@ -318,20 +324,21 @@
      @Nullable
      @Override
      public SoundEvent getAmbientSound() {
@@ -244,7 +246,7 @@
 +        return Parrot.getAmbient(this.level, this.level.random);
      }
  
-     public static SoundEvent getAmbient(Level world, Random random) {
+     public static SoundEvent getAmbient(Level world, RandomSource random) {
          if (world.getDifficulty() != Difficulty.PEACEFUL && random.nextInt(1000) == 0) {
 -            List<EntityType<?>> list = Lists.newArrayList(MOB_SOUND_MAP.keySet());
 -            return getImitatedSound(list.get(random.nextInt(list.size())));
@@ -262,7 +264,7 @@
      }
  
      @Override
-@@ -361,7 +368,7 @@
+@@ -362,11 +369,11 @@
  
      @Override
      public float getVoicePitch() {
@@ -270,8 +272,14 @@
 +        return Parrot.getPitch(this.random);
      }
  
-     public static float getPitch(Random random) {
-@@ -374,8 +381,8 @@
+-    public static float getPitch(RandomSource randomSource) {
+-        return (randomSource.nextFloat() - randomSource.nextFloat()) * 0.2F + 1.0F;
++    public static float getPitch(RandomSource randomsource) {
++        return (randomsource.nextFloat() - randomsource.nextFloat()) * 0.2F + 1.0F;
+     }
+ 
+     @Override
+@@ -375,8 +382,8 @@
      }
  
      @Override
@@ -282,7 +290,7 @@
      }
  
      @Override
-@@ -391,7 +398,7 @@
+@@ -392,7 +399,7 @@
              return false;
          } else {
              if (!this.level.isClientSide) {
@@ -291,7 +299,7 @@
              }
  
              return super.hurt(source, amount);
-@@ -399,17 +406,17 @@
+@@ -400,17 +407,17 @@
      }
  
      public int getVariant() {
@@ -312,7 +320,7 @@
      }
  
      @Override
-@@ -431,10 +438,11 @@
+@@ -432,10 +439,11 @@
  
      @Override
      public Vec3 getLeashOffset() {
@@ -326,7 +334,7 @@
          public ParrotWanderGoal(PathfinderMob mob, double speed) {
              super(mob, speed);
          }
-@@ -442,30 +450,36 @@
+@@ -443,30 +451,36 @@
          @Nullable
          @Override
          protected Vec3 getPosition() {

@@ -539,7 +539,7 @@
  
 -                        this.isScaredOfCat = !list.isEmpty();
 +                        if (Phantom.this.canAttack(entityhuman, TargetingConditions.DEFAULT)) {
-+                            if (!level.paperConfig.phantomOnlyAttackInsomniacs || EntitySelector.isInsomniac.test(entityhuman)) // Paper
++                            if (!level.paperConfig().entities.behavior.phantomsOnlyAttackInsomniacs || EntitySelector.isInsomniac.test(entityhuman)) // Paper
 +                            Phantom.this.setTarget(entityhuman, org.bukkit.event.entity.EntityTargetEvent.TargetReason.CLOSEST_PLAYER, true); // CraftBukkit - reason
 +                            return true;
 +                        }

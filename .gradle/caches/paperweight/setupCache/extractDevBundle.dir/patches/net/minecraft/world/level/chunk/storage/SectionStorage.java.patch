@@ -1,6 +1,6 @@
 --- a/net/minecraft/world/level/chunk/storage/SectionStorage.java
 +++ b/net/minecraft/world/level/chunk/storage/SectionStorage.java
-@@ -30,10 +30,10 @@
+@@ -34,10 +34,10 @@
  import net.minecraft.world.level.LevelHeightAccessor;
  import org.slf4j.Logger;
  
@@ -13,20 +13,21 @@
      private final Long2ObjectMap<Optional<R>> storage = new Long2ObjectOpenHashMap<>();
      public final LongLinkedOpenHashSet dirty = new LongLinkedOpenHashSet();
      private final Function<Runnable, Codec<R>> codec;
-@@ -43,14 +43,49 @@
+@@ -48,14 +48,49 @@
      protected final LevelHeightAccessor levelHeightAccessor;
  
-     public SectionStorage(Path path, Function<Runnable, Codec<R>> codecFactory, Function<Runnable, R> factory, DataFixer dataFixer, DataFixTypes dataFixTypes, boolean dsync, LevelHeightAccessor world) {
-+        super(path, dsync);
+     public SectionStorage(Path path, Function<Runnable, Codec<R>> codecFactory, Function<Runnable, R> factory, DataFixer dataFixer, DataFixTypes dataFixTypes, boolean dsync, RegistryAccess dynamicRegistryManager, LevelHeightAccessor world) {
++        super(path, dsync); // Paper - remove mojang I/O thread
          this.codec = codecFactory;
          this.factory = factory;
          this.fixerUpper = dataFixer;
          this.type = dataFixTypes;
+         this.registryAccess = dynamicRegistryManager;
          this.levelHeightAccessor = world;
 -        this.worker = new IOWorker(path, dsync, path.getFileName().toString());
 +        // Paper - remove mojang I/O thread
-     }
- 
++    }
++
 +    // Paper start - actually unload POI data
 +    public void unloadData(long coordinate) {
 +        ChunkPos chunkPos = new ChunkPos(coordinate);
@@ -58,13 +59,12 @@
 +        }
 +
 +        return true;
-+    }
+     }
 +    // Paper end - actually unload POI data
-+
+ 
      protected void tick(BooleanSupplier shouldKeepTicking) {
          while(this.hasWork() && shouldKeepTicking.getAsBoolean()) {
-             ChunkPos chunkPos = SectionPos.of(this.dirty.firstLong()).chunk();
-@@ -64,11 +99,11 @@
+@@ -70,11 +105,11 @@
      }
  
      @Nullable
@@ -78,28 +78,36 @@
          if (this.outsideStoredRange(pos)) {
              return Optional.empty();
          } else {
-@@ -110,13 +145,18 @@
+@@ -122,15 +157,20 @@
      }
  
-     private void readColumn(ChunkPos chunkPos) {
--        this.readColumn(chunkPos, NbtOps.INSTANCE, this.tryRead(chunkPos));
-+        // Paper start - expose function to load in data
-+       this.loadInData(chunkPos, this.tryRead(chunkPos));
+     private CompletableFuture<Optional<CompoundTag>> tryRead(ChunkPos pos) {
+-        return this.worker.loadAsync(pos).exceptionally((throwable) -> {
+-            if (throwable instanceof IOException iOException) {
+-                LOGGER.error("Error reading chunk {} data from disk", pos, iOException);
+-                return Optional.empty();
+-            } else {
+-                throw new CompletionException(throwable);
+-            }
+-        });
++        // Paper start - async chunk io
++        try {
++            return CompletableFuture.completedFuture(Optional.ofNullable(this.read(pos)));
++        } catch (Throwable thr) {
++            return CompletableFuture.failedFuture(thr);
++        }
++        // Paper end - async chunk io
 +    }
++
++    // Paper start - async chunk io
 +    public void loadInData(ChunkPos chunkPos, CompoundTag compound) {
-+        this.readColumn(chunkPos, NbtOps.INSTANCE, compound);
-+        // Paper end - expose function to load in data
++        this.readColumn(chunkPos, RegistryOps.create(NbtOps.INSTANCE, this.registryAccess), compound);
      }
++    // Paper end - aync chnnk i
  
-     @Nullable
-     private CompoundTag tryRead(ChunkPos pos) {
-         try {
--            return this.worker.load(pos);
-+            return this.read(pos); // Paper - nuke IOWorker
-         } catch (IOException var3) {
-             LOGGER.error("Error reading chunk {} data from disk", pos, var3);
-             return null;
-@@ -133,7 +173,14 @@
+     private <T> void readColumn(ChunkPos pos, DynamicOps<T> ops, @Nullable T data) {
+         if (data == null) {
+@@ -142,7 +182,14 @@
              int j = getVersion(dynamic);
              int k = SharedConstants.getCurrentVersion().getWorldVersion();
              boolean bl = j != k;
@@ -115,7 +123,7 @@
              OptionalDynamic<T> optionalDynamic = dynamic2.get("Sections");
  
              for(int l = this.levelHeightAccessor.getMinSection(); l < this.levelHeightAccessor.getMaxSection(); ++l) {
-@@ -153,6 +200,7 @@
+@@ -162,6 +209,7 @@
                  });
              }
          }
@@ -123,21 +131,23 @@
  
      }
  
-@@ -160,13 +208,26 @@
-         Dynamic<Tag> dynamic = this.writeColumn(chunkPos, NbtOps.INSTANCE);
+@@ -170,7 +218,7 @@
+         Dynamic<Tag> dynamic = this.writeColumn(pos, registryOps);
          Tag tag = dynamic.getValue();
          if (tag instanceof CompoundTag) {
--            this.worker.store(chunkPos, (CompoundTag)tag);
-+            try { this.write(chunkPos, (CompoundTag)tag); } catch (IOException ioexception) { SectionStorage.LOGGER.error("Error writing data to disk", ioexception); } // Paper - nuke IOWorker
+-            this.worker.store(pos, (CompoundTag)tag);
++            try { this.write(pos, (CompoundTag)tag); } catch (IOException ioexception) { SectionStorage.LOGGER.error("Error writing data to disk", ioexception); } // Paper - nuke IOWorker
          } else {
              LOGGER.error("Expected compound tag, got {}", (Object)tag);
          }
- 
+@@ -198,6 +246,21 @@
+         return new Dynamic<>(ops, ops.createMap(ImmutableMap.of(ops.createString("Sections"), ops.createMap(map), ops.createString("DataVersion"), ops.createInt(SharedConstants.getCurrentVersion().getWorldVersion()))));
      }
  
 +    // Paper start - internal get data function, copied from above
-+    private CompoundTag getDataInternal(ChunkPos chunkcoordintpair) {
-+        Dynamic<Tag> dynamic = this.writeColumn(chunkcoordintpair, NbtOps.INSTANCE);
++    private CompoundTag getDataInternal(ChunkPos pos) {
++        RegistryOps<Tag> registryOps = RegistryOps.create(NbtOps.INSTANCE, this.registryAccess);
++        Dynamic<Tag> dynamic = this.writeColumn(pos, registryOps);
 +        Tag nbtbase = (Tag) dynamic.getValue();
 +
 +        if (nbtbase instanceof CompoundTag) {
@@ -148,10 +158,11 @@
 +        return null;
 +    }
 +    // Paper end
-     private <T> Dynamic<T> writeColumn(ChunkPos chunkPos, DynamicOps<T> dynamicOps) {
-         Map<T, T> map = Maps.newHashMap();
- 
-@@ -223,6 +284,23 @@
++
+     private static long getKey(ChunkPos chunkPos, int y) {
+         return SectionPos.asLong(chunkPos.x, y, chunkPos.z);
+     }
+@@ -233,6 +296,23 @@
  
      @Override
      public void close() throws IOException {

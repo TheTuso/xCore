@@ -8,21 +8,26 @@
      protected SpawnerBlock(BlockBehaviour.Properties settings) {
          super(settings);
      }
-@@ -32,8 +33,16 @@
+@@ -32,11 +33,20 @@
      @Override
-     public void spawnAfterBreak(BlockState state, ServerLevel world, BlockPos pos, ItemStack stack) {
-         super.spawnAfterBreak(state, world, pos, stack);
--        int i = 15 + world.random.nextInt(15) + world.random.nextInt(15);
--        this.popExperience(world, pos, i);
+     public void spawnAfterBreak(BlockState state, ServerLevel world, BlockPos pos, ItemStack stack, boolean dropExperience) {
+         super.spawnAfterBreak(state, world, pos, stack, dropExperience);
+-        if (dropExperience) {
+-            int i = 15 + world.random.nextInt(15) + world.random.nextInt(15);
+-            this.popExperience(world, pos, i);
 +        // CraftBukkit start - Delegate to getExpDrop
 +    }
 +
 +    @Override
-+    public int getExpDrop(BlockState iblockdata, ServerLevel worldserver, BlockPos blockposition, ItemStack itemstack) {
-+        int i = 15 + worldserver.random.nextInt(15) + worldserver.random.nextInt(15);
++    public int getExpDrop(BlockState iblockdata, ServerLevel worldserver, BlockPos blockposition, ItemStack itemstack, boolean flag) {
++        if (flag) {
++            int i = 15 + worldserver.random.nextInt(15) + worldserver.random.nextInt(15);
 +
-+        // this.popExperience(worldserver, blockposition, i);
-+        return i;
++            // this.popExperience(worldserver, blockposition, i);
++            return i;
+         }
+ 
++        return 0;
 +        // CraftBukkit end
      }
  

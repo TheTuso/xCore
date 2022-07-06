@@ -13,7 +13,7 @@
 +            // This is vanilla
 +            float qualityModifer = (float) LootPoolSingletonContainer.this.quality * luck;
 +            double baseWeight = (LootPoolSingletonContainer.this.weight + qualityModifer);
-+            if (com.destroystokyo.paper.PaperConfig.useAlternativeLuckFormula) {
++            if (io.papermc.paper.configuration.GlobalConfiguration.get().misc.useAlternativeLuckFormula) {
 +                // Random boost to avoid losing precision in the final int cast on return
 +                final int weightBoost = 100;
 +                baseWeight *= weightBoost;

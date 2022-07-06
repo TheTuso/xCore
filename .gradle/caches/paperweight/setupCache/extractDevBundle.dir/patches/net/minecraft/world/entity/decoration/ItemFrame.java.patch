@@ -1,14 +1,14 @@
 --- a/net/minecraft/world/entity/decoration/ItemFrame.java
 +++ b/net/minecraft/world/entity/decoration/ItemFrame.java
-@@ -2,6 +2,7 @@
- 
+@@ -3,6 +3,7 @@
  import com.mojang.logging.LogUtils;
+ import java.util.OptionalInt;
  import javax.annotation.Nullable;
 +import io.papermc.paper.event.player.PlayerItemFrameChangeEvent; // Paper
  import net.minecraft.core.BlockPos;
  import net.minecraft.core.Direction;
  import net.minecraft.nbt.CompoundTag;
-@@ -37,15 +38,17 @@
+@@ -39,15 +40,17 @@
  import org.slf4j.Logger;
  
  public class ItemFrame extends HangingEntity {
@@ -27,7 +27,7 @@
      }
  
      public ItemFrame(Level world, BlockPos pos, Direction facing) {
-@@ -54,6 +57,7 @@
+@@ -56,6 +59,7 @@
  
      public ItemFrame(EntityType<? extends ItemFrame> type, Level world, BlockPos pos, Direction facing) {
          super(type, world, pos);
@@ -35,7 +35,7 @@
          this.setDirection(facing);
      }
  
-@@ -64,8 +68,8 @@
+@@ -66,8 +70,8 @@
  
      @Override
      protected void defineSynchedData() {
@@ -46,7 +46,7 @@
      }
  
      @Override
-@@ -74,9 +78,9 @@
+@@ -76,9 +80,9 @@
          this.direction = facing;
          if (facing.getAxis().isHorizontal()) {
              this.setXRot(0.0F);
@@ -58,7 +58,7 @@
              this.setYRot(0.0F);
          }
  
-@@ -88,42 +92,57 @@
+@@ -90,42 +94,57 @@
      @Override
      protected void recalculateBoundingBox() {
          if (this.direction != null) {
@@ -136,12 +136,12 @@
          }
      }
  
-@@ -162,6 +181,18 @@
+@@ -164,6 +183,18 @@
              return false;
          } else if (!source.isExplosion() && !this.getItem().isEmpty()) {
              if (!this.level.isClientSide) {
 +                // CraftBukkit start - fire EntityDamageEvent
-+                if (org.bukkit.craftbukkit.v1_18_R2.event.CraftEventFactory.handleNonLivingEntityDamageEvent(this, source, amount, false) || this.isRemoved()) {
++                if (org.bukkit.craftbukkit.v1_19_R1.event.CraftEventFactory.handleNonLivingEntityDamageEvent(this, source, amount, false) || this.isRemoved()) {
 +                    return true;
 +                }
 +                // CraftBukkit end
@@ -155,7 +155,7 @@
                  this.dropItem(source.getEntity(), false);
                  this.playSound(this.getRemoveItemSound(), 1.0F, 1.0F);
              }
-@@ -188,9 +219,10 @@
+@@ -190,9 +221,10 @@
  
      @Override
      public boolean shouldRenderAtSqrDistance(double distance) {
@@ -169,7 +169,7 @@
      }
  
      @Override
-@@ -214,18 +246,20 @@
+@@ -216,18 +248,20 @@
  
      private void dropItem(@Nullable Entity entity, boolean alwaysDrop) {
          if (!this.fixed) {
@@ -195,7 +195,7 @@
                          return;
                      }
                  }
-@@ -234,11 +268,11 @@
+@@ -236,11 +270,11 @@
                      this.spawnAtLocation(this.getFrameItemStack());
                  }
  
@@ -211,24 +211,27 @@
                      }
                  }
  
-@@ -248,18 +282,19 @@
+@@ -248,26 +282,29 @@
+         }
+     }
  
-     private void removeFramedMap(ItemStack map) {
-         if (map.is(Items.FILLED_MAP)) {
--            MapItemSavedData mapItemSavedData = MapItem.getSavedData(map, this.level);
+-    private void removeFramedMap(ItemStack itemStack) {
++    private void removeFramedMap(ItemStack itemstack) {
+         this.getFramedMapId().ifPresent((i) -> {
+-            MapItemSavedData mapItemSavedData = MapItem.getSavedData(i, this.level);
 -            if (mapItemSavedData != null) {
 -                mapItemSavedData.removedFromFrame(this.pos, this.getId());
 -                mapItemSavedData.setDirty(true);
-+            MapItemSavedData worldmap = MapItem.getSavedData(map, this.level);
++            MapItemSavedData worldmap = MapItem.getSavedData(i, this.level);
 +
 +            if (worldmap != null) {
 +                worldmap.removedFromFrame(this.pos, this.getId());
 +                worldmap.setDirty(true);
              }
-         }
  
--        map.setEntityRepresentation((Entity)null);
-+        map.setEntityRepresentation((Entity) null);
+         });
+-        itemStack.setEntityRepresentation((Entity)null);
++        itemstack.setEntityRepresentation((Entity) null);
      }
  
      public ItemStack getItem() {
@@ -236,15 +239,25 @@
 +        return (ItemStack) this.getEntityData().get(ItemFrame.DATA_ITEM);
      }
  
-     public void setItem(ItemStack stack) {
-@@ -267,18 +302,24 @@
+     public OptionalInt getFramedMapId() {
+-        ItemStack itemStack = this.getItem();
+-        if (itemStack.is(Items.FILLED_MAP)) {
+-            Integer integer = MapItem.getMapId(itemStack);
++        ItemStack itemstack = this.getItem();
++
++        if (itemstack.is(Items.FILLED_MAP)) {
++            Integer integer = MapItem.getMapId(itemstack);
++
+             if (integer != null) {
+                 return OptionalInt.of(integer);
+             }
+@@ -285,18 +322,24 @@
      }
  
      public void setItem(ItemStack value, boolean update) {
 -        if (!value.isEmpty()) {
 -            value = value.copy();
 -            value.setCount(1);
--            value.setEntityRepresentation(this);
 +        // CraftBukkit start
 +        this.setItem(value, update, true);
 +    }
@@ -254,11 +267,12 @@
 +        if (!itemstack.isEmpty()) {
 +            itemstack = itemstack.copy();
 +            itemstack.setCount(1);
-+            itemstack.setEntityRepresentation(this);
          }
  
+-        this.onItemChanged(value);
 -        this.getEntityData().set(DATA_ITEM, value);
 -        if (!value.isEmpty()) {
++        this.onItemChanged(itemstack);
 +        this.getEntityData().set(ItemFrame.DATA_ITEM, itemstack);
 +        if (!itemstack.isEmpty() && flag && playSound) { // CraftBukkit // Paper - only play sound when update flag is set
              this.playSound(this.getAddItemSound(), 1.0F, 1.0F);
@@ -269,22 +283,16 @@
              this.level.updateNeighbourForOutputSignal(this.pos, Blocks.AIR);
          }
  
-@@ -306,17 +347,18 @@
+@@ -324,7 +367,7 @@
  
      @Override
      public void onSyncedDataUpdated(EntityDataAccessor<?> data) {
 -        if (data.equals(DATA_ITEM)) {
--            ItemStack itemStack = this.getItem();
--            if (!itemStack.isEmpty() && itemStack.getFrame() != this) {
--                itemStack.setEntityRepresentation(this);
 +        if (data.equals(ItemFrame.DATA_ITEM)) {
-+            ItemStack itemstack = this.getItem();
-+
-+            if (!itemstack.isEmpty() && itemstack.getFrame() != this) {
-+                itemstack.setEntityRepresentation(this);
-             }
+             this.onItemChanged(this.getItem());
          }
  
+@@ -339,7 +382,7 @@
      }
  
      public int getRotation() {
@@ -293,7 +301,7 @@
      }
  
      public void setRotation(int value) {
-@@ -324,7 +366,7 @@
+@@ -347,7 +390,7 @@
      }
  
      private void setRotation(int value, boolean updateComparators) {
@@ -302,7 +310,7 @@
          if (updateComparators && this.pos != null) {
              this.level.updateNeighbourForOutputSignal(this.pos, Blocks.AIR);
          }
-@@ -336,11 +378,11 @@
+@@ -359,11 +402,11 @@
          super.addAdditionalSaveData(nbt);
          if (!this.getItem().isEmpty()) {
              nbt.put("Item", this.getItem().save(new CompoundTag()));
@@ -316,7 +324,7 @@
          nbt.putBoolean("Invisible", this.isInvisible());
          nbt.putBoolean("Fixed", this.fixed);
      }
-@@ -348,19 +390,22 @@
+@@ -371,19 +414,22 @@
      @Override
      public void readAdditionalSaveData(CompoundTag nbt) {
          super.readAdditionalSaveData(nbt);
@@ -348,7 +356,7 @@
              this.setRotation(nbt.getByte("ItemRotation"), false);
              if (nbt.contains("ItemDropChance", 99)) {
                  this.dropChance = nbt.getFloat("ItemDropChance");
-@@ -374,34 +419,45 @@
+@@ -397,34 +443,45 @@
  
      @Override
      public InteractionResult interact(Player player, InteractionHand hand) {
@@ -406,7 +414,7 @@
          }
      }
  
-@@ -426,8 +482,9 @@
+@@ -449,8 +506,9 @@
  
      @Override
      public ItemStack getPickResult() {
@@ -418,3 +426,16 @@
      }
  
      protected ItemStack getFrameItemStack() {
+@@ -459,8 +517,9 @@
+ 
+     @Override
+     public float getVisualRotationYInDegrees() {
+-        Direction direction = this.getDirection();
+-        int i = direction.getAxis().isVertical() ? 90 * direction.getAxisDirection().getStep() : 0;
+-        return (float)Mth.wrapDegrees(180 + direction.get2DDataValue() * 90 + this.getRotation() * 45 + i);
++        Direction enumdirection = this.getDirection();
++        int i = enumdirection.getAxis().isVertical() ? 90 * enumdirection.getAxisDirection().getStep() : 0;
++
++        return (float) Mth.wrapDegrees(180 + enumdirection.get2DDataValue() * 90 + this.getRotation() * 45 + i);
+     }
+ }

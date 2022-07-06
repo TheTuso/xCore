@@ -6,7 +6,7 @@
 +import java.util.Iterator;
  import java.util.List;
  import java.util.Map;
- import java.util.Random;
+ import net.minecraft.core.BlockPos;
 @@ -18,11 +19,14 @@
  import net.minecraft.world.level.block.state.StateDefinition;
  import net.minecraft.world.level.block.state.properties.BlockStateProperties;
@@ -55,7 +55,7 @@
      }
  
      @Override
-@@ -69,14 +74,14 @@
+@@ -69,35 +74,52 @@
      @Override
      public void onRemove(BlockState state, Level world, BlockPos pos, BlockState newState, boolean moved) {
          if (!moved && !state.is(newState.getBlock())) {
@@ -68,11 +68,12 @@
      public void playerWillDestroy(Level world, BlockPos pos, BlockState state, Player player) {
          if (!world.isClientSide && !player.getMainHandItem().isEmpty() && player.getMainHandItem().is(Items.SHEARS)) {
 -            world.setBlock(pos, state.setValue(DISARMED, Boolean.valueOf(true)), 4);
+-            world.gameEvent(player, GameEvent.SHEAR, pos);
 +            world.setBlock(pos, (BlockState) state.setValue(TripWireBlock.DISARMED, true), 4);
-             world.gameEvent(player, GameEvent.SHEAR, pos);
++            world.gameEvent((Entity) player, GameEvent.SHEAR, pos);
          }
  
-@@ -84,20 +89,37 @@
+         super.playerWillDestroy(world, pos, state, player);
      }
  
      private void updateSource(Level world, BlockPos pos, BlockState state) {
@@ -125,7 +126,7 @@
  
      @Override
      public void entityInside(BlockState state, Level world, BlockPos pos, Entity entity) {
-+        if (!new io.papermc.paper.event.entity.EntityInsideBlockEvent(entity.getBukkitEntity(), org.bukkit.craftbukkit.v1_18_R2.block.CraftBlock.at(world, pos)).callEvent()) { return; } // Paper
++        if (!new io.papermc.paper.event.entity.EntityInsideBlockEvent(entity.getBukkitEntity(), org.bukkit.craftbukkit.v1_19_R1.block.CraftBlock.at(world, pos)).callEvent()) { return; } // Paper
          if (!world.isClientSide) {
 -            if (!state.getValue(POWERED)) {
 +            if (!(Boolean) state.getValue(TripWireBlock.POWERED)) {
@@ -135,7 +136,7 @@
 @@ -114,54 +137,89 @@
  
      @Override
-     public void tick(BlockState state, ServerLevel world, BlockPos pos, Random random) {
+     public void tick(BlockState state, ServerLevel world, BlockPos pos, RandomSource random) {
 -        if (world.getBlockState(pos).getValue(POWERED)) {
 +        if ((Boolean) world.getBlockState(pos).getValue(TripWireBlock.POWERED)) {
              this.checkPressed(world, pos);
@@ -184,7 +185,7 @@
 +                    org.bukkit.event.Cancellable cancellable;
 +
 +                    if (object instanceof Player) {
-+                        cancellable = org.bukkit.craftbukkit.v1_18_R2.event.CraftEventFactory.callPlayerInteractEvent((Player) object, org.bukkit.event.block.Action.PHYSICAL, pos, null, null, null);
++                        cancellable = org.bukkit.craftbukkit.v1_19_R1.event.CraftEventFactory.callPlayerInteractEvent((Player) object, org.bukkit.event.block.Action.PHYSICAL, pos, null, null, null);
 +                    } else if (object instanceof Entity) {
 +                        cancellable = new EntityInteractEvent(((Entity) object).getBukkitEntity(), block);
 +                        manager.callEvent((EntityInteractEvent) cancellable);

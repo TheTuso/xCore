@@ -8,7 +8,7 @@
  import java.util.List;
  import java.util.UUID;
  import java.util.stream.Stream;
-@@ -54,6 +55,7 @@
+@@ -53,6 +54,7 @@
  import net.minecraft.world.phys.Vec3;
  
  public class IronGolem extends AbstractGolem implements NeutralMob {
@@ -16,7 +16,7 @@
      protected static final EntityDataAccessor<Byte> DATA_FLAGS_ID = SynchedEntityData.defineId(IronGolem.class, EntityDataSerializers.BYTE);
      private static final int IRON_INGOT_HEAL_AMOUNT = 25;
      private int attackAnimationTick;
-@@ -78,10 +80,10 @@
+@@ -77,10 +79,10 @@
          this.goalSelector.addGoal(7, new LookAtPlayerGoal(this, Player.class, 6.0F));
          this.goalSelector.addGoal(8, new RandomLookAroundGoal(this));
          this.targetSelector.addGoal(1, new DefendVillageTargetGoal(this));
@@ -30,7 +30,7 @@
          }));
          this.targetSelector.addGoal(4, new ResetUniversalAngerTargetGoal<>(this, false));
      }
-@@ -89,7 +91,7 @@
+@@ -88,7 +90,7 @@
      @Override
      protected void defineSynchedData() {
          super.defineSynchedData();
@@ -39,7 +39,7 @@
      }
  
      public static AttributeSupplier.Builder createAttributes() {
-@@ -104,7 +106,7 @@
+@@ -103,7 +105,7 @@
      @Override
      protected void doPush(Entity entity) {
          if (entity instanceof Enemy && !(entity instanceof Creeper) && this.getRandom().nextInt(20) == 0) {
@@ -48,7 +48,7 @@
          }
  
          super.doPush(entity);
-@@ -121,29 +123,26 @@
+@@ -120,29 +122,26 @@
              --this.offerFlowerTick;
          }
  
@@ -86,7 +86,7 @@
      }
  
      @Override
-@@ -162,7 +161,7 @@
+@@ -161,7 +160,7 @@
  
      @Override
      public void startPersistentAngerTimer() {
@@ -95,7 +95,7 @@
      }
  
      @Override
-@@ -187,34 +186,36 @@
+@@ -186,44 +185,49 @@
      }
  
      private float getAttackDamage() {
@@ -112,12 +112,31 @@
 -        float g = (int)f > 0 ? f / 2.0F + (float)this.random.nextInt((int)f) : f;
 -        boolean bl = target.hurt(DamageSource.mobAttack(this), g);
 -        if (bl) {
--            target.setDeltaMovement(target.getDeltaMovement().add(0.0D, (double)0.4F, 0.0D));
+-            double var10000;
 +        float f1 = (int) f > 0 ? f / 2.0F + (float) this.random.nextInt((int) f) : f;
 +        boolean flag = target.hurt(DamageSource.mobAttack(this), f1);
 +
 +        if (flag) {
-+            target.setDeltaMovement(target.getDeltaMovement().add(0.0D, 0.4000000059604645D, 0.0D));
++            double d0;
++
+             if (target instanceof LivingEntity) {
+-                LivingEntity livingEntity = (LivingEntity)target;
+-                var10000 = livingEntity.getAttributeValue(Attributes.KNOCKBACK_RESISTANCE);
++                LivingEntity entityliving = (LivingEntity) target;
++
++                d0 = entityliving.getAttributeValue(Attributes.KNOCKBACK_RESISTANCE);
+             } else {
+-                var10000 = 0.0D;
++                d0 = 0.0D;
+             }
+ 
+-            double d = var10000;
+-            double e = Math.max(0.0D, 1.0D - d);
+-            target.setDeltaMovement(target.getDeltaMovement().add(0.0D, (double)0.4F * e, 0.0D));
++            double d1 = d0;
++            double d2 = Math.max(0.0D, 1.0D - d1);
++
++            target.setDeltaMovement(target.getDeltaMovement().add(0.0D, 0.4000000059604645D * d2, 0.0D));
              this.doEnchantDamageEffects(this, target);
          }
  
@@ -143,7 +162,7 @@
      }
  
      public IronGolem.Crackiness getCrackiness() {
-@@ -243,10 +244,10 @@
+@@ -252,10 +256,10 @@
      public void offerFlower(boolean lookingAtVillager) {
          if (lookingAtVillager) {
              this.offerFlowerTick = 400;
@@ -156,7 +175,7 @@
          }
  
      }
-@@ -263,20 +264,23 @@
+@@ -272,19 +276,22 @@
  
      @Override
      protected InteractionResult mobInteract(Player player, InteractionHand hand) {
@@ -178,14 +197,13 @@
 +                float f1 = 1.0F + (this.random.nextFloat() - this.random.nextFloat()) * 0.2F;
 +
 +                this.playSound(SoundEvents.IRON_GOLEM_REPAIR, 1.0F, f1);
-                 this.gameEvent(GameEvent.MOB_INTERACT, this.eyeBlockPosition());
                  if (!player.getAbilities().instabuild) {
 -                    itemStack.shrink(1);
 +                    itemstack.shrink(1);
                  }
  
                  return InteractionResult.sidedSuccess(this.level.isClientSide);
-@@ -294,15 +298,16 @@
+@@ -302,15 +309,16 @@
      }
  
      public boolean isPlayerCreated() {
@@ -206,7 +224,7 @@
          }
  
      }
-@@ -314,52 +319,58 @@
+@@ -322,52 +330,58 @@
  
      @Override
      public boolean checkSpawnObstruction(LevelReader world) {
@@ -218,7 +236,7 @@
 +        BlockPos blockposition1 = blockposition.below();
 +        BlockState iblockdata = world.getBlockState(blockposition1);
 +
-+        if (!iblockdata.entityCanStandOn(world, blockposition1, this) && !level.paperConfig.ironGolemsCanSpawnInAir) { // Paper
++        if (!iblockdata.entityCanStandOn(world, blockposition1, this) && !level.paperConfig().entities.spawning.ironGolemsCanSpawnInAir) { // Paper
              return false;
          } else {
 -            for(int i = 1; i < 3; ++i) {

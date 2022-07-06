@@ -1,6 +1,7 @@
 package co.aikar.timings;
 
 import com.google.common.collect.MapMaker;
+import io.papermc.paper.configuration.GlobalConfiguration;
 import net.minecraft.commands.CommandFunction;
 import net.minecraft.network.protocol.Packet;
 import net.minecraft.world.level.block.Block;
@@ -8,7 +9,7 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.scheduler.BukkitTask;
 
-import org.bukkit.craftbukkit.v1_18_R2.scheduler.CraftTask;
+import org.bukkit.craftbukkit.v1_19_R1.scheduler.CraftTask;
 
 import java.util.Map;
 
@@ -159,5 +160,21 @@ public final class MinecraftTimings {
 
     public static Timing getCommandFunctionTiming(CommandFunction function) {
         return Timings.ofSafe("Command Function - " + function.getId());
+    }
+
+    public static void processConfig(GlobalConfiguration.Timings config) {
+        TimingsManager.url = config.url;
+        if (!TimingsManager.url.endsWith("/")) {
+            TimingsManager.url += "/";
+        }
+        TimingsManager.privacy = config.serverNamePrivacy;
+        if (!config.hiddenConfigEntries.contains("proxies.velocity.secret")) {
+            config.hiddenConfigEntries.add("proxies.velocity.secret");
+        }
+        TimingsManager.hiddenConfigs.addAll(config.hiddenConfigEntries);
+        co.aikar.timings.Timings.setVerboseTimingsEnabled(config.verbose);
+        co.aikar.timings.Timings.setTimingsEnabled(config.enabled);
+        co.aikar.timings.Timings.setHistoryInterval(config.historyInterval * 20);
+        co.aikar.timings.Timings.setHistoryLength(config.historyLength * 20);
     }
 }

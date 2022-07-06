@@ -1,6 +1,6 @@
 --- a/net/minecraft/server/commands/GiveCommand.java
 +++ b/net/minecraft/server/commands/GiveCommand.java
-@@ -2,10 +2,12 @@
+@@ -2,11 +2,13 @@
  
  import com.mojang.brigadier.CommandDispatcher;
  import com.mojang.brigadier.arguments.IntegerArgumentType;
@@ -9,12 +9,13 @@
  import com.mojang.brigadier.exceptions.CommandSyntaxException;
  import java.util.Collection;
 +import java.util.Iterator;
+ import net.minecraft.commands.CommandBuildContext;
  import net.minecraft.commands.CommandSourceStack;
 -import net.minecraft.commands.Commands;
  import net.minecraft.commands.arguments.EntityArgument;
  import net.minecraft.commands.arguments.item.ItemArgument;
  import net.minecraft.commands.arguments.item.ItemInput;
-@@ -18,56 +20,66 @@
+@@ -19,54 +21,64 @@
  import net.minecraft.world.item.ItemStack;
  
  public class GiveCommand {
@@ -23,16 +24,16 @@
  
 +    public GiveCommand() {}
 +
-     public static void register(CommandDispatcher<CommandSourceStack> dispatcher) {
+     public static void register(CommandDispatcher<CommandSourceStack> dispatcher, CommandBuildContext commandRegistryAccess) {
 -        dispatcher.register(Commands.literal("give").requires((source) -> {
 -            return source.hasPermission(2);
--        }).then(Commands.argument("targets", EntityArgument.players()).then(Commands.argument("item", ItemArgument.item()).executes((context) -> {
+-        }).then(Commands.argument("targets", EntityArgument.players()).then(Commands.argument("item", ItemArgument.item(commandRegistryAccess)).executes((context) -> {
 -            return giveItem(context.getSource(), ItemArgument.getItem(context, "item"), EntityArgument.getPlayers(context, "targets"), 1);
 -        }).then(Commands.argument("count", IntegerArgumentType.integer(1)).executes((context) -> {
 -            return giveItem(context.getSource(), ItemArgument.getItem(context, "item"), EntityArgument.getPlayers(context, "targets"), IntegerArgumentType.getInteger(context, "count"));
 +        dispatcher.register((LiteralArgumentBuilder) ((LiteralArgumentBuilder) net.minecraft.commands.Commands.literal("give").requires((commandlistenerwrapper) -> {
 +            return commandlistenerwrapper.hasPermission(2);
-+        })).then(net.minecraft.commands.Commands.argument("targets", EntityArgument.players()).then(((RequiredArgumentBuilder) net.minecraft.commands.Commands.argument("item", ItemArgument.item()).executes((commandcontext) -> {
++        })).then(net.minecraft.commands.Commands.argument("targets", EntityArgument.players()).then(((RequiredArgumentBuilder) net.minecraft.commands.Commands.argument("item", ItemArgument.item(commandRegistryAccess)).executes((commandcontext) -> {
 +            return GiveCommand.giveItem((CommandSourceStack) commandcontext.getSource(), ItemArgument.getItem(commandcontext, "item"), EntityArgument.getPlayers(commandcontext, "targets"), 1);
 +        })).then(net.minecraft.commands.Commands.argument("count", IntegerArgumentType.integer(1)).executes((commandcontext) -> {
 +            return GiveCommand.giveItem((CommandSourceStack) commandcontext.getSource(), ItemArgument.getItem(commandcontext, "item"), EntityArgument.getPlayers(commandcontext, "targets"), IntegerArgumentType.getInteger(commandcontext, "count"));
@@ -43,12 +44,12 @@
 -        int i = item.getItem().getMaxStackSize();
 -        int j = i * 100;
 -        if (count > j) {
--            source.sendFailure(new TranslatableComponent("commands.give.failed.toomanyitems", j, item.createItemStack(count, false).getDisplayName()));
+-            source.sendFailure(Component.translatable("commands.give.failed.toomanyitems", j, item.createItemStack(count, false).getDisplayName()));
 +        int j = item.getItem().getMaxStackSize();
 +        int k = j * 100;
 +
 +        if (count > k) {
-+            source.sendFailure(new TranslatableComponent("commands.give.failed.toomanyitems", new Object[]{k, item.createItemStack(count, false).getDisplayName()}));
++            source.sendFailure(Component.translatable("commands.give.failed.toomanyitems", k, item.createItemStack(count, false).getDisplayName()));
              return 0;
          } else {
 -            for(ServerPlayer serverPlayer : targets) {
@@ -103,11 +104,8 @@
              }
  
              if (targets.size() == 1) {
--                source.sendSuccess(new TranslatableComponent("commands.give.success.single", count, item.createItemStack(count, false).getDisplayName(), targets.iterator().next().getDisplayName()), true);
-+                source.sendSuccess(new TranslatableComponent("commands.give.success.single", new Object[]{count, item.createItemStack(count, false).getDisplayName(), ((ServerPlayer) targets.iterator().next()).getDisplayName()}), true);
+-                source.sendSuccess(Component.translatable("commands.give.success.single", count, item.createItemStack(count, false).getDisplayName(), targets.iterator().next().getDisplayName()), true);
++                source.sendSuccess(Component.translatable("commands.give.success.single", count, item.createItemStack(count, false).getDisplayName(), ((ServerPlayer) targets.iterator().next()).getDisplayName()), true);
              } else {
--                source.sendSuccess(new TranslatableComponent("commands.give.success.single", count, item.createItemStack(count, false).getDisplayName(), targets.size()), true);
-+                source.sendSuccess(new TranslatableComponent("commands.give.success.single", new Object[]{count, item.createItemStack(count, false).getDisplayName(), targets.size()}), true);
+                 source.sendSuccess(Component.translatable("commands.give.success.single", count, item.createItemStack(count, false).getDisplayName(), targets.size()), true);
              }
- 
-             return targets.size();

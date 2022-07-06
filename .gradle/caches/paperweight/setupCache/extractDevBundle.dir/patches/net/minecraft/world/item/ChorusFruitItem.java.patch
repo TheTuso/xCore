@@ -1,7 +1,15 @@
 --- a/net/minecraft/world/item/ChorusFruitItem.java
 +++ b/net/minecraft/world/item/ChorusFruitItem.java
-@@ -11,39 +11,52 @@
- import net.minecraft.world.level.Level;
+@@ -5,6 +5,7 @@
+ import net.minecraft.sounds.SoundEvents;
+ import net.minecraft.sounds.SoundSource;
+ import net.minecraft.util.Mth;
++import net.minecraft.world.entity.Entity;
+ import net.minecraft.world.entity.LivingEntity;
+ import net.minecraft.world.entity.animal.Fox;
+ import net.minecraft.world.entity.player.Player;
+@@ -13,41 +14,55 @@
+ import net.minecraft.world.phys.Vec3;
  
  public class ChorusFruitItem extends Item {
 +
@@ -35,10 +43,14 @@
                      user.stopRiding();
                  }
  
+-                Vec3 vec3 = user.position();
 -                if (user.randomTeleport(g, h, j, true)) {
+-                    world.gameEvent(GameEvent.TELEPORT, vec3, GameEvent.Context.of(user));
 -                    SoundEvent soundEvent = user instanceof Fox ? SoundEvents.FOX_TELEPORT : SoundEvents.CHORUS_FRUIT_TELEPORT;
 -                    world.playSound((Player)null, d, e, f, soundEvent, SoundSource.PLAYERS, 1.0F, 1.0F);
 -                    user.playSound(soundEvent, 1.0F, 1.0F);
++                Vec3 vec3d = user.position();
++
 +                // CraftBukkit start - handle canceled status of teleport event
 +                java.util.Optional<Boolean> status = user.randomTeleport(d3, d4, d5, true, org.bukkit.event.player.PlayerTeleportEvent.TeleportCause.CHORUS_FRUIT);
 +
@@ -49,6 +61,7 @@
 +
 +                if (status.get()) {
 +                    // CraftBukkit end
++                    world.gameEvent(GameEvent.TELEPORT, vec3d, GameEvent.Context.of((Entity) user));
 +                    SoundEvent soundeffect = user instanceof Fox ? SoundEvents.FOX_TELEPORT : SoundEvents.CHORUS_FRUIT_TELEPORT;
 +
 +                    world.playSound((Player) null, d0, d1, d2, soundeffect, SoundSource.PLAYERS, 1.0F, 1.0F);

@@ -1,14 +1,14 @@
 --- a/net/minecraft/server/rcon/RconConsoleSource.java
 +++ b/net/minecraft/server/rcon/RconConsoleSource.java
-@@ -12,6 +12,7 @@
+@@ -10,6 +10,7 @@
  import net.minecraft.world.phys.Vec3;
  
  public class RconConsoleSource implements CommandSource {
 +
      private static final String RCON = "Rcon";
-     private static final Component RCON_COMPONENT = new TextComponent("Rcon");
+     private static final Component RCON_COMPONENT = Component.literal("Rcon");
      private final StringBuffer buffer = new StringBuffer();
-@@ -30,10 +31,22 @@
+@@ -28,10 +29,22 @@
      }
  
      public CommandSourceStack createCommandSourceStack() {
@@ -31,5 +31,5 @@
 +    // CraftBukkit end
 +
      @Override
-     public void sendMessage(Component message, UUID sender) {
+     public void sendSystemMessage(Component message) {
          this.buffer.append(message.getString());

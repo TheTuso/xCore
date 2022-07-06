@@ -3,7 +3,7 @@
   "component": {
     "group": "pl.tuso.core",
     "module": "xcore",
-    "version": "1.2",
+    "version": "1.6",
     "attributes": {
       "org.gradle.status": "release"
     }
@@ -25,13 +25,13 @@
       },
       "files": [
         {
-          "name": "xcore-1.2-dev.jar",
-          "url": "xcore-1.2-dev.jar",
-          "size": 18351,
-          "sha512": "8dd636b9fa42a52e7dfd42c3006affb55620fbc3c887b0282af29eb3c69d2ef928c0ff86c36f1e4b1915a235a9e34411155e640e090d216724beac33b10fe135",
-          "sha256": "75ab5c6637256836bdeb44acbdd8840fdb322c43d518aff25c090ab216a9694c",
-          "sha1": "9d2444f782901a16661e6eb26479d058046d2bc3",
-          "md5": "6f9ee6ec08296e42453959f126a04c6c"
+          "name": "xcore-1.6-dev.jar",
+          "url": "xcore-1.6-dev.jar",
+          "size": 19523,
+          "sha512": "8cf0c34de9c66bd3fe3b7bb8c70a19924dd3f052ccef551295a614c2525c65892e93f52ae2a40b325ca21f2b2e05abaab9bac3402de1621cb8e84ecaf5e45394",
+          "sha256": "6ef5803711374246b062d4a7041c506640c3740008f2705ee429c24ff077d7d7",
+          "sha1": "6a6927890c05e044d663207154af7ac9489d3b99",
+          "md5": "199c87c51c3659adb2828409bc964afd"
         }
       ]
     },
@@ -69,13 +69,13 @@
       ],
       "files": [
         {
-          "name": "xcore-1.2-dev.jar",
-          "url": "xcore-1.2-dev.jar",
-          "size": 18351,
-          "sha512": "8dd636b9fa42a52e7dfd42c3006affb55620fbc3c887b0282af29eb3c69d2ef928c0ff86c36f1e4b1915a235a9e34411155e640e090d216724beac33b10fe135",
-          "sha256": "75ab5c6637256836bdeb44acbdd8840fdb322c43d518aff25c090ab216a9694c",
-          "sha1": "9d2444f782901a16661e6eb26479d058046d2bc3",
-          "md5": "6f9ee6ec08296e42453959f126a04c6c"
+          "name": "xcore-1.6-dev.jar",
+          "url": "xcore-1.6-dev.jar",
+          "size": 19523,
+          "sha512": "8cf0c34de9c66bd3fe3b7bb8c70a19924dd3f052ccef551295a614c2525c65892e93f52ae2a40b325ca21f2b2e05abaab9bac3402de1621cb8e84ecaf5e45394",
+          "sha256": "6ef5803711374246b062d4a7041c506640c3740008f2705ee429c24ff077d7d7",
+          "sha1": "6a6927890c05e044d663207154af7ac9489d3b99",
+          "md5": "199c87c51c3659adb2828409bc964afd"
         }
       ]
     },
@@ -89,13 +89,13 @@
       },
       "files": [
         {
-          "name": "xcore-1.2-dev-all.jar",
-          "url": "xcore-1.2-dev-all.jar",
-          "size": 8876003,
-          "sha512": "185791f8c10a9babb8b1e5eacb67219996808b1e5f1310a70c2909868d0107dc0a10576dd4c27828bd9fdf6405c76d6aab3f47b92d413236af0ca5a3112d127c",
-          "sha256": "262675074b88f2efc0ed253bda0621caf51018a5eb318ef2d746ded24055cc97",
-          "sha1": "af44c6b75f86fed545b566a634865ea37a52941a",
-          "md5": "13ecb25773acb1a5ad838702d7a08091"
+          "name": "xcore-1.6-dev-all.jar",
+          "url": "xcore-1.6-dev-all.jar",
+          "size": 8877187,
+          "sha512": "f69845fbba2c68862fd2750dce4d7f73ba408772e6c0791e95d71c3534cc1257d1e5c6500d4596df86d5758464ad38a5cf75acc266a852cc9c6121d1052ffdd0",
+          "sha256": "bc294bb9535644e041c6d34ae5815c660508597c4373f2fc94d3a30dd84f2d37",
+          "sha1": "62696d1c366642da22ed7ebb752ba9b291b9b324",
+          "md5": "19abe9c7e74010878279ca8dd0eec891"
         }
       ]
     }

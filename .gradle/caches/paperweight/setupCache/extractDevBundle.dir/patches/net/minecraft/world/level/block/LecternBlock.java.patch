@@ -1,6 +1,14 @@
 --- a/net/minecraft/world/level/block/LecternBlock.java
 +++ b/net/minecraft/world/level/block/LecternBlock.java
-@@ -36,23 +36,24 @@
+@@ -13,6 +13,7 @@
+ import net.minecraft.world.InteractionHand;
+ import net.minecraft.world.InteractionResult;
+ import net.minecraft.world.MenuProvider;
++import net.minecraft.world.entity.Entity;
+ import net.minecraft.world.entity.item.ItemEntity;
+ import net.minecraft.world.entity.player.Player;
+ import net.minecraft.world.item.BlockItem;
+@@ -36,23 +37,24 @@
  import net.minecraft.world.phys.shapes.VoxelShape;
  
  public class LecternBlock extends BaseEntityBlock {
@@ -32,7 +40,7 @@
      }
  
      @Override
-@@ -62,7 +63,7 @@
+@@ -62,7 +64,7 @@
  
      @Override
      public VoxelShape getOcclusionShape(BlockState state, BlockGetter world, BlockPos pos) {
@@ -41,7 +49,7 @@
      }
  
      @Override
-@@ -72,54 +73,56 @@
+@@ -72,54 +74,56 @@
  
      @Override
      public BlockState getStateForPlacement(BlockPlaceContext ctx) {
@@ -117,7 +125,7 @@
      }
  
      @Override
-@@ -128,9 +131,9 @@
+@@ -128,9 +132,9 @@
      }
  
      public static boolean tryPlaceBook(@Nullable Player player, Level world, BlockPos pos, BlockState state, ItemStack stack) {
@@ -129,7 +137,7 @@
              }
  
              return true;
-@@ -140,30 +143,33 @@
+@@ -140,30 +144,33 @@
      }
  
      private static void placeBook(@Nullable Player player, Level world, BlockPos pos, BlockState state, ItemStack stack) {
@@ -138,6 +146,7 @@
 -            lecternBlockEntity.setBook(stack.split(1));
 -            resetBookState(world, pos, state, true);
 -            world.playSound((Player)null, pos, SoundEvents.BOOK_PUT, SoundSource.BLOCKS, 1.0F, 1.0F);
+-            world.gameEvent(player, GameEvent.BLOCK_CHANGE, pos);
 +        BlockEntity tileentity = world.getBlockEntity(pos);
 +
 +        if (tileentity instanceof LecternBlockEntity) {
@@ -146,7 +155,7 @@
 +            tileentitylectern.setBook(stack.split(1));
 +            LecternBlock.resetBookState(world, pos, state, true);
 +            world.playSound((Player) null, pos, SoundEvents.BOOK_PUT, SoundSource.BLOCKS, 1.0F, 1.0F);
-             world.gameEvent(player, GameEvent.BLOCK_CHANGE, pos);
++            world.gameEvent((Entity) player, GameEvent.BLOCK_CHANGE, pos);
          }
  
      }
@@ -173,10 +182,10 @@
      }
  
      private static void updateBelow(Level world, BlockPos pos, BlockState state) {
-@@ -172,17 +178,17 @@
+@@ -172,17 +179,17 @@
  
      @Override
-     public void tick(BlockState state, ServerLevel world, BlockPos pos, Random random) {
+     public void tick(BlockState state, ServerLevel world, BlockPos pos, RandomSource random) {
 -        changePowered(world, pos, state, false);
 +        LecternBlock.changePowered(world, pos, state, false);
      }
@@ -194,7 +203,7 @@
                  world.updateNeighborsAt(pos.below(), this);
              }
  
-@@ -191,16 +197,20 @@
+@@ -191,16 +198,20 @@
      }
  
      private void popBook(BlockState state, Level world, BlockPos pos) {
@@ -225,22 +234,8 @@
          }
  
      }
-@@ -210,14 +220,26 @@
-         return true;
-     }
+@@ -212,12 +223,12 @@
  
-+    // Paper start - optimize redstone (Alternate Current)
-+    @Override
-+    public boolean isSignalSourceTo(Level level, BlockPos pos, BlockState state, Direction dir) {
-+        return true;
-+    }
-+
-+    @Override
-+    public boolean isDirectSignalSourceTo(Level level, BlockPos pos, BlockState state, Direction dir) {
-+        return dir == Direction.UP;
-+    }
-+    // Paper end;
-+
      @Override
      public int getSignal(BlockState state, BlockGetter world, BlockPos pos, Direction direction) {
 -        return state.getValue(POWERED) ? 15 : 0;
@@ -254,7 +249,7 @@
      }
  
      @Override
-@@ -227,10 +249,11 @@
+@@ -227,10 +238,11 @@
  
      @Override
      public int getAnalogOutputSignal(BlockState state, Level world, BlockPos pos) {
@@ -270,7 +265,7 @@
              }
          }
  
-@@ -239,28 +262,30 @@
+@@ -239,28 +251,30 @@
  
      @Override
      public InteractionResult use(BlockState state, Level world, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {

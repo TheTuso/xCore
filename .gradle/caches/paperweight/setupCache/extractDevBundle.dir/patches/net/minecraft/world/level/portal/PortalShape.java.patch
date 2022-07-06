@@ -13,7 +13,7 @@
  import net.minecraft.world.level.block.state.properties.BlockStateProperties;
  import net.minecraft.world.phys.Vec3;
 +// CraftBukkit start
-+import org.bukkit.craftbukkit.v1_18_R2.event.CraftPortalEvent;
++import org.bukkit.craftbukkit.v1_19_R1.event.CraftPortalEvent;
 +import org.bukkit.event.world.PortalCreateEvent;
 +// CraftBukkit end
  
@@ -34,7 +34,7 @@
      private BlockPos bottomLeft;
      private int height;
      private final int width;
-+    org.bukkit.craftbukkit.v1_18_R2.util.BlockStateListPopulator blocks; // CraftBukkit - add field
++    org.bukkit.craftbukkit.v1_19_R1.util.BlockStateListPopulator blocks; // CraftBukkit - add field
  
      public static Optional<PortalShape> findEmptyPortalShape(LevelAccessor world, BlockPos pos, Direction.Axis axis) {
 -        return findPortalShape(world, pos, (portalShape) -> {
@@ -59,7 +59,7 @@
      }
  
      public PortalShape(LevelAccessor world, BlockPos pos, Direction.Axis axis) {
-+        this.blocks = new org.bukkit.craftbukkit.v1_18_R2.util.BlockStateListPopulator(world.getMinecraftWorld()); // CraftBukkit
++        this.blocks = new org.bukkit.craftbukkit.v1_19_R1.util.BlockStateListPopulator(world.getMinecraftWorld()); // CraftBukkit
          this.level = world;
          this.axis = axis;
          this.rightDir = axis == Direction.Axis.X ? Direction.WEST : Direction.SOUTH;

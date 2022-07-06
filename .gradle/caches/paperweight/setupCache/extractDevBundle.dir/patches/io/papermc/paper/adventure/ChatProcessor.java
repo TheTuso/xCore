@@ -17,10 +17,10 @@ import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
 import org.bukkit.ChatColor;
-import org.bukkit.craftbukkit.v1_18_R2.CraftWorld;
-import org.bukkit.craftbukkit.v1_18_R2.entity.CraftPlayer;
-import org.bukkit.craftbukkit.v1_18_R2.util.LazyPlayerSet;
-import org.bukkit.craftbukkit.v1_18_R2.util.Waitable;
+import org.bukkit.craftbukkit.v1_19_R1.CraftWorld;
+import org.bukkit.craftbukkit.v1_19_R1.entity.CraftPlayer;
+import org.bukkit.craftbukkit.v1_19_R1.util.LazyPlayerSet;
+import org.bukkit.craftbukkit.v1_19_R1.util.Waitable;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Event;
 import org.bukkit.event.HandlerList;
@@ -156,14 +156,14 @@ public final class ChatProcessor {
     }
 
     private static String legacyDisplayName(final CraftPlayer player) {
-        if (((CraftWorld) player.getWorld()).getHandle().paperConfig.useVanillaScoreboardColoring) {
+        if (((org.bukkit.craftbukkit.v1_19_R1.CraftWorld) player.getWorld()).getHandle().paperConfig().scoreboards.useVanillaWorldScoreboardNameColoring) {
             return LegacyComponentSerializer.legacySection().serialize(player.teamDisplayName()) + ChatColor.RESET;
         }
         return player.getDisplayName();
     }
 
     private static Component displayName(final CraftPlayer player) {
-        if (((CraftWorld) player.getWorld()).getHandle().paperConfig.useVanillaScoreboardColoring) {
+        if (((CraftWorld) player.getWorld()).getHandle().paperConfig().scoreboards.useVanillaWorldScoreboardNameColoring) {
             return player.teamDisplayName();
         }
         return player.displayName();

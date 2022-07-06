@@ -1,14 +1,14 @@
 --- a/net/minecraft/world/item/CrossbowItem.java
 +++ b/net/minecraft/world/item/CrossbowItem.java
-@@ -21,6 +21,7 @@
- import net.minecraft.stats.Stats;
+@@ -19,6 +19,7 @@
+ import net.minecraft.util.RandomSource;
  import net.minecraft.world.InteractionHand;
  import net.minecraft.world.InteractionResultHolder;
 +import net.minecraft.world.entity.Entity;
  import net.minecraft.world.entity.LivingEntity;
  import net.minecraft.world.entity.monster.CrossbowAttackMob;
  import net.minecraft.world.entity.player.Player;
-@@ -33,6 +34,7 @@
+@@ -31,6 +32,7 @@
  import net.minecraft.world.phys.Vec3;
  
  public class CrossbowItem extends ProjectileWeaponItem implements Vanishable {
@@ -16,7 +16,7 @@
      private static final String TAG_CHARGED = "Charged";
      private static final String TAG_CHARGED_PROJECTILES = "ChargedProjectiles";
      private static final int MAX_CHARGE_DURATION = 25;
-@@ -50,68 +52,87 @@
+@@ -48,68 +50,87 @@
  
      @Override
      public Predicate<ItemStack> getSupportedHeldProjectiles() {
@@ -131,7 +131,7 @@
                  return false;
              }
          }
-@@ -123,56 +144,64 @@
+@@ -121,56 +142,64 @@
          if (projectile.isEmpty()) {
              return false;
          } else {
@@ -223,7 +223,7 @@
                  }
              }
          }
-@@ -181,121 +210,151 @@
+@@ -179,121 +208,151 @@
      }
  
      private static void clearChargedProjectiles(ItemStack crossbow) {
@@ -294,7 +294,7 @@
 +                ((Projectile) object).shoot((double) vector3fa.x(), (double) vector3fa.y(), (double) vector3fa.z(), speed, divergence);
 +            }
 +            // CraftBukkit start
-+            org.bukkit.event.entity.EntityShootBowEvent event = org.bukkit.craftbukkit.v1_18_R2.event.CraftEventFactory.callEntityShootBowEvent(shooter, crossbow, projectile, (Entity) object, shooter.getUsedItemHand(), soundPitch, true);
++            org.bukkit.event.entity.EntityShootBowEvent event = org.bukkit.craftbukkit.v1_19_R1.event.CraftEventFactory.callEntityShootBowEvent(shooter, crossbow, projectile, (Entity) object, shooter.getUsedItemHand(), soundPitch, true);
 +            if (event.isCancelled()) {
 +                event.getProjectile().remove();
 +                return;
@@ -380,7 +380,7 @@
 +        CrossbowItem.onCrossbowShot(world, entity, stack);
      }
  
-     private static float[] getShotPitches(Random random) {
+     private static float[] getShotPitches(RandomSource random) {
 -        boolean bl = random.nextBoolean();
 -        return new float[]{1.0F, getRandomShotPitch(bl, random), getRandomShotPitch(!bl, random)};
 +        boolean flag = random.nextBoolean();
@@ -388,7 +388,7 @@
 +        return new float[]{1.0F, CrossbowItem.getRandomShotPitch(flag, random), CrossbowItem.getRandomShotPitch(!flag, random)};
      }
  
-     private static float getRandomShotPitch(boolean flag, Random random) {
+     private static float getRandomShotPitch(boolean flag, RandomSource random) {
          float f = flag ? 0.63F : 0.43F;
 +
          return 1.0F / (random.nextFloat() * 0.5F + 1.8F) + f;
@@ -427,7 +427,7 @@
              if (f < 0.2F) {
                  this.startSoundPlayed = false;
                  this.midLoadSoundPlayed = false;
-@@ -303,12 +362,12 @@
+@@ -301,12 +360,12 @@
  
              if (f >= 0.2F && !this.startSoundPlayed) {
                  this.startSoundPlayed = true;
@@ -443,7 +443,7 @@
              }
          }
  
-@@ -316,11 +375,12 @@
+@@ -314,11 +373,12 @@
  
      @Override
      public int getUseDuration(ItemStack stack) {
@@ -457,7 +457,7 @@
          return i == 0 ? 25 : 25 - 5 * i;
      }
  
-@@ -343,7 +403,8 @@
+@@ -341,7 +401,8 @@
      }
  
      private static float getPowerForTime(int useTicks, ItemStack stack) {
@@ -467,21 +467,21 @@
          if (f > 1.0F) {
              f = 1.0F;
          }
-@@ -353,16 +414,19 @@
+@@ -351,16 +412,19 @@
  
      @Override
      public void appendHoverText(ItemStack stack, @Nullable Level world, List<Component> tooltip, TooltipFlag context) {
 -        List<ItemStack> list = getChargedProjectiles(stack);
 -        if (isCharged(stack) && !list.isEmpty()) {
 -            ItemStack itemStack = list.get(0);
--            tooltip.add((new TranslatableComponent("item.minecraft.crossbow.projectile")).append(" ").append(itemStack.getDisplayName()));
+-            tooltip.add(Component.translatable("item.minecraft.crossbow.projectile").append(" ").append(itemStack.getDisplayName()));
 -            if (context.isAdvanced() && itemStack.is(Items.FIREWORK_ROCKET)) {
 +        List<ItemStack> list1 = CrossbowItem.getChargedProjectiles(stack);
 +
 +        if (CrossbowItem.isCharged(stack) && !list1.isEmpty()) {
 +            ItemStack itemstack1 = (ItemStack) list1.get(0);
 +
-+            tooltip.add((new TranslatableComponent("item.minecraft.crossbow.projectile")).append(" ").append(itemstack1.getDisplayName()));
++            tooltip.add(Component.translatable("item.minecraft.crossbow.projectile").append(" ").append(itemstack1.getDisplayName()));
 +            if (context.isAdvanced() && itemstack1.is(Items.FIREWORK_ROCKET)) {
                  List<Component> list2 = Lists.newArrayList();
 -                Items.FIREWORK_ROCKET.appendHoverText(itemStack, world, list2, context);
@@ -489,13 +489,13 @@
 +                Items.FIREWORK_ROCKET.appendHoverText(itemstack1, world, list2, context);
                  if (!list2.isEmpty()) {
 -                    for(int i = 0; i < list2.size(); ++i) {
--                        list2.set(i, (new TextComponent("  ")).append(list2.get(i)).withStyle(ChatFormatting.GRAY));
+-                        list2.set(i, Component.literal("  ").append(list2.get(i)).withStyle(ChatFormatting.GRAY));
 +                    for (int i = 0; i < list2.size(); ++i) {
-+                        list2.set(i, (new TextComponent("  ")).append((Component) list2.get(i)).withStyle(ChatFormatting.GRAY));
++                        list2.set(i, Component.literal("  ").append((Component) list2.get(i)).withStyle(ChatFormatting.GRAY));
                      }
  
                      tooltip.addAll(list2);
-@@ -374,7 +438,7 @@
+@@ -372,7 +436,7 @@
  
      @Override
      public boolean useOnRelease(ItemStack stack) {

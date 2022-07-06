@@ -4,6 +4,7 @@ import com.destroystokyo.paper.io.PaperFileIOThread;
 import com.destroystokyo.paper.io.IOUtil;
 import com.destroystokyo.paper.io.PrioritizedTaskQueue;
 import com.destroystokyo.paper.io.QueueExecutorThread;
+import io.papermc.paper.configuration.GlobalConfiguration;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ChunkHolder;
@@ -152,6 +153,35 @@ public final class ChunkTaskManager {
                 }
             }
             // Paper end
+        }
+    }
+
+    public static void processConfiguration(GlobalConfiguration.AsyncChunks config) {
+        int threads = config.threads; // don't write back to config
+        int cpus = Runtime.getRuntime().availableProcessors() / 2;
+        if (threads <= 0) {
+            if (cpus <= 4) {
+                threads = cpus <= 2 ? 1 : 2;
+            } else {
+                threads = (int) Math.min(Integer.getInteger("paper.maxChunkThreads", 4), cpus / 2);
+            }
+        }
+        if (cpus == 1 && !Boolean.getBoolean("Paper.allowAsyncChunksSingleCore")) {
+            config.asyncChunks = false;
+        } else {
+            config.asyncChunks = true;
+        }
+
+        // Let Shared Host set some limits
+        String sharedHostThreads = System.getenv("PAPER_ASYNC_CHUNKS_SHARED_HOST_THREADS");
+        if (sharedHostThreads != null) {
+            try {
+                threads = Math.max(1, Math.min(threads, Integer.parseInt(sharedHostThreads)));
+            } catch (NumberFormatException ignored) {}
+        }
+
+        if (config.asyncChunks) {
+            ChunkTaskManager.initGlobalLoadThreads(threads);
         }
     }
 

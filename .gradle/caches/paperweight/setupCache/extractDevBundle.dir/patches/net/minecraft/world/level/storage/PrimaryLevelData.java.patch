@@ -28,7 +28,7 @@
  import net.minecraft.util.datafix.DataFixTypes;
  import net.minecraft.world.Difficulty;
  import net.minecraft.world.level.DataPackConfig;
-@@ -37,8 +43,13 @@
+@@ -38,8 +44,13 @@
  import net.minecraft.world.level.timers.TimerCallbacks;
  import net.minecraft.world.level.timers.TimerQueue;
  import org.slf4j.Logger;
@@ -42,14 +42,15 @@
      private static final Logger LOGGER = LogUtils.getLogger();
      protected static final String PLAYER = "Player";
      protected static final String WORLD_GEN_SETTINGS = "WorldGenSettings";
-@@ -76,6 +87,19 @@
+@@ -77,12 +88,25 @@
      private final Set<String> knownServerBrands;
      private boolean wasModded;
      private final TimerQueue<MinecraftServer> scheduledEvents;
 +    // CraftBukkit start - Add world and pdc
 +    private ServerLevel world;
 +    protected Tag pdc;
-+
+ 
+-    private PrimaryLevelData(@Nullable DataFixer dataFixer, int dataVersion, @Nullable CompoundTag playerData, boolean modded, int spawnX, int spawnY, int spawnZ, float spawnAngle, long time, long timeOfDay, int version, int clearWeatherTime, int rainTime, boolean raining, int thunderTime, boolean thundering, boolean initialized, boolean difficultyLocked, WorldBorder.Settings worldBorder, int wanderingTraderSpawnDelay, int wanderingTraderSpawnChance, @Nullable UUID wanderingTraderId, Set<String> serverBrands, TimerQueue<MinecraftServer> scheduledEvents, @Nullable CompoundTag customBossEvents, CompoundTag dragonFight, LevelSettings levelInfo, WorldGenSettings generatorOptions, Lifecycle lifecycle) {
 +    public void setWorld(ServerLevel world) {
 +        if (this.world != null) {
 +            return;
@@ -59,10 +60,17 @@
 +        this.pdc = null;
 +    }
 +    // CraftBukkit end
- 
-     private PrimaryLevelData(@Nullable DataFixer dataFixer, int dataVersion, @Nullable CompoundTag playerData, boolean modded, int spawnX, int spawnY, int spawnZ, float spawnAngle, long time, long timeOfDay, int version, int clearWeatherTime, int rainTime, boolean raining, int thunderTime, boolean thundering, boolean initialized, boolean difficultyLocked, WorldBorder.Settings worldBorder, int wanderingTraderSpawnDelay, int wanderingTraderSpawnChance, @Nullable UUID wanderingTraderId, Set<String> serverBrands, TimerQueue<MinecraftServer> scheduledEvents, @Nullable CompoundTag customBossEvents, CompoundTag dragonFight, LevelSettings levelInfo, WorldGenSettings generatorOptions, Lifecycle lifecycle) {
-         this.fixerUpper = dataFixer;
-@@ -110,17 +134,19 @@
++
++    private PrimaryLevelData(@Nullable DataFixer datafixer, int dataVersion, @Nullable CompoundTag playerData, boolean modded, int spawnX, int spawnY, int spawnZ, float spawnAngle, long time, long timeOfDay, int version, int clearWeatherTime, int rainTime, boolean raining, int thunderTime, boolean thundering, boolean initialized, boolean difficultyLocked, WorldBorder.Settings worldBorder, int wanderingTraderSpawnDelay, int wanderingTraderSpawnChance, @Nullable UUID wanderingTraderId, Set<String> serverBrands, TimerQueue<MinecraftServer> scheduledEvents, @Nullable CompoundTag customBossEvents, CompoundTag dragonFight, LevelSettings levelInfo, WorldGenSettings generatorOptions, Lifecycle lifecycle) {
+         if (!generatorOptions.dimensions().containsKey(LevelStem.OVERWORLD)) {
+             throw new IllegalStateException("Missing Overworld dimension data");
+         } else {
+-            this.fixerUpper = dataFixer;
++            this.fixerUpper = datafixer;
+             this.wasModded = modded;
+             this.xSpawn = spawnX;
+             this.ySpawn = spawnY;
+@@ -115,17 +139,19 @@
      }
  
      public PrimaryLevelData(LevelSettings levelInfo, WorldGenSettings generatorOptions, Lifecycle lifecycle) {
@@ -78,18 +86,18 @@
 +        CompoundTag nbttagcompound1 = (CompoundTag) dynamic.get("DragonFight").result().map(Dynamic::getValue).orElseGet(() -> {
 +            return (Tag) dynamic.get("DimensionData").get("1").get("DragonFight").orElseEmptyMap().getValue();
          });
--        return new PrimaryLevelData(dataFixer, dataVersion, playerData, dynamic.get("WasModded").asBoolean(false), dynamic.get("SpawnX").asInt(0), dynamic.get("SpawnY").asInt(0), dynamic.get("SpawnZ").asInt(0), dynamic.get("SpawnAngle").asFloat(0.0F), l, dynamic.get("DayTime").asLong(l), saveVersionInfo.levelDataVersion(), dynamic.get("clearWeatherTime").asInt(0), dynamic.get("rainTime").asInt(0), dynamic.get("raining").asBoolean(false), dynamic.get("thunderTime").asInt(0), dynamic.get("thundering").asBoolean(false), dynamic.get("initialized").asBoolean(true), dynamic.get("DifficultyLocked").asBoolean(false), WorldBorder.Settings.read(dynamic, WorldBorder.DEFAULT_SETTINGS), dynamic.get("WanderingTraderSpawnDelay").asInt(0), dynamic.get("WanderingTraderSpawnChance").asInt(0), dynamic.get("WanderingTraderId").read(SerializableUUID.CODEC).result().orElse((UUID)null), dynamic.get("ServerBrands").asStream().flatMap((dynamicx) -> {
+-        return new PrimaryLevelData(dataFixer, dataVersion, playerData, dynamic.get("WasModded").asBoolean(false), dynamic.get("SpawnX").asInt(0), dynamic.get("SpawnY").asInt(0), dynamic.get("SpawnZ").asInt(0), dynamic.get("SpawnAngle").asFloat(0.0F), l, dynamic.get("DayTime").asLong(l), saveVersionInfo.levelDataVersion(), dynamic.get("clearWeatherTime").asInt(0), dynamic.get("rainTime").asInt(0), dynamic.get("raining").asBoolean(false), dynamic.get("thunderTime").asInt(0), dynamic.get("thundering").asBoolean(false), dynamic.get("initialized").asBoolean(true), dynamic.get("DifficultyLocked").asBoolean(false), WorldBorder.Settings.read(dynamic, WorldBorder.DEFAULT_SETTINGS), dynamic.get("WanderingTraderSpawnDelay").asInt(0), dynamic.get("WanderingTraderSpawnChance").asInt(0), dynamic.get("WanderingTraderId").read(UUIDUtil.CODEC).result().orElse((UUID)null), dynamic.get("ServerBrands").asStream().flatMap((dynamicx) -> {
 -            return dynamicx.asString().result().stream();
 -        }).collect(Collectors.toCollection(Sets::newLinkedHashSet)), new TimerQueue<>(TimerCallbacks.SERVER_CALLBACKS, dynamic.get("ScheduledEvents").asStream()), (CompoundTag)dynamic.get("CustomBossEvents").orElseEmptyMap().getValue(), compoundTag, levelInfo, generatorOptions, lifecycle);
 +
 +        // CraftBukkit - decompile error
-+        return new PrimaryLevelData(dataFixer, dataVersion, playerData, dynamic.get("WasModded").asBoolean(false), dynamic.get("SpawnX").asInt(0), dynamic.get("SpawnY").asInt(0), dynamic.get("SpawnZ").asInt(0), dynamic.get("SpawnAngle").asFloat(0.0F), j, dynamic.get("DayTime").asLong(j), saveVersionInfo.levelDataVersion(), dynamic.get("clearWeatherTime").asInt(0), dynamic.get("rainTime").asInt(0), dynamic.get("raining").asBoolean(false), dynamic.get("thunderTime").asInt(0), dynamic.get("thundering").asBoolean(false), dynamic.get("initialized").asBoolean(true), dynamic.get("DifficultyLocked").asBoolean(false), WorldBorder.Settings.read(dynamic, WorldBorder.DEFAULT_SETTINGS), dynamic.get("WanderingTraderSpawnDelay").asInt(0), dynamic.get("WanderingTraderSpawnChance").asInt(0), (UUID) dynamic.get("WanderingTraderId").read(SerializableUUID.CODEC).result().orElse(null), (Set) dynamic.get("ServerBrands").asStream().flatMap((dynamic1) -> {
++        return new PrimaryLevelData(dataFixer, dataVersion, playerData, dynamic.get("WasModded").asBoolean(false), dynamic.get("SpawnX").asInt(0), dynamic.get("SpawnY").asInt(0), dynamic.get("SpawnZ").asInt(0), dynamic.get("SpawnAngle").asFloat(0.0F), j, dynamic.get("DayTime").asLong(j), saveVersionInfo.levelDataVersion(), dynamic.get("clearWeatherTime").asInt(0), dynamic.get("rainTime").asInt(0), dynamic.get("raining").asBoolean(false), dynamic.get("thunderTime").asInt(0), dynamic.get("thundering").asBoolean(false), dynamic.get("initialized").asBoolean(true), dynamic.get("DifficultyLocked").asBoolean(false), WorldBorder.Settings.read(dynamic, WorldBorder.DEFAULT_SETTINGS), dynamic.get("WanderingTraderSpawnDelay").asInt(0), dynamic.get("WanderingTraderSpawnChance").asInt(0), (UUID) dynamic.get("WanderingTraderId").read(UUIDUtil.CODEC).result().orElse(null), (Set) dynamic.get("ServerBrands").asStream().flatMap((dynamic1) -> {
 +            return dynamic1.asString().result().stream();
 +        }).collect(Collectors.toCollection(Sets::newLinkedHashSet)), new TimerQueue<>(TimerCallbacks.SERVER_CALLBACKS, dynamic.get("ScheduledEvents").asStream()), (CompoundTag) dynamic.get("CustomBossEvents").orElseEmptyMap().getValue(), nbttagcompound1, levelInfo, generatorOptions, lifecycle);
      }
  
      @Override
-@@ -130,26 +156,35 @@
+@@ -135,26 +161,35 @@
              playerNbt = this.loadedPlayerTag;
          }
  
@@ -140,7 +148,7 @@
          });
          levelNbt.putInt("GameType", this.settings.gameType().getId());
          levelNbt.putInt("SpawnX", this.xSpawn);
-@@ -170,7 +205,7 @@
+@@ -175,7 +210,7 @@
          levelNbt.putBoolean("allowCommands", this.settings.allowCommands());
          levelNbt.putBoolean("initialized", this.initialized);
          this.worldBorder.write(levelNbt);
@@ -149,7 +157,7 @@
          levelNbt.putBoolean("DifficultyLocked", this.difficultyLocked);
          levelNbt.put("GameRules", this.settings.gameRules().createTag());
          levelNbt.put("DragonFight", this.endDragonFightData);
-@@ -178,8 +213,8 @@
+@@ -183,8 +218,8 @@
              levelNbt.put("Player", playerNbt);
          }
  
@@ -160,7 +168,7 @@
          });
          if (this.customBossEvents != null) {
              levelNbt.put("CustomBossEvents", this.customBossEvents);
-@@ -192,6 +227,8 @@
+@@ -197,6 +232,8 @@
              levelNbt.putUUID("WanderingTraderId", this.wanderingTraderId);
          }
  
@@ -169,7 +177,7 @@
      }
  
      @Override
-@@ -228,7 +265,7 @@
+@@ -233,7 +270,7 @@
          if (!this.upgradedPlayerTag && this.loadedPlayerTag != null) {
              if (this.playerDataVersion < SharedConstants.getCurrentVersion().getWorldVersion()) {
                  if (this.fixerUpper == null) {
@@ -178,7 +186,7 @@
                  }
  
                  this.loadedPlayerTag = NbtUtils.update(this.fixerUpper, DataFixTypes.PLAYER, this.loadedPlayerTag, this.playerDataVersion);
-@@ -309,6 +346,25 @@
+@@ -314,6 +351,25 @@
  
      @Override
      public void setThundering(boolean thundering) {
@@ -204,7 +212,7 @@
          this.thundering = thundering;
      }
  
-@@ -329,6 +385,26 @@
+@@ -334,6 +390,26 @@
  
      @Override
      public void setRaining(boolean raining) {
@@ -231,7 +239,7 @@
          this.raining = raining;
      }
  
-@@ -395,6 +471,12 @@
+@@ -400,6 +476,12 @@
      @Override
      public void setDifficulty(Difficulty difficulty) {
          this.settings = this.settings.withDifficulty(difficulty);
@@ -244,7 +252,7 @@
      }
  
      @Override
-@@ -515,4 +597,12 @@
+@@ -520,4 +602,12 @@
      public LevelSettings getLevelSettings() {
          return this.settings.copy();
      }

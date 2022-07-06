@@ -20,7 +20,7 @@
 +        // CraftBukkit start
 +        @Override
 +        public org.bukkit.command.CommandSender getBukkitSender(CommandSourceStack wrapper) {
-+            return new org.bukkit.craftbukkit.v1_18_R2.command.CraftBlockCommandSender(wrapper, CommandBlockEntity.this);
++            return new org.bukkit.craftbukkit.v1_19_R1.command.CraftBlockCommandSender(wrapper, CommandBlockEntity.this);
 +        }
 +        // CraftBukkit end
 +

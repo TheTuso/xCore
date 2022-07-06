@@ -6,7 +6,7 @@
 +import java.util.Iterator;
  import java.util.List;
  import java.util.function.Predicate;
- import net.minecraft.core.BlockPos;
+ import net.minecraft.stats.Stats;
 @@ -14,10 +15,12 @@
  import net.minecraft.world.level.Level;
  import net.minecraft.world.level.gameevent.GameEvent;
@@ -19,8 +19,8 @@
 +
      private static final Predicate<Entity> ENTITY_PREDICATE = EntitySelector.NO_SPECTATORS.and(Entity::isPickable);
      private final Boat.Type type;
- 
-@@ -28,45 +31,66 @@
+     private final boolean hasChest;
+@@ -30,50 +33,71 @@
  
      @Override
      public InteractionResultHolder<ItemStack> use(Level world, Player user, InteractionHand hand) {
@@ -61,20 +61,20 @@
              }
  
 -            if (hitResult.getType() == HitResult.Type.BLOCK) {
--                Boat boat = new Boat(world, hitResult.getLocation().x, hitResult.getLocation().y, hitResult.getLocation().z);
+-                Boat boat = this.getBoat(world, hitResult);
 -                boat.setType(this.type);
 -                boat.setYRot(user.getYRot());
 -                if (!world.noCollision(boat, boat.getBoundingBox())) {
 -                    return InteractionResultHolder.fail(itemStack);
 +            if (movingobjectpositionblock.getType() == HitResult.Type.BLOCK) {
 +                // CraftBukkit start - Boat placement
-+                org.bukkit.event.player.PlayerInteractEvent event = org.bukkit.craftbukkit.v1_18_R2.event.CraftEventFactory.callPlayerInteractEvent(user, org.bukkit.event.block.Action.RIGHT_CLICK_BLOCK, movingobjectpositionblock.getBlockPos(), movingobjectpositionblock.getDirection(), itemstack, hand);
++                org.bukkit.event.player.PlayerInteractEvent event = org.bukkit.craftbukkit.v1_19_R1.event.CraftEventFactory.callPlayerInteractEvent(user, org.bukkit.event.block.Action.RIGHT_CLICK_BLOCK, movingobjectpositionblock.getBlockPos(), movingobjectpositionblock.getDirection(), itemstack, hand);
 +
 +                if (event.isCancelled()) {
 +                    return InteractionResultHolder.pass(itemstack);
 +                }
 +                // CraftBukkit end
-+                Boat entityboat = new Boat(world, movingobjectpositionblock.getLocation().x, movingobjectpositionblock.getLocation().y, movingobjectpositionblock.getLocation().z);
++                Boat entityboat = this.getBoat(world, movingobjectpositionblock);
 +
 +                entityboat.setType(this.type);
 +                entityboat.setYRot(user.getYRot());
@@ -83,9 +83,9 @@
                  } else {
                      if (!world.isClientSide) {
 -                        world.addFreshEntity(boat);
--                        world.gameEvent(user, GameEvent.ENTITY_PLACE, new BlockPos(hitResult.getLocation()));
+-                        world.gameEvent(user, GameEvent.ENTITY_PLACE, hitResult.getLocation());
 +                        // CraftBukkit start
-+                        if (org.bukkit.craftbukkit.v1_18_R2.event.CraftEventFactory.callEntityPlaceEvent(world, movingobjectpositionblock.getBlockPos(), movingobjectpositionblock.getDirection(), user, entityboat).isCancelled()) {
++                        if (org.bukkit.craftbukkit.v1_19_R1.event.CraftEventFactory.callEntityPlaceEvent(world, movingobjectpositionblock.getBlockPos(), movingobjectpositionblock.getDirection(), user, entityboat).isCancelled()) {
 +                            return InteractionResultHolder.fail(itemstack);
 +                        }
 +
@@ -93,7 +93,7 @@
 +                            return InteractionResultHolder.pass(itemstack);
 +                        }
 +                        // CraftBukkit end
-+                        world.gameEvent(user, GameEvent.ENTITY_PLACE, new BlockPos(movingobjectpositionblock.getLocation()));
++                        world.gameEvent((Entity) user, GameEvent.ENTITY_PLACE, movingobjectpositionblock.getLocation());
                          if (!user.getAbilities().instabuild) {
 -                            itemStack.shrink(1);
 +                            itemstack.shrink(1);
@@ -110,3 +110,9 @@
              }
          }
      }
+ 
+     private Boat getBoat(Level world, HitResult hitResult) {
+-        return (Boat)(this.hasChest ? new ChestBoat(world, hitResult.getLocation().x, hitResult.getLocation().y, hitResult.getLocation().z) : new Boat(world, hitResult.getLocation().x, hitResult.getLocation().y, hitResult.getLocation().z));
++        return (Boat) (this.hasChest ? new ChestBoat(world, hitResult.getLocation().x, hitResult.getLocation().y, hitResult.getLocation().z) : new Boat(world, hitResult.getLocation().x, hitResult.getLocation().y, hitResult.getLocation().z));
+     }
+ }

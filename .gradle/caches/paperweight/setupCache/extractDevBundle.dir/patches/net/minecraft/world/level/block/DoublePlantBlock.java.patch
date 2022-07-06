@@ -1,14 +1,6 @@
 --- a/net/minecraft/world/level/block/DoublePlantBlock.java
 +++ b/net/minecraft/world/level/block/DoublePlantBlock.java
-@@ -4,6 +4,7 @@
- import net.minecraft.core.BlockPos;
- import net.minecraft.core.Direction;
- import net.minecraft.util.Mth;
-+import net.minecraft.server.level.ServerLevel;
- import net.minecraft.world.entity.LivingEntity;
- import net.minecraft.world.entity.player.Player;
- import net.minecraft.world.item.ItemStack;
-@@ -20,64 +21,66 @@
+@@ -20,64 +20,66 @@
  import net.minecraft.world.level.block.state.properties.EnumProperty;
  
  public class DoublePlantBlock extends BushBlock {
@@ -96,7 +88,7 @@
              }
          }
  
-@@ -90,14 +93,22 @@
+@@ -90,14 +92,22 @@
      }
  
      protected static void preventCreativeDropFromBottomPart(Level world, BlockPos pos, BlockState state, Player player) {
@@ -109,7 +101,7 @@
 -                world.setBlock(blockPos, blockState2, 35);
 -                world.levelEvent(player, 2001, blockPos, Block.getId(blockState));
 +        // CraftBukkit start
-+        if (((ServerLevel)world).hasPhysicsEvent && org.bukkit.craftbukkit.v1_18_R2.event.CraftEventFactory.callBlockPhysicsEvent(world, pos).isCancelled()) { // Paper
++        if (((net.minecraft.server.level.ServerLevel)world).hasPhysicsEvent && org.bukkit.craftbukkit.v1_19_R1.event.CraftEventFactory.callBlockPhysicsEvent(world, pos).isCancelled()) { // Paper
 +            return;
 +        }
 +        // CraftBukkit end
@@ -127,16 +119,13 @@
              }
          }
  
-@@ -105,7 +116,7 @@
+@@ -105,11 +115,11 @@
  
      @Override
      protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
 -        builder.add(HALF);
 +        builder.add(DoublePlantBlock.HALF);
      }
- 
-     @Override
-@@ -115,6 +126,6 @@
  
      @Override
      public long getSeed(BlockState state, BlockPos pos) {

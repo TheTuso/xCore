@@ -4,11 +4,11 @@ import io.papermc.paper.registry.PaperRegistry;
 import io.papermc.paper.registry.RegistryKey;
 import net.minecraft.core.Registry;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.world.level.levelgen.feature.ConfiguredStructureFeature;
-import net.minecraft.world.level.levelgen.feature.StructureFeature;
+import net.minecraft.world.level.levelgen.structure.Structure;
 import org.bukkit.NamespacedKey;
 import org.bukkit.StructureType;
 import org.checkerframework.checker.nullness.qual.NonNull;
+import org.checkerframework.checker.nullness.qual.Nullable;
 import org.checkerframework.framework.qual.DefaultQualifier;
 
 import java.util.Objects;
@@ -24,19 +24,19 @@ public final class PaperConfiguredStructure {
         new ConfiguredStructureRegistry().register();
     }
 
-    static final class ConfiguredStructureRegistry extends PaperRegistry<ConfiguredStructure, ConfiguredStructureFeature<?, ?>> {
+    static final class ConfiguredStructureRegistry extends PaperRegistry<ConfiguredStructure, Structure> {
 
-        private static final Supplier<Registry<StructureFeature<?>>> STRUCTURE_FEATURE_REGISTRY = registryFor(Registry.STRUCTURE_FEATURE_REGISTRY);
+        private static final Supplier<Registry<Structure>> STRUCTURE_FEATURE_REGISTRY = registryFor(Registry.STRUCTURE_REGISTRY);
 
         public ConfiguredStructureRegistry() {
             super(RegistryKey.CONFIGURED_STRUCTURE_REGISTRY);
         }
 
         @Override
-        public ConfiguredStructure convertToApi(NamespacedKey key, ConfiguredStructureFeature<?, ?> nms) {
-            final ResourceLocation structureFeatureLoc = Objects.requireNonNull(STRUCTURE_FEATURE_REGISTRY.get().getKey(nms.feature));
-            final StructureType structureType = Objects.requireNonNull(StructureType.getStructureTypes().get(structureFeatureLoc.getPath()), structureFeatureLoc + " could not be converted to an API type");
-            return new ConfiguredStructure(key, structureType);
+        public @Nullable ConfiguredStructure convertToApi(NamespacedKey key, Structure nms) {
+            final ResourceLocation structureTypeLoc = Objects.requireNonNull(Registry.STRUCTURE_TYPES.getKey(nms.type()), "unexpected structure type " + nms.type());
+            final @Nullable StructureType structureType = StructureType.getStructureTypes().get(structureTypeLoc.getPath());
+            return structureType == null ? null : new ConfiguredStructure(key, structureType);
         }
     }
 }

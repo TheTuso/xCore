@@ -1,6 +1,6 @@
 --- a/net/minecraft/world/level/block/entity/BaseContainerBlockEntity.java
 +++ b/net/minecraft/world/level/block/entity/BaseContainerBlockEntity.java
-@@ -17,11 +17,13 @@
+@@ -16,11 +16,13 @@
  import net.minecraft.world.level.block.state.BlockState;
  
  public abstract class BaseContainerBlockEntity extends BlockEntity implements Container, MenuProvider, Nameable {
@@ -15,7 +15,7 @@
      }
  
      @Override
-@@ -29,7 +31,7 @@
+@@ -28,7 +30,7 @@
          super.load(nbt);
          this.lockKey = LockCode.fromTag(nbt);
          if (nbt.contains("CustomName", 8)) {
@@ -24,7 +24,7 @@
          }
  
      }
-@@ -67,12 +69,12 @@
+@@ -66,7 +68,7 @@
      protected abstract Component getDefaultName();
  
      public boolean canOpen(Player player) {
@@ -33,13 +33,7 @@
      }
  
      public static boolean canUnlock(Player player, LockCode lock, Component containerName) {
-         if (!player.isSpectator() && !lock.unlocksWith(player.getMainHandItem())) {
--            player.displayClientMessage(new TranslatableComponent("container.isLocked", containerName), true);
-+            player.displayClientMessage(new TranslatableComponent("container.isLocked", new Object[]{containerName}), true);
-             player.playNotifySound(SoundEvents.CHEST_LOCKED, SoundSource.BLOCKS, 1.0F, 1.0F);
-             return false;
-         } else {
-@@ -87,4 +89,12 @@
+@@ -86,4 +88,12 @@
      }
  
      protected abstract AbstractContainerMenu createMenu(int syncId, Inventory playerInventory);

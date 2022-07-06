@@ -4,14 +4,14 @@
  package net.minecraft.world.level.block;
  
 +import java.util.Iterator;
- import java.util.Random;
  import javax.annotation.Nullable;
  import net.minecraft.core.BlockPos;
+ import net.minecraft.core.Direction;
 @@ -16,8 +17,10 @@
  import net.minecraft.world.level.block.state.properties.BlockStateProperties;
  import net.minecraft.world.level.block.state.properties.IntegerProperty;
  import net.minecraft.world.phys.BlockHitResult;
-+import org.bukkit.craftbukkit.v1_18_R2.event.CraftEventFactory; // CraftBukkit
++import org.bukkit.craftbukkit.v1_19_R1.event.CraftEventFactory; // CraftBukkit
  
  public class ChorusFlowerBlock extends Block {
 +
@@ -36,7 +36,7 @@
      }
  
      @Override
-     public void randomTick(BlockState state, ServerLevel world, BlockPos pos, Random random) {
+     public void randomTick(BlockState state, ServerLevel world, BlockPos pos, RandomSource random) {
 -        BlockPos blockPos = pos.above();
 -        if (world.isEmptyBlock(blockPos) && blockPos.getY() < world.getMaxBuildHeight()) {
 -            int i = state.getValue(AGE);
@@ -250,14 +250,14 @@
 +        builder.add(ChorusFlowerBlock.AGE);
      }
  
-     public static void generatePlant(LevelAccessor world, BlockPos pos, Random random, int size) {
+     public static void generatePlant(LevelAccessor world, BlockPos pos, RandomSource random, int size) {
 -        world.setBlock(pos, ((ChorusPlantBlock)Blocks.CHORUS_PLANT).getStateForPlacement(world, pos), 2);
 -        growTreeRecursive(world, pos, random, pos, size, 0);
 +        world.setBlock(pos, ((ChorusPlantBlock) Blocks.CHORUS_PLANT).getStateForPlacement(world, pos), 2);
 +        ChorusFlowerBlock.growTreeRecursive(world, pos, random, pos, size, 0);
      }
  
-     private static void growTreeRecursive(LevelAccessor world, BlockPos pos, Random random, BlockPos rootPos, int size, int layer) {
+     private static void growTreeRecursive(LevelAccessor world, BlockPos pos, RandomSource random, BlockPos rootPos, int size, int layer) {
 -        ChorusPlantBlock chorusPlantBlock = (ChorusPlantBlock)Blocks.CHORUS_PLANT;
 -        int i = random.nextInt(4) + 1;
 +        ChorusPlantBlock blockchorusfruit = (ChorusPlantBlock) Blocks.CHORUS_PLANT;

@@ -17,7 +17,7 @@
 -import net.minecraft.world.item.ItemStack;
 -import net.minecraft.world.level.Level;
 -import net.minecraft.world.level.block.DispenserBlock;
-+import org.bukkit.craftbukkit.v1_18_R2.inventory.CraftItemStack;
++import org.bukkit.craftbukkit.v1_19_R1.inventory.CraftItemStack;
 +import org.bukkit.event.block.BlockDispenseEvent;
 +// CraftBukkit end
  
@@ -67,7 +67,7 @@
 +        }
 +
 +        iprojectile.shoot(event.getVelocity().getX(), event.getVelocity().getY(), event.getVelocity().getZ(), this.getPower(), this.getUncertainty());
-+        ((Entity) iprojectile).projectileSource = new org.bukkit.craftbukkit.v1_18_R2.projectiles.CraftBlockProjectileSource((DispenserBlockEntity) pointer.getEntity());
++        ((Entity) iprojectile).projectileSource = new org.bukkit.craftbukkit.v1_19_R1.projectiles.CraftBlockProjectileSource((DispenserBlockEntity) pointer.getEntity());
 +        // CraftBukkit end
 +        worldserver.addFreshEntity(iprojectile);
 +        // itemstack.shrink(1); // CraftBukkit - Handled during event processing

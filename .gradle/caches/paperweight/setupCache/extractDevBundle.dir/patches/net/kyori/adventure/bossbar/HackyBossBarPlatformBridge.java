@@ -3,7 +3,7 @@ package net.kyori.adventure.bossbar;
 import io.papermc.paper.adventure.PaperAdventure;
 import io.papermc.paper.adventure.VanillaBossBarListener;
 import net.minecraft.server.level.ServerBossEvent;
-import org.bukkit.craftbukkit.v1_18_R2.entity.CraftPlayer;
+import org.bukkit.craftbukkit.v1_19_R1.entity.CraftPlayer;
 
 public abstract class HackyBossBarPlatformBridge {
     public ServerBossEvent vanilla$bar;

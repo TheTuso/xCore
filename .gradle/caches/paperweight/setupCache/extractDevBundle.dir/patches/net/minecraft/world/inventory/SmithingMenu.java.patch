@@ -4,7 +4,7 @@
  import net.minecraft.world.level.Level;
  import net.minecraft.world.level.block.Blocks;
  import net.minecraft.world.level.block.state.BlockState;
-+import org.bukkit.craftbukkit.v1_18_R2.inventory.CraftInventoryView; // CraftBukkit
++import org.bukkit.craftbukkit.v1_19_R1.inventory.CraftInventoryView; // CraftBukkit
  
  public class SmithingMenu extends ItemCombinerMenu {
 +
@@ -45,7 +45,7 @@
 +
          if (list.isEmpty()) {
 -            this.resultSlots.setItem(0, ItemStack.EMPTY);
-+            org.bukkit.craftbukkit.v1_18_R2.event.CraftEventFactory.callPrepareSmithingEvent(this.getBukkitView(), ItemStack.EMPTY); // CraftBukkit
++            org.bukkit.craftbukkit.v1_19_R1.event.CraftEventFactory.callPrepareSmithingEvent(this.getBukkitView(), ItemStack.EMPTY); // CraftBukkit
          } else {
 -            this.selectedRecipe = list.get(0);
 -            ItemStack itemStack = this.selectedRecipe.assemble(this.inputSlots);
@@ -55,11 +55,11 @@
              this.resultSlots.setRecipeUsed(this.selectedRecipe);
 -            this.resultSlots.setItem(0, itemStack);
 +            // CraftBukkit start
-+            org.bukkit.craftbukkit.v1_18_R2.event.CraftEventFactory.callPrepareSmithingEvent(this.getBukkitView(), itemstack);
++            org.bukkit.craftbukkit.v1_19_R1.event.CraftEventFactory.callPrepareSmithingEvent(this.getBukkitView(), itemstack);
 +            // CraftBukkit end
          }
  
-+        org.bukkit.craftbukkit.v1_18_R2.event.CraftEventFactory.callPrepareResultEvent(this, 2); // Paper
++        org.bukkit.craftbukkit.v1_19_R1.event.CraftEventFactory.callPrepareResultEvent(this, RESULT_SLOT); // Paper
      }
  
      @Override
@@ -83,7 +83,7 @@
 +            return this.bukkitEntity;
 +        }
 +
-+        org.bukkit.craftbukkit.v1_18_R2.inventory.CraftInventory inventory = new org.bukkit.craftbukkit.v1_18_R2.inventory.CraftInventorySmithing(
++        org.bukkit.craftbukkit.v1_19_R1.inventory.CraftInventory inventory = new org.bukkit.craftbukkit.v1_19_R1.inventory.CraftInventorySmithing(
 +                access.getLocation(), this.inputSlots, this.resultSlots);
 +        this.bukkitEntity = new CraftInventoryView(this.player.getBukkitEntity(), inventory, this);
 +        return this.bukkitEntity;

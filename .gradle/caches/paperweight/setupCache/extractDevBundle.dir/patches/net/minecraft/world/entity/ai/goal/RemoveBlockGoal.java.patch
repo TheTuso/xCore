@@ -5,7 +5,7 @@
  import net.minecraft.world.level.chunk.ChunkStatus;
  import net.minecraft.world.phys.Vec3;
 +// CraftBukkit start
-+import org.bukkit.craftbukkit.v1_18_R2.block.CraftBlock;
++import org.bukkit.craftbukkit.v1_19_R1.block.CraftBlock;
 +import org.bukkit.event.entity.EntityInteractEvent;
 +// CraftBukkit end
  
@@ -32,11 +32,12 @@
 -        Level level = this.removerMob.level;
 -        BlockPos blockPos = this.removerMob.blockPosition();
 -        BlockPos blockPos2 = this.getPosWithBlock(blockPos, level);
+-        RandomSource randomSource = this.removerMob.getRandom();
+-        if (this.isReachedTarget() && blockPos2 != null) {
 +        Level world = this.removerMob.level;
 +        BlockPos blockposition = this.removerMob.blockPosition();
 +        BlockPos blockposition1 = this.getPosWithBlock(blockposition, world);
-         Random random = this.removerMob.getRandom();
--        if (this.isReachedTarget() && blockPos2 != null) {
++        RandomSource randomsource = this.removerMob.getRandom();
 +
 +        if (this.isReachedTarget() && blockposition1 != null) {
 +            Vec3 vec3d;
@@ -47,12 +48,12 @@
 -                this.removerMob.setDeltaMovement(vec3.x, 0.3D, vec3.z);
 -                if (!level.isClientSide) {
 -                    double d = 0.08D;
--                    ((ServerLevel)level).sendParticles(new ItemParticleOption(ParticleTypes.ITEM, new ItemStack(Items.EGG)), (double)blockPos2.getX() + 0.5D, (double)blockPos2.getY() + 0.7D, (double)blockPos2.getZ() + 0.5D, 3, ((double)random.nextFloat() - 0.5D) * 0.08D, ((double)random.nextFloat() - 0.5D) * 0.08D, ((double)random.nextFloat() - 0.5D) * 0.08D, (double)0.15F);
+-                    ((ServerLevel)level).sendParticles(new ItemParticleOption(ParticleTypes.ITEM, new ItemStack(Items.EGG)), (double)blockPos2.getX() + 0.5D, (double)blockPos2.getY() + 0.7D, (double)blockPos2.getZ() + 0.5D, 3, ((double)randomSource.nextFloat() - 0.5D) * 0.08D, ((double)randomSource.nextFloat() - 0.5D) * 0.08D, ((double)randomSource.nextFloat() - 0.5D) * 0.08D, (double)0.15F);
 +                vec3d = this.removerMob.getDeltaMovement();
 +                this.removerMob.setDeltaMovement(vec3d.x, 0.3D, vec3d.z);
 +                if (!world.isClientSide) {
 +                    d0 = 0.08D;
-+                    ((ServerLevel) world).sendParticles(new ItemParticleOption(ParticleTypes.ITEM, new ItemStack(Items.EGG)), (double) blockposition1.getX() + 0.5D, (double) blockposition1.getY() + 0.7D, (double) blockposition1.getZ() + 0.5D, 3, ((double) random.nextFloat() - 0.5D) * 0.08D, ((double) random.nextFloat() - 0.5D) * 0.08D, ((double) random.nextFloat() - 0.5D) * 0.08D, 0.15000000596046448D);
++                    ((ServerLevel) world).sendParticles(new ItemParticleOption(ParticleTypes.ITEM, new ItemStack(Items.EGG)), (double) blockposition1.getX() + 0.5D, (double) blockposition1.getY() + 0.7D, (double) blockposition1.getZ() + 0.5D, 3, ((double) randomsource.nextFloat() - 0.5D) * 0.08D, ((double) randomsource.nextFloat() - 0.5D) * 0.08D, ((double) randomsource.nextFloat() - 0.5D) * 0.08D, 0.15000000596046448D);
                  }
              }
  
@@ -71,9 +72,9 @@
 -                level.removeBlock(blockPos2, false);
 -                if (!level.isClientSide) {
 -                    for(int i = 0; i < 20; ++i) {
--                        double e = random.nextGaussian() * 0.02D;
--                        double f = random.nextGaussian() * 0.02D;
--                        double g = random.nextGaussian() * 0.02D;
+-                        double e = randomSource.nextGaussian() * 0.02D;
+-                        double f = randomSource.nextGaussian() * 0.02D;
+-                        double g = randomSource.nextGaussian() * 0.02D;
 -                        ((ServerLevel)level).sendParticles(ParticleTypes.POOF, (double)blockPos2.getX() + 0.5D, (double)blockPos2.getY(), (double)blockPos2.getZ() + 0.5D, 1, e, f, g, (double)0.15F);
 +                // CraftBukkit start - Step on eggs
 +                EntityInteractEvent event = new EntityInteractEvent(this.removerMob.getBukkitEntity(), CraftBlock.at(world, blockposition1));
@@ -86,9 +87,9 @@
 +                world.removeBlock(blockposition1, false);
 +                if (!world.isClientSide) {
 +                    for (int i = 0; i < 20; ++i) {
-+                        d0 = random.nextGaussian() * 0.02D;
-+                        double d1 = random.nextGaussian() * 0.02D;
-+                        double d2 = random.nextGaussian() * 0.02D;
++                        d0 = randomsource.nextGaussian() * 0.02D;
++                        double d1 = randomsource.nextGaussian() * 0.02D;
++                        double d2 = randomsource.nextGaussian() * 0.02D;
 +
 +                        ((ServerLevel) world).sendParticles(ParticleTypes.POOF, (double) blockposition1.getX() + 0.5D, (double) blockposition1.getY(), (double) blockposition1.getZ() + 0.5D, 1, d0, d1, d2, 0.15000000596046448D);
                      }

@@ -1,6 +1,6 @@
 --- a/net/minecraft/world/entity/EntityType.java
 +++ b/net/minecraft/world/entity/EntityType.java
-@@ -149,123 +149,124 @@
+@@ -153,128 +153,129 @@
  import org.slf4j.Logger;
  
  public class EntityType<T extends Entity> implements EntityTypeTest<Entity, T> {
@@ -10,6 +10,7 @@
 -    private final Holder.Reference<EntityType<?>> builtInRegistryHolder = Registry.ENTITY_TYPE.createIntrusiveHolder(this);
 +    private final Holder.Reference<EntityType<?>> builtInRegistryHolder;
      private static final float MAGIC_HORSE_WIDTH = 1.3964844F;
+-    public static final EntityType<Allay> ALLAY = register("allay", EntityType.Builder.<Allay>of(Allay::new, MobCategory.CREATURE).sized(0.35F, 0.6F).clientTrackingRange(8).updateInterval(2));
 -    public static final EntityType<AreaEffectCloud> AREA_EFFECT_CLOUD = register("area_effect_cloud", EntityType.Builder.<AreaEffectCloud>of(AreaEffectCloud::new, MobCategory.MISC).fireImmune().sized(6.0F, 0.5F).clientTrackingRange(10).updateInterval(Integer.MAX_VALUE));
 -    public static final EntityType<ArmorStand> ARMOR_STAND = register("armor_stand", EntityType.Builder.<ArmorStand>of(ArmorStand::new, MobCategory.MISC).sized(0.5F, 1.975F).clientTrackingRange(10));
 -    public static final EntityType<Arrow> ARROW = register("arrow", EntityType.Builder.<Arrow>of(Arrow::new, MobCategory.MISC).sized(0.5F, 0.5F).clientTrackingRange(4).updateInterval(20));
@@ -18,6 +19,7 @@
 -    public static final EntityType<Bee> BEE = register("bee", EntityType.Builder.<Bee>of(Bee::new, MobCategory.CREATURE).sized(0.7F, 0.6F).clientTrackingRange(8));
 -    public static final EntityType<Blaze> BLAZE = register("blaze", EntityType.Builder.<Blaze>of(Blaze::new, MobCategory.MONSTER).fireImmune().sized(0.6F, 1.8F).clientTrackingRange(8));
 -    public static final EntityType<Boat> BOAT = register("boat", EntityType.Builder.<Boat>of(Boat::new, MobCategory.MISC).sized(1.375F, 0.5625F).clientTrackingRange(10));
+-    public static final EntityType<ChestBoat> CHEST_BOAT = register("chest_boat", EntityType.Builder.<ChestBoat>of(ChestBoat::new, MobCategory.MISC).sized(1.375F, 0.5625F).clientTrackingRange(10));
 -    public static final EntityType<Cat> CAT = register("cat", EntityType.Builder.<Cat>of(Cat::new, MobCategory.CREATURE).sized(0.6F, 0.7F).clientTrackingRange(8));
 -    public static final EntityType<CaveSpider> CAVE_SPIDER = register("cave_spider", EntityType.Builder.<CaveSpider>of(CaveSpider::new, MobCategory.MONSTER).sized(0.7F, 0.5F).clientTrackingRange(8));
 -    public static final EntityType<Chicken> CHICKEN = register("chicken", EntityType.Builder.<Chicken>of(Chicken::new, MobCategory.CREATURE).sized(0.4F, 0.7F).clientTrackingRange(10));
@@ -40,6 +42,7 @@
 -    public static final EntityType<FallingBlockEntity> FALLING_BLOCK = register("falling_block", EntityType.Builder.<FallingBlockEntity>of(FallingBlockEntity::new, MobCategory.MISC).sized(0.98F, 0.98F).clientTrackingRange(10).updateInterval(20));
 -    public static final EntityType<FireworkRocketEntity> FIREWORK_ROCKET = register("firework_rocket", EntityType.Builder.<FireworkRocketEntity>of(FireworkRocketEntity::new, MobCategory.MISC).sized(0.25F, 0.25F).clientTrackingRange(4).updateInterval(10));
 -    public static final EntityType<Fox> FOX = register("fox", EntityType.Builder.<Fox>of(Fox::new, MobCategory.CREATURE).sized(0.6F, 0.7F).clientTrackingRange(8).immuneTo(Blocks.SWEET_BERRY_BUSH));
+-    public static final EntityType<Frog> FROG = register("frog", EntityType.Builder.<Frog>of(Frog::new, MobCategory.CREATURE).sized(0.5F, 0.5F).clientTrackingRange(10));
 -    public static final EntityType<Ghast> GHAST = register("ghast", EntityType.Builder.<Ghast>of(Ghast::new, MobCategory.MONSTER).fireImmune().sized(4.0F, 4.0F).clientTrackingRange(10));
 -    public static final EntityType<Giant> GIANT = register("giant", EntityType.Builder.<Giant>of(Giant::new, MobCategory.MONSTER).sized(3.6F, 12.0F).clientTrackingRange(10));
 -    public static final EntityType<GlowItemFrame> GLOW_ITEM_FRAME = register("glow_item_frame", EntityType.Builder.<GlowItemFrame>of(GlowItemFrame::new, MobCategory.MISC).sized(0.5F, 0.5F).clientTrackingRange(10).updateInterval(Integer.MAX_VALUE));
@@ -99,6 +102,7 @@
 -    public static final EntityType<Squid> SQUID = register("squid", EntityType.Builder.<Squid>of(Squid::new, MobCategory.WATER_CREATURE).sized(0.8F, 0.8F).clientTrackingRange(8));
 -    public static final EntityType<Stray> STRAY = register("stray", EntityType.Builder.<Stray>of(Stray::new, MobCategory.MONSTER).sized(0.6F, 1.99F).immuneTo(Blocks.POWDER_SNOW).clientTrackingRange(8));
 -    public static final EntityType<Strider> STRIDER = register("strider", EntityType.Builder.<Strider>of(Strider::new, MobCategory.CREATURE).fireImmune().sized(0.9F, 1.7F).clientTrackingRange(10));
+-    public static final EntityType<Tadpole> TADPOLE = register("tadpole", EntityType.Builder.<Tadpole>of(Tadpole::new, MobCategory.CREATURE).sized(Tadpole.HITBOX_WIDTH, Tadpole.HITBOX_HEIGHT).clientTrackingRange(10));
 -    public static final EntityType<ThrownEgg> EGG = register("egg", EntityType.Builder.<ThrownEgg>of(ThrownEgg::new, MobCategory.MISC).sized(0.25F, 0.25F).clientTrackingRange(4).updateInterval(10));
 -    public static final EntityType<ThrownEnderpearl> ENDER_PEARL = register("ender_pearl", EntityType.Builder.<ThrownEnderpearl>of(ThrownEnderpearl::new, MobCategory.MISC).sized(0.25F, 0.25F).clientTrackingRange(4).updateInterval(10));
 -    public static final EntityType<ThrownExperienceBottle> EXPERIENCE_BOTTLE = register("experience_bottle", EntityType.Builder.<ThrownExperienceBottle>of(ThrownExperienceBottle::new, MobCategory.MISC).sized(0.25F, 0.25F).clientTrackingRange(4).updateInterval(10));
@@ -111,6 +115,7 @@
 -    public static final EntityType<Villager> VILLAGER = register("villager", EntityType.Builder.<Villager>of(Villager::new, MobCategory.MISC).sized(0.6F, 1.95F).clientTrackingRange(10));
 -    public static final EntityType<Vindicator> VINDICATOR = register("vindicator", EntityType.Builder.<Vindicator>of(Vindicator::new, MobCategory.MONSTER).sized(0.6F, 1.95F).clientTrackingRange(8));
 -    public static final EntityType<WanderingTrader> WANDERING_TRADER = register("wandering_trader", EntityType.Builder.<WanderingTrader>of(WanderingTrader::new, MobCategory.CREATURE).sized(0.6F, 1.95F).clientTrackingRange(10));
+-    public static final EntityType<Warden> WARDEN = register("warden", EntityType.Builder.<Warden>of(Warden::new, MobCategory.MONSTER).sized(0.9F, 2.9F).clientTrackingRange(16).fireImmune());
 -    public static final EntityType<Witch> WITCH = register("witch", EntityType.Builder.<Witch>of(Witch::new, MobCategory.MONSTER).sized(0.6F, 1.95F).clientTrackingRange(8));
 -    public static final EntityType<WitherBoss> WITHER = register("wither", EntityType.Builder.<WitherBoss>of(WitherBoss::new, MobCategory.MONSTER).fireImmune().immuneTo(Blocks.WITHER_ROSE).sized(0.9F, 3.5F).clientTrackingRange(10));
 -    public static final EntityType<WitherSkeleton> WITHER_SKELETON = register("wither_skeleton", EntityType.Builder.<WitherSkeleton>of(WitherSkeleton::new, MobCategory.MONSTER).fireImmune().immuneTo(Blocks.WITHER_ROSE).sized(0.7F, 2.4F).clientTrackingRange(8));
@@ -123,6 +128,7 @@
 -    public static final EntityType<ZombifiedPiglin> ZOMBIFIED_PIGLIN = register("zombified_piglin", EntityType.Builder.<ZombifiedPiglin>of(ZombifiedPiglin::new, MobCategory.MONSTER).fireImmune().sized(0.6F, 1.95F).clientTrackingRange(8));
 -    public static final EntityType<Player> PLAYER = register("player", EntityType.Builder.<Player>createNothing(MobCategory.MISC).noSave().noSummon().sized(0.6F, 1.8F).clientTrackingRange(32).updateInterval(2));
 -    public static final EntityType<FishingHook> FISHING_BOBBER = register("fishing_bobber", EntityType.Builder.<FishingHook>of(FishingHook::new, MobCategory.MISC).noSave().noSummon().sized(0.25F, 0.25F).clientTrackingRange(4).updateInterval(5));
++    public static final EntityType<Allay> ALLAY = EntityType.register("allay", EntityType.Builder.of(Allay::new, MobCategory.CREATURE).sized(0.35F, 0.6F).clientTrackingRange(8).updateInterval(2));
 +    public static final EntityType<AreaEffectCloud> AREA_EFFECT_CLOUD = EntityType.register("area_effect_cloud", EntityType.Builder.of(AreaEffectCloud::new, MobCategory.MISC).fireImmune().sized(6.0F, 0.5F).clientTrackingRange(10).updateInterval(10)); // CraftBukkit - SPIGOT-3729: track area effect clouds
 +    public static final EntityType<ArmorStand> ARMOR_STAND = EntityType.register("armor_stand", EntityType.Builder.of(ArmorStand::new, MobCategory.MISC).sized(0.5F, 1.975F).clientTrackingRange(10));
 +    public static final EntityType<Arrow> ARROW = EntityType.register("arrow", EntityType.Builder.of(Arrow::new, MobCategory.MISC).sized(0.5F, 0.5F).clientTrackingRange(4).updateInterval(20));
@@ -131,6 +137,7 @@
 +    public static final EntityType<Bee> BEE = EntityType.register("bee", EntityType.Builder.of(Bee::new, MobCategory.CREATURE).sized(0.7F, 0.6F).clientTrackingRange(8));
 +    public static final EntityType<Blaze> BLAZE = EntityType.register("blaze", EntityType.Builder.of(Blaze::new, MobCategory.MONSTER).fireImmune().sized(0.6F, 1.8F).clientTrackingRange(8));
 +    public static final EntityType<Boat> BOAT = EntityType.register("boat", EntityType.Builder.of(Boat::new, MobCategory.MISC).sized(1.375F, 0.5625F).clientTrackingRange(10));
++    public static final EntityType<ChestBoat> CHEST_BOAT = EntityType.register("chest_boat", EntityType.Builder.of(ChestBoat::new, MobCategory.MISC).sized(1.375F, 0.5625F).clientTrackingRange(10));
 +    public static final EntityType<Cat> CAT = EntityType.register("cat", EntityType.Builder.of(Cat::new, MobCategory.CREATURE).sized(0.6F, 0.7F).clientTrackingRange(8));
 +    public static final EntityType<CaveSpider> CAVE_SPIDER = EntityType.register("cave_spider", EntityType.Builder.of(CaveSpider::new, MobCategory.MONSTER).sized(0.7F, 0.5F).clientTrackingRange(8));
 +    public static final EntityType<Chicken> CHICKEN = EntityType.register("chicken", EntityType.Builder.of(Chicken::new, MobCategory.CREATURE).sized(0.4F, 0.7F).clientTrackingRange(10));
@@ -153,6 +160,7 @@
 +    public static final EntityType<FallingBlockEntity> FALLING_BLOCK = EntityType.register("falling_block", EntityType.Builder.of(FallingBlockEntity::new, MobCategory.MISC).sized(0.98F, 0.98F).clientTrackingRange(10).updateInterval(20));
 +    public static final EntityType<FireworkRocketEntity> FIREWORK_ROCKET = EntityType.register("firework_rocket", EntityType.Builder.of(FireworkRocketEntity::new, MobCategory.MISC).sized(0.25F, 0.25F).clientTrackingRange(4).updateInterval(10));
 +    public static final EntityType<Fox> FOX = EntityType.register("fox", EntityType.Builder.of(Fox::new, MobCategory.CREATURE).sized(0.6F, 0.7F).clientTrackingRange(8).immuneTo(Blocks.SWEET_BERRY_BUSH));
++    public static final EntityType<Frog> FROG = EntityType.register("frog", EntityType.Builder.of(Frog::new, MobCategory.CREATURE).sized(0.5F, 0.5F).clientTrackingRange(10));
 +    public static final EntityType<Ghast> GHAST = EntityType.register("ghast", EntityType.Builder.of(Ghast::new, MobCategory.MONSTER).fireImmune().sized(4.0F, 4.0F).clientTrackingRange(10));
 +    public static final EntityType<Giant> GIANT = EntityType.register("giant", EntityType.Builder.of(Giant::new, MobCategory.MONSTER).sized(3.6F, 12.0F).clientTrackingRange(10));
 +    public static final EntityType<GlowItemFrame> GLOW_ITEM_FRAME = EntityType.register("glow_item_frame", EntityType.Builder.of(GlowItemFrame::new, MobCategory.MISC).sized(0.5F, 0.5F).clientTrackingRange(10).updateInterval(Integer.MAX_VALUE));
@@ -212,6 +220,7 @@
 +    public static final EntityType<Squid> SQUID = EntityType.register("squid", EntityType.Builder.of(Squid::new, MobCategory.WATER_CREATURE).sized(0.8F, 0.8F).clientTrackingRange(8));
 +    public static final EntityType<Stray> STRAY = EntityType.register("stray", EntityType.Builder.of(Stray::new, MobCategory.MONSTER).sized(0.6F, 1.99F).immuneTo(Blocks.POWDER_SNOW).clientTrackingRange(8));
 +    public static final EntityType<Strider> STRIDER = EntityType.register("strider", EntityType.Builder.of(Strider::new, MobCategory.CREATURE).fireImmune().sized(0.9F, 1.7F).clientTrackingRange(10));
++    public static final EntityType<Tadpole> TADPOLE = EntityType.register("tadpole", EntityType.Builder.of(Tadpole::new, MobCategory.CREATURE).sized(Tadpole.HITBOX_WIDTH, Tadpole.HITBOX_HEIGHT).clientTrackingRange(10));
 +    public static final EntityType<ThrownEgg> EGG = EntityType.register("egg", EntityType.Builder.of(ThrownEgg::new, MobCategory.MISC).sized(0.25F, 0.25F).clientTrackingRange(4).updateInterval(10));
 +    public static final EntityType<ThrownEnderpearl> ENDER_PEARL = EntityType.register("ender_pearl", EntityType.Builder.of(ThrownEnderpearl::new, MobCategory.MISC).sized(0.25F, 0.25F).clientTrackingRange(4).updateInterval(10));
 +    public static final EntityType<ThrownExperienceBottle> EXPERIENCE_BOTTLE = EntityType.register("experience_bottle", EntityType.Builder.of(ThrownExperienceBottle::new, MobCategory.MISC).sized(0.25F, 0.25F).clientTrackingRange(4).updateInterval(10));
@@ -224,6 +233,7 @@
 +    public static final EntityType<Villager> VILLAGER = EntityType.register("villager", EntityType.Builder.of(Villager::new, MobCategory.MISC).sized(0.6F, 1.95F).clientTrackingRange(10));
 +    public static final EntityType<Vindicator> VINDICATOR = EntityType.register("vindicator", EntityType.Builder.of(Vindicator::new, MobCategory.MONSTER).sized(0.6F, 1.95F).clientTrackingRange(8));
 +    public static final EntityType<WanderingTrader> WANDERING_TRADER = EntityType.register("wandering_trader", EntityType.Builder.of(WanderingTrader::new, MobCategory.CREATURE).sized(0.6F, 1.95F).clientTrackingRange(10));
++    public static final EntityType<Warden> WARDEN = EntityType.register("warden", EntityType.Builder.of(Warden::new, MobCategory.MONSTER).sized(0.9F, 2.9F).clientTrackingRange(16).fireImmune());
 +    public static final EntityType<Witch> WITCH = EntityType.register("witch", EntityType.Builder.of(Witch::new, MobCategory.MONSTER).sized(0.6F, 1.95F).clientTrackingRange(8));
 +    public static final EntityType<WitherBoss> WITHER = EntityType.register("wither", EntityType.Builder.of(WitherBoss::new, MobCategory.MONSTER).fireImmune().immuneTo(Blocks.WITHER_ROSE).sized(0.9F, 3.5F).clientTrackingRange(10));
 +    public static final EntityType<WitherSkeleton> WITHER_SKELETON = EntityType.register("wither_skeleton", EntityType.Builder.of(WitherSkeleton::new, MobCategory.MONSTER).fireImmune().immuneTo(Blocks.WITHER_ROSE).sized(0.7F, 2.4F).clientTrackingRange(8));
@@ -239,7 +249,7 @@
      private final EntityType.EntityFactory<T> factory;
      private final MobCategory category;
      private final ImmutableSet<Block> immuneTo;
-@@ -283,8 +284,8 @@
+@@ -292,8 +293,8 @@
      private ResourceLocation lootTable;
      private final EntityDimensions dimensions;
  
@@ -250,7 +260,7 @@
      }
  
      public static ResourceLocation getKey(EntityType<?> type) {
-@@ -295,7 +296,15 @@
+@@ -304,7 +305,15 @@
          return Registry.ENTITY_TYPE.getOptional(ResourceLocation.tryParse(id));
      }
  
@@ -266,7 +276,7 @@
          this.factory = factory;
          this.category = spawnGroup;
          this.canSpawnFarFromPlayer = spawnableFarFromPlayer;
-@@ -306,6 +315,14 @@
+@@ -315,6 +324,14 @@
          this.dimensions = dimensions;
          this.clientTrackingRange = maxTrackDistance;
          this.updateInterval = trackTickInterval;
@@ -281,7 +291,7 @@
      }
  
      @Nullable
-@@ -315,66 +332,103 @@
+@@ -324,66 +341,103 @@
  
      @Nullable
      public T spawn(ServerLevel world, @Nullable CompoundTag itemNbt, @Nullable Component name, @Nullable Player player, BlockPos pos, MobSpawnType spawnReason, boolean alignPosition, boolean invertY) {
@@ -312,18 +322,18 @@
 +            if (!event.callEvent()) {
 +                return null;
 +            }
-         }
++        }
 +        // Paper end
 +        T t0 = this.create(worldserver, nbttagcompound, ichatbasecomponent, entityhuman, blockposition, enummobspawn, flag, flag1);
 +        if (t0 != null && op != null) op.accept(t0); // Paper
- 
--        return entity;
++
 +        if (t0 != null) {
 +            worldserver.addFreshEntityWithPassengers(t0, spawnReason);
 +            return !t0.isRemoved() ? t0 : null; // Don't return an entity when CreatureSpawnEvent is canceled
 +            // CraftBukkit end
-+        }
-+
+         }
+ 
+-        return entity;
 +        return t0;
      }
  
@@ -418,7 +428,7 @@
                  }
              }
          }
-@@ -416,20 +470,21 @@
+@@ -425,20 +479,21 @@
          return this.description;
      }
  
@@ -443,12 +453,7 @@
          }
  
          return this.lootTable;
-@@ -450,16 +505,16 @@
- 
-     @Nullable
-     public static Entity create(int type, Level world) {
--        return create(world, Registry.ENTITY_TYPE.byId(type));
-+        return EntityType.create(world, (EntityType) Registry.ENTITY_TYPE.byId(type));
+@@ -458,28 +513,23 @@
      }
  
      public static Optional<Entity> create(CompoundTag nbt, Level world) {
@@ -463,8 +468,6 @@
 +            EntityType.LOGGER.warn("Skipping Entity with id {}", nbt.getString("id"));
          });
      }
- 
-@@ -470,17 +525,12 @@
  
      public AABB getAABB(double feetX, double feetY, double feetZ) {
          float f = this.getWidth() / 2.0F;
@@ -485,7 +488,7 @@
      }
  
      public EntityDimensions getDimensions() {
-@@ -493,46 +543,55 @@
+@@ -492,46 +542,55 @@
  
      @Nullable
      public static Entity loadEntityRecursive(CompoundTag nbt, Level world, Function<Entity, Entity> entityProcessor) {
@@ -520,13 +523,13 @@
 -            @Override
 +            final java.util.Map<EntityType<?>, Integer> loadedEntityCounts = new java.util.HashMap<>(); // Paper
              public boolean tryAdvance(Consumer<? super Entity> consumer) {
--                return spliterator.tryAdvance((tag) -> {
--                    EntityType.loadEntityRecursive((CompoundTag)tag, world, (entity) -> {
+-                return spliterator.tryAdvance((nbt) -> {
+-                    EntityType.loadEntityRecursive((CompoundTag)nbt, world, (entity) -> {
 +                return spliterator.tryAdvance((nbtbase) -> {
 +                    EntityType.loadEntityRecursive((CompoundTag) nbtbase, world, (entity) -> {
 +                        // Paper start
 +                        final EntityType<?> entityType = entity.getType();
-+                        final int saveLimit = world.paperConfig.entityPerChunkSaveLimits.getOrDefault(entityType, -1);
++                        final int saveLimit = world.paperConfig().chunks.entityPerChunkSaveLimit.getOrDefault(entityType, -1);
 +                        if (saveLimit > -1) {
 +                            if (this.loadedEntityCounts.getOrDefault(entityType, 0) >= saveLimit) {
 +                                return null;
@@ -555,7 +558,7 @@
              public int characteristics() {
                  return 1297;
              }
-@@ -541,9 +600,9 @@
+@@ -540,9 +599,9 @@
  
      private static Optional<Entity> loadStaticEntity(CompoundTag nbt, Level world) {
          try {
@@ -568,7 +571,7 @@
              return Optional.empty();
          }
      }
-@@ -556,8 +615,14 @@
+@@ -555,8 +614,14 @@
          return this.updateInterval;
      }
  
@@ -584,7 +587,7 @@
      }
  
      public boolean is(TagKey<EntityType<?>> tag) {
-@@ -565,9 +630,8 @@
+@@ -564,9 +629,8 @@
      }
  
      @Nullable
@@ -595,7 +598,7 @@
      }
  
      @Override
-@@ -582,6 +646,7 @@
+@@ -581,6 +645,7 @@
      }
  
      public static class Builder<T extends Entity> {
@@ -603,7 +606,7 @@
          private final EntityType.EntityFactory<T> factory;
          private final MobCategory category;
          private ImmutableSet<Block> immuneTo = ImmutableSet.of();
-@@ -599,13 +664,13 @@
+@@ -598,13 +663,13 @@
              this.canSpawnFarFromPlayer = spawnGroup == MobCategory.CREATURE || spawnGroup == MobCategory.MISC;
          }
  
@@ -613,14 +616,14 @@
          }
  
          public static <T extends Entity> EntityType.Builder<T> createNothing(MobCategory spawnGroup) {
--            return new EntityType.Builder<>((entityType, level) -> {
+-            return new EntityType.Builder<>((type, world) -> {
 -                return (T)null;
 +            return new EntityType.Builder<>((entitytypes, world) -> {
 +                return null;
              }, spawnGroup);
          }
  
-@@ -654,11 +719,18 @@
+@@ -653,11 +718,12 @@
                  Util.fetchChoiceType(References.ENTITY_TREE, id);
              }
  
@@ -633,10 +636,4 @@
 +
          T create(EntityType<T> type, Level world);
      }
-+
-+    // Paper start
-+    public static java.util.Set<ResourceLocation> getEntityNameList() {
-+        return Registry.ENTITY_TYPE.keySet();
-+    }
-+    // Paper end
  }

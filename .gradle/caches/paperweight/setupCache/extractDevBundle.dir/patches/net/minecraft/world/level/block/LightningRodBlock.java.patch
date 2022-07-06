@@ -10,7 +10,7 @@
  import net.minecraft.world.phys.BlockHitResult;
  import net.minecraft.world.phys.Vec3;
 +// CraftBukkit start
-+import org.bukkit.craftbukkit.v1_18_R2.block.CraftBlock;
++import org.bukkit.craftbukkit.v1_19_R1.block.CraftBlock;
 +import org.bukkit.event.block.BlockRedstoneEvent;
 +// CraftBukkit end
  
@@ -95,14 +95,14 @@
      }
  
      @Override
-     public void tick(BlockState state, ServerLevel world, BlockPos pos, Random random) {
+     public void tick(BlockState state, ServerLevel world, BlockPos pos, RandomSource random) {
 -        world.setBlock(pos, state.setValue(POWERED, Boolean.valueOf(false)), 3);
 +        world.setBlock(pos, (BlockState) state.setValue(LightningRodBlock.POWERED, false), 3);
          this.updateNeighbours(state, world, pos);
      }
  
      @Override
-     public void animateTick(BlockState state, Level world, BlockPos pos, Random random) {
+     public void animateTick(BlockState state, Level world, BlockPos pos, RandomSource random) {
 -        if (world.isThundering() && (long)world.random.nextInt(200) <= world.getGameTime() % 200L && pos.getY() == world.getHeight(Heightmap.Types.WORLD_SURFACE, pos.getX(), pos.getZ()) - 1) {
 -            ParticleUtils.spawnParticlesAlongAxis(state.getValue(FACING).getAxis(), world, pos, 0.125D, ParticleTypes.ELECTRIC_SPARK, UniformInt.of(1, 2));
 +        if (world.isThundering() && (long) world.random.nextInt(200) <= world.getGameTime() % 200L && pos.getY() == world.getHeight(Heightmap.Types.WORLD_SURFACE, pos.getX(), pos.getZ()) - 1) {
@@ -156,7 +156,7 @@
              }
          }
  
-@@ -137,11 +159,23 @@
+@@ -137,7 +159,7 @@
  
      @Override
      protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
@@ -165,19 +165,3 @@
      }
  
      @Override
-     public boolean isSignalSource(BlockState state) {
-         return true;
-     }
-+
-+    // Paper start - optimize redstone (Alternate Current)
-+    @Override
-+    public boolean isSignalSourceTo(Level level, BlockPos pos, BlockState state, Direction dir) {
-+        return true;
-+    }
-+
-+    @Override
-+    public boolean isDirectSignalSourceTo(Level level, BlockPos pos, BlockState state, Direction dir) {
-+        return state.getValue(FACING) == dir;
-+    }
-+    // Paper end
- }

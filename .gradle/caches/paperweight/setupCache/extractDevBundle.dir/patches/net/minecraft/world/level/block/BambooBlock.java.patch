@@ -23,7 +23,7 @@
      }
  
      @Override
-@@ -64,9 +65,10 @@
+@@ -59,9 +60,10 @@
  
      @Override
      public VoxelShape getShape(BlockState state, BlockGetter world, BlockPos pos, CollisionContext context) {
@@ -37,7 +37,7 @@
      }
  
      @Override
-@@ -76,8 +78,9 @@
+@@ -71,8 +73,9 @@
  
      @Override
      public VoxelShape getCollisionShape(BlockState state, BlockGetter world, BlockPos pos, CollisionContext context) {
@@ -49,7 +49,7 @@
      }
  
      @Override
-@@ -88,20 +91,24 @@
+@@ -83,20 +86,24 @@
      @Nullable
      @Override
      public BlockState getStateForPlacement(BlockPlaceContext ctx) {
@@ -85,7 +85,7 @@
                  }
              } else {
                  return null;
-@@ -119,15 +126,16 @@
+@@ -114,15 +121,16 @@
  
      @Override
      public boolean isRandomlyTicking(BlockState state) {
@@ -94,7 +94,7 @@
      }
  
      @Override
-     public void randomTick(BlockState state, ServerLevel world, BlockPos pos, Random random) {
+     public void randomTick(BlockState state, ServerLevel world, BlockPos pos, RandomSource random) {
 -        if (state.getValue(STAGE) == 0) {
 -            if (random.nextInt(3) == 0 && world.isEmptyBlock(pos.above()) && world.getRawBrightness(pos.above(), 0) >= 9) {
 +        if ((Integer) state.getValue(BambooBlock.STAGE) == 0) {
@@ -102,11 +102,11 @@
                  int i = this.getHeightBelowUpToMax(world, pos) + 1;
 -                if (i < 16) {
 +
-+                if (i < world.paperConfig.bambooMaxHeight) { // Paper
++                if (i < world.paperConfig().maxGrowthHeight.bamboo.max) { // Paper
                      this.growBamboo(state, world, pos, random, i);
                  }
              }
-@@ -143,11 +151,11 @@
+@@ -138,11 +146,11 @@
      @Override
      public BlockState updateShape(BlockState state, Direction direction, BlockState neighborState, LevelAccessor world, BlockPos pos, BlockPos neighborPos) {
          if (!state.canSurvive(world, pos)) {
@@ -121,17 +121,17 @@
          }
  
          return super.updateShape(state, direction, neighborState, world, pos, neighborPos);
-@@ -157,7 +165,8 @@
+@@ -152,7 +160,8 @@
      public boolean isValidBonemealTarget(BlockGetter world, BlockPos pos, BlockState state, boolean isClient) {
          int i = this.getHeightAboveUpToMax(world, pos);
          int j = this.getHeightBelowUpToMax(world, pos);
 -        return i + j + 1 < 16 && world.getBlockState(pos.above(i)).getValue(STAGE) != 1;
 +
-+        return i + j + 1 < ((Level) world).paperConfig.bambooMaxHeight && (Integer) world.getBlockState(pos.above(i)).getValue(BambooBlock.STAGE) != 1; // Paper
++        return i + j + 1 < ((Level) world).paperConfig().maxGrowthHeight.bamboo.max && (Integer) world.getBlockState(pos.above(i)).getValue(BambooBlock.STAGE) != 1; // Paper
      }
  
      @Override
-@@ -172,14 +181,15 @@
+@@ -167,14 +176,15 @@
          int k = i + j + 1;
          int l = 1 + random.nextInt(2);
  
@@ -143,7 +143,7 @@
 +            BlockPos blockposition1 = pos.above(i);
 +            BlockState iblockdata1 = world.getBlockState(blockposition1);
 +
-+            if (k >= world.paperConfig.bambooMaxHeight || !iblockdata1.is(Blocks.BAMBOO) || (Integer) iblockdata1.getValue(BambooBlock.STAGE) == 1 || !world.isEmptyBlock(blockposition1.above())) { // CraftBukkit - If the BlockSpreadEvent was cancelled, we have no bamboo here // Paper - Configurable cactus bamboo and reed growth heights
++            if (k >= world.paperConfig().maxGrowthHeight.bamboo.max || !iblockdata1.is(Blocks.BAMBOO) || (Integer) iblockdata1.getValue(BambooBlock.STAGE) == 1 || !world.isEmptyBlock(blockposition1.above())) { // CraftBukkit - If the BlockSpreadEvent was cancelled, we have no bamboo here // Paper - Configurable cactus bamboo and reed growth heights
                  return;
              }
  
@@ -152,10 +152,10 @@
              ++i;
              ++k;
          }
-@@ -192,32 +202,47 @@
+@@ -187,32 +197,47 @@
      }
  
-     protected void growBamboo(BlockState state, Level world, BlockPos pos, Random random, int height) {
+     protected void growBamboo(BlockState state, Level world, BlockPos pos, RandomSource random, int height) {
 -        BlockState blockState = world.getBlockState(pos.below());
 -        BlockPos blockPos = pos.below(2);
 -        BlockState blockState2 = world.getBlockState(blockPos);
@@ -194,10 +194,10 @@
 -        int j = (height < 11 || !(random.nextFloat() < 0.25F)) && height != 15 ? 0 : 1;
 -        world.setBlock(pos.above(), this.defaultBlockState().setValue(AGE, Integer.valueOf(i)).setValue(LEAVES, bambooLeaves).setValue(STAGE, Integer.valueOf(j)), 3);
 +        int j = (Integer) state.getValue(BambooBlock.AGE) != 1 && !iblockdata2.is(Blocks.BAMBOO) ? 0 : 1;
-+        int k = (height < world.paperConfig.bambooMinHeight || random.nextFloat() >= 0.25F) && height != (world.paperConfig.bambooMaxHeight - 1) ? 0 : 1; // Paper
++        int k = (height < world.paperConfig().maxGrowthHeight.bamboo.min || random.nextFloat() >= 0.25F) && height != (world.paperConfig().maxGrowthHeight.bamboo.max - 1) ? 0 : 1; // Paper
 +
 +        // CraftBukkit start
-+        if (org.bukkit.craftbukkit.v1_18_R2.event.CraftEventFactory.handleBlockSpreadEvent(world, pos, pos.above(), (BlockState) ((BlockState) ((BlockState) this.defaultBlockState().setValue(BambooBlock.AGE, j)).setValue(BambooBlock.LEAVES, blockpropertybamboosize)).setValue(BambooBlock.STAGE, k), 3)) {
++        if (org.bukkit.craftbukkit.v1_19_R1.event.CraftEventFactory.handleBlockSpreadEvent(world, pos, pos.above(), (BlockState) ((BlockState) ((BlockState) this.defaultBlockState().setValue(BambooBlock.AGE, j)).setValue(BambooBlock.LEAVES, blockpropertybamboosize)).setValue(BambooBlock.STAGE, k), 3)) {
 +            if (shouldUpdateOthers) {
 +                world.setBlock(pos.below(), (BlockState) iblockdata1.setValue(BambooBlock.LEAVES, BambooLeaves.SMALL), 3);
 +                world.setBlock(blockposition1, (BlockState) iblockdata2.setValue(BambooBlock.LEAVES, BambooLeaves.NONE), 3);
@@ -210,18 +210,18 @@
          int i;
 -        for(i = 0; i < 16 && world.getBlockState(pos.above(i + 1)).is(Blocks.BAMBOO); ++i) {
 +
-+        for (i = 0; i < ((Level) world).paperConfig.bambooMaxHeight && world.getBlockState(pos.above(i + 1)).is(Blocks.BAMBOO); ++i) { // Paper
++        for (i = 0; i < ((Level) world).paperConfig().maxGrowthHeight.bamboo.max && world.getBlockState(pos.above(i + 1)).is(Blocks.BAMBOO); ++i) { // Paper
 +            ;
          }
  
          return i;
-@@ -225,7 +250,9 @@
+@@ -220,7 +245,9 @@
  
      protected int getHeightBelowUpToMax(BlockGetter world, BlockPos pos) {
          int i;
 -        for(i = 0; i < 16 && world.getBlockState(pos.below(i + 1)).is(Blocks.BAMBOO); ++i) {
 +
-+        for (i = 0; i < ((Level) world).paperConfig.bambooMaxHeight && world.getBlockState(pos.below(i + 1)).is(Blocks.BAMBOO); ++i) { // Paper
++        for (i = 0; i < ((Level) world).paperConfig().maxGrowthHeight.bamboo.max && world.getBlockState(pos.below(i + 1)).is(Blocks.BAMBOO); ++i) { // Paper
 +            ;
          }
  

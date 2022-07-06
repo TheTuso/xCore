@@ -49,7 +49,7 @@
  
          this.move(MoverType.SELF, this.getDeltaMovement());
 +        // Paper start - Configurable TNT entity height nerf
-+        if (this.level.paperConfig.entityTNTHeightNerf != 0 && this.getY() > this.level.paperConfig.entityTNTHeightNerf) {
++        if (this.level.paperConfig().fixes.tntEntityHeightNerf != 0 && this.getY() > this.level.paperConfig().fixes.tntEntityHeightNerf) {
 +            this.discard();
 +            return;
 +        }
@@ -79,7 +79,7 @@
          }
  
 +        // Paper start - Optional prevent TNT from moving in water
-+        if (!this.isRemoved() && this.wasTouchingWater && this.level.paperConfig.preventTntFromMovingInWater) {
++        if (!this.isRemoved() && this.wasTouchingWater && this.level.paperConfig().fixes.preventTntFromMovingInWater) {
 +            /*
 +             * Author: Jedediah Smith <jedediah@silencegreys.com>
 +             */
@@ -157,7 +157,7 @@
 +    // Paper start - Optional prevent TNT from moving in water
 +    @Override
 +    public boolean isPushedByFluid() {
-+        return !level.paperConfig.preventTntFromMovingInWater && super.isPushedByFluid();
++        return !level.paperConfig().fixes.preventTntFromMovingInWater && super.isPushedByFluid();
 +    }
 +    // Paper end
  }

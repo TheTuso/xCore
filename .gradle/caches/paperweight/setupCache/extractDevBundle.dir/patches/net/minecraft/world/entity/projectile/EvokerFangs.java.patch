@@ -114,9 +114,9 @@
 +
 +        if (target.isAlive() && !target.isInvulnerable() && target != entityliving1) {
 +            if (entityliving1 == null) {
-+                org.bukkit.craftbukkit.v1_18_R2.event.CraftEventFactory.entityDamage = this; // CraftBukkit
++                org.bukkit.craftbukkit.v1_19_R1.event.CraftEventFactory.entityDamage = this; // CraftBukkit
                  target.hurt(DamageSource.MAGIC, 6.0F);
-+                org.bukkit.craftbukkit.v1_18_R2.event.CraftEventFactory.entityDamage = null; // CraftBukkit
++                org.bukkit.craftbukkit.v1_19_R1.event.CraftEventFactory.entityDamage = null; // CraftBukkit
              } else {
 -                if (livingEntity.isAlliedTo(target)) {
 +                if (entityliving1.isAlliedTo((Entity) target)) {

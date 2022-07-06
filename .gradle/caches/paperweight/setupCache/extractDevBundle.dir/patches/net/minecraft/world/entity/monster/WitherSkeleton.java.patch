@@ -1,6 +1,6 @@
 --- a/net/minecraft/world/entity/monster/WitherSkeleton.java
 +++ b/net/minecraft/world/entity/monster/WitherSkeleton.java
-@@ -22,11 +22,13 @@
+@@ -23,11 +23,13 @@
  import net.minecraft.world.entity.projectile.AbstractArrow;
  import net.minecraft.world.item.ItemStack;
  import net.minecraft.world.item.Items;
@@ -14,7 +14,7 @@
      public WitherSkeleton(EntityType<? extends WitherSkeleton> type, Level world) {
          super(type, world);
          this.setPathfindingMalus(BlockPathTypes.LAVA, 8.0F);
-@@ -62,10 +64,13 @@
+@@ -63,10 +65,13 @@
      protected void dropCustomDeathLoot(DamageSource source, int lootingMultiplier, boolean allowDrops) {
          super.dropCustomDeathLoot(source, lootingMultiplier, allowDrops);
          Entity entity = source.getEntity();
@@ -32,13 +32,13 @@
              }
          }
  
-@@ -77,16 +82,16 @@
+@@ -78,16 +83,16 @@
      }
  
      @Override
--    protected void populateDefaultEquipmentEnchantments(DifficultyInstance difficulty) {
+-    protected void populateDefaultEquipmentEnchantments(RandomSource random, DifficultyInstance localDifficulty) {
 -    }
-+    protected void populateDefaultEquipmentEnchantments(DifficultyInstance difficulty) {}
++    protected void populateDefaultEquipmentEnchantments(RandomSource random, DifficultyInstance localDifficulty) {}
  
      @Nullable
      @Override
@@ -53,7 +53,7 @@
      }
  
      @Override
-@@ -100,7 +105,7 @@
+@@ -101,7 +106,7 @@
              return false;
          } else {
              if (target instanceof LivingEntity) {
@@ -62,7 +62,7 @@
              }
  
              return true;
-@@ -109,13 +114,14 @@
+@@ -110,13 +115,14 @@
  
      @Override
      protected AbstractArrow getArrow(ItemStack arrow, float damageModifier) {
@@ -78,6 +78,6 @@
      @Override
      public boolean canBeAffected(MobEffectInstance effect) {
 -        return effect.getEffect() == MobEffects.WITHER ? false : super.canBeAffected(effect);
-+        return effect.getEffect() == MobEffects.WITHER && this.level.paperConfig.witherSkeletonImmuneToWitherEffect ? false : super.canBeAffected(effect); // Paper
++        return effect.getEffect() == MobEffects.WITHER && this.level.paperConfig().entities.mobEffects.immuneToWitherEffect.witherSkeleton ? false : super.canBeAffected(effect); // Paper
      }
  }

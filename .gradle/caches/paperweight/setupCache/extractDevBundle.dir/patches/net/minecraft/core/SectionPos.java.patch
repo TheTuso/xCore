@@ -9,7 +9,7 @@
      }
  
      public static SectionPos of(ChunkPos chunkPos, int y) {
-@@ -50,7 +50,7 @@
+@@ -54,7 +54,7 @@
      }
  
      public static SectionPos of(long packed) {
@@ -18,7 +18,7 @@
      }
  
      public static SectionPos bottomOf(ChunkAccess chunk) {
-@@ -61,8 +61,16 @@
+@@ -65,8 +65,16 @@
          return offset(packed, direction.getStepX(), direction.getStepY(), direction.getStepZ());
      }
  
@@ -36,7 +36,7 @@
      }
  
      public static int posToSectionCoord(double coord) {
-@@ -78,10 +86,7 @@
+@@ -86,10 +94,7 @@
      }
  
      public static short sectionRelativePos(BlockPos pos) {
@@ -48,7 +48,7 @@
      }
  
      public static int sectionRelativeX(short packedLocalPos) {
-@@ -144,16 +149,16 @@
+@@ -152,16 +157,16 @@
          return this.getZ();
      }
  
@@ -71,7 +71,7 @@
      }
  
      public int maxBlockX() {
-@@ -169,7 +174,8 @@
+@@ -177,7 +182,8 @@
      }
  
      public static long blockToSection(long blockPos) {
@@ -81,7 +81,7 @@
      }
  
      public static long getZeroNode(long pos) {
-@@ -193,15 +199,18 @@
+@@ -201,15 +207,18 @@
          return asLong(blockToSectionCoord(pos.getX()), blockToSectionCoord(pos.getY()), blockToSectionCoord(pos.getZ()));
      }
  
@@ -105,7 +105,7 @@
      }
  
      @Override
-@@ -214,16 +223,11 @@
+@@ -222,16 +231,11 @@
      }
  
      public static Stream<SectionPos> cube(SectionPos center, int radius) {

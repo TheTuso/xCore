@@ -42,7 +42,7 @@
      }
  
      @Nullable
-@@ -82,47 +80,65 @@
+@@ -82,49 +80,67 @@
          } else if (this.level.getGameRules().getBoolean(GameRules.RULE_DISABLE_RAIDS)) {
              return null;
          } else {
@@ -54,9 +54,13 @@
                  return null;
              } else {
 -                BlockPos blockPos = player.blockPosition();
--                List<PoiRecord> list = this.level.getPoiManager().getInRange(PoiType.ALL, blockPos, 64, PoiManager.Occupancy.IS_OCCUPIED).collect(Collectors.toList());
+-                List<PoiRecord> list = this.level.getPoiManager().getInRange((poiType) -> {
+-                    return poiType.is(PoiTypeTags.VILLAGE);
+-                }, blockPos, 64, PoiManager.Occupancy.IS_OCCUPIED).toList();
 +                BlockPos blockposition = player.blockPosition();
-+                List<PoiRecord> list = (List) this.level.getPoiManager().getInRange(PoiType.ALL, blockposition, 64, PoiManager.Occupancy.IS_OCCUPIED).collect(Collectors.toList());
++                List<PoiRecord> list = this.level.getPoiManager().getInRange((holder) -> {
++                    return holder.is(PoiTypeTags.VILLAGE);
++                }, blockposition, 64, PoiManager.Occupancy.IS_OCCUPIED).toList();
                  int i = 0;
 -                Vec3 vec3 = Vec3.ZERO;
 +                Vec3 vec3d = Vec3.ZERO;
@@ -114,7 +118,7 @@
 -                if (bl) {
 +                if (flag) {
 +                    // CraftBukkit start
-+                    if (!org.bukkit.craftbukkit.v1_18_R2.event.CraftEventFactory.callRaidTriggerEvent(raid, player)) {
++                    if (!org.bukkit.craftbukkit.v1_19_R1.event.CraftEventFactory.callRaidTriggerEvent(raid, player)) {
 +                        player.removeEffect(MobEffects.BAD_OMEN);
 +                        return null;
 +                    }
@@ -129,7 +133,7 @@
                      if (!raid.hasFirstWaveSpawned()) {
                          player.awardStat(Stats.RAID_TRIGGER);
                          CriteriaTriggers.BAD_OMEN.trigger(player);
-@@ -137,37 +153,43 @@
+@@ -139,37 +155,43 @@
  
      private Raid getOrCreateRaid(ServerLevel world, BlockPos pos) {
          Raid raid = world.getRaidAt(pos);
@@ -188,7 +192,7 @@
          return nbt;
      }
  
-@@ -182,13 +204,16 @@
+@@ -184,13 +206,16 @@
      @Nullable
      public Raid getNearbyRaid(BlockPos pos, int searchDistance) {
          Raid raid = null;

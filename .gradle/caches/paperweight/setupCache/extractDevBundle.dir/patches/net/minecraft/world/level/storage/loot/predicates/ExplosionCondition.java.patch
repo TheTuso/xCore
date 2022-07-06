@@ -21,18 +21,18 @@
 -    public boolean test(LootContext lootContext) {
 -        Float float_ = lootContext.getParamOrNull(LootContextParams.EXPLOSION_RADIUS);
 -        if (float_ != null) {
--            Random random = lootContext.getRandom();
+-            RandomSource randomSource = lootContext.getRandom();
 -            float f = 1.0F / float_;
--            return random.nextFloat() <= f;
+-            return randomSource.nextFloat() <= f;
 +    public boolean test(LootContext loottableinfo) {
 +        Float ofloat = (Float) loottableinfo.getParamOrNull(LootContextParams.EXPLOSION_RADIUS);
 +
 +        if (ofloat != null) {
-+            Random random = loottableinfo.getRandom();
++            RandomSource randomsource = loottableinfo.getRandom();
 +            float f = 1.0F / ofloat;
 +
 +            // CraftBukkit - <= to < to allow for plugins to completely disable block drops from explosions
-+            return random.nextFloat() < f;
++            return randomsource.nextFloat() < f;
          } else {
              return true;
          }

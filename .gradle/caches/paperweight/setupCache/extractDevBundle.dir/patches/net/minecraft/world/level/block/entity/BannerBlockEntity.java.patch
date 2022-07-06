@@ -1,6 +1,6 @@
 --- a/net/minecraft/world/level/block/entity/BannerBlockEntity.java
 +++ b/net/minecraft/world/level/block/entity/BannerBlockEntity.java
-@@ -19,6 +19,7 @@
+@@ -20,6 +20,7 @@
  import net.minecraft.world.level.block.state.BlockState;
  
  public class BannerBlockEntity extends BlockEntity implements Nameable {
@@ -8,7 +8,7 @@
      public static final int MAX_PATTERNS = 6;
      public static final String TAG_PATTERNS = "Patterns";
      public static final String TAG_PATTERN = "Pattern";
-@@ -33,7 +34,7 @@
+@@ -34,7 +35,7 @@
  
      public BannerBlockEntity(BlockPos pos, BlockState state) {
          super(BlockEntityType.BANNER, pos, state);
@@ -17,7 +17,7 @@
      }
  
      public BannerBlockEntity(BlockPos pos, BlockState state, DyeColor baseColor) {
-@@ -43,13 +44,14 @@
+@@ -44,13 +45,14 @@
  
      @Nullable
      public static ListTag getItemPatterns(ItemStack stack) {
@@ -37,7 +37,7 @@
      }
  
      public void fromItem(ItemStack stack, DyeColor baseColor) {
-@@ -58,14 +60,14 @@
+@@ -59,14 +61,14 @@
      }
  
      public void fromItem(ItemStack stack) {
@@ -49,12 +49,12 @@
  
      @Override
      public Component getName() {
--        return (Component)(this.name != null ? this.name : new TranslatableComponent("block.minecraft.banner"));
-+        return (Component) (this.name != null ? this.name : new TranslatableComponent("block.minecraft.banner"));
+-        return (Component)(this.name != null ? this.name : Component.translatable("block.minecraft.banner"));
++        return (Component) (this.name != null ? this.name : Component.translatable("block.minecraft.banner"));
      }
  
      @Nullable
-@@ -95,10 +97,15 @@
+@@ -96,10 +98,15 @@
      public void load(CompoundTag nbt) {
          super.load(nbt);
          if (nbt.contains("CustomName", 8)) {
@@ -71,7 +71,7 @@
          this.patterns = null;
      }
  
-@@ -113,13 +120,14 @@
+@@ -114,13 +121,14 @@
      }
  
      public static int getPatternCount(ItemStack stack) {
@@ -82,38 +82,35 @@
 +        return nbttagcompound != null && nbttagcompound.contains("Patterns") ? nbttagcompound.getList("Patterns", 10).size() : 0;
      }
  
-     public List<Pair<BannerPattern, DyeColor>> getPatterns() {
+     public List<Pair<Holder<BannerPattern>, DyeColor>> getPatterns() {
          if (this.patterns == null) {
 -            this.patterns = createPatterns(this.baseColor, this.itemPatterns);
 +            this.patterns = BannerBlockEntity.createPatterns(this.baseColor, this.itemPatterns);
          }
  
          return this.patterns;
-@@ -127,14 +135,17 @@
+@@ -128,13 +136,16 @@
  
-     public static List<Pair<BannerPattern, DyeColor>> createPatterns(DyeColor baseColor, @Nullable ListTag patternListNbt) {
-         List<Pair<BannerPattern, DyeColor>> list = Lists.newArrayList();
+     public static List<Pair<Holder<BannerPattern>, DyeColor>> createPatterns(DyeColor baseColor, @Nullable ListTag patternListNbt) {
+         List<Pair<Holder<BannerPattern>, DyeColor>> list = Lists.newArrayList();
 +
-         list.add(Pair.of(BannerPattern.BASE, baseColor));
+         list.add(Pair.of(Registry.BANNER_PATTERN.getHolderOrThrow(BannerPatterns.BASE), baseColor));
          if (patternListNbt != null) {
 -            for(int i = 0; i < patternListNbt.size(); ++i) {
 -                CompoundTag compoundTag = patternListNbt.getCompound(i);
--                BannerPattern bannerPattern = BannerPattern.byHash(compoundTag.getString("Pattern"));
--                if (bannerPattern != null) {
--                    int j = compoundTag.getInt("Color");
--                    list.add(Pair.of(bannerPattern, DyeColor.byId(j)));
+-                Holder<BannerPattern> holder = BannerPattern.byHash(compoundTag.getString("Pattern"));
 +            for (int i = 0; i < patternListNbt.size(); ++i) {
 +                CompoundTag nbttagcompound = patternListNbt.getCompound(i);
-+                BannerPattern enumbannerpatterntype = BannerPattern.byHash(nbttagcompound.getString("Pattern"));
++                Holder<BannerPattern> holder = BannerPattern.byHash(nbttagcompound.getString("Pattern"));
 +
-+                if (enumbannerpatterntype != null) {
+                 if (holder != null) {
+-                    int j = compoundTag.getInt("Color");
 +                    int j = nbttagcompound.getInt("Color");
 +
-+                    list.add(Pair.of(enumbannerpatterntype, DyeColor.byId(j)));
+                     list.add(Pair.of(holder, DyeColor.byId(j)));
                  }
              }
-         }
-@@ -143,33 +154,37 @@
+@@ -144,33 +155,37 @@
      }
  
      public static void removeLastPattern(ItemStack stack) {

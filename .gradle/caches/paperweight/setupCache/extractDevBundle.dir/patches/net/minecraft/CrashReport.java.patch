@@ -27,7 +27,7 @@
 +        io.papermc.paper.util.StacktraceDeobfuscator.INSTANCE.deobfuscateThrowable(cause); // Paper
          this.title = message;
          this.exception = cause;
-+        this.systemReport.setDetail("CraftBukkit Information", new org.bukkit.craftbukkit.v1_18_R2.CraftCrashReport()); // CraftBukkit
++        this.systemReport.setDetail("CraftBukkit Information", new org.bukkit.craftbukkit.v1_19_R1.CraftCrashReport()); // CraftBukkit
      }
  
      public String getTitle() {

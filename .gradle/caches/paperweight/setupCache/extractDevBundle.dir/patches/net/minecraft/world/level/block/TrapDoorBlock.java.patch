@@ -1,6 +1,14 @@
 --- a/net/minecraft/world/level/block/TrapDoorBlock.java
 +++ b/net/minecraft/world/level/block/TrapDoorBlock.java
-@@ -18,6 +18,7 @@
+@@ -5,6 +5,7 @@
+ import net.minecraft.core.Direction;
+ import net.minecraft.world.InteractionHand;
+ import net.minecraft.world.InteractionResult;
++import net.minecraft.world.entity.Entity;
+ import net.minecraft.world.entity.player.Player;
+ import net.minecraft.world.item.context.BlockPlaceContext;
+ import net.minecraft.world.level.BlockGetter;
+@@ -18,6 +19,7 @@
  import net.minecraft.world.level.block.state.properties.EnumProperty;
  import net.minecraft.world.level.block.state.properties.Half;
  import net.minecraft.world.level.gameevent.GameEvent;
@@ -8,7 +16,7 @@
  import net.minecraft.world.level.material.FluidState;
  import net.minecraft.world.level.material.Fluids;
  import net.minecraft.world.level.material.Material;
-@@ -25,8 +26,10 @@
+@@ -25,8 +27,10 @@
  import net.minecraft.world.phys.BlockHitResult;
  import net.minecraft.world.phys.shapes.CollisionContext;
  import net.minecraft.world.phys.shapes.VoxelShape;
@@ -19,7 +27,7 @@
      public static final BooleanProperty OPEN = BlockStateProperties.OPEN;
      public static final EnumProperty<Half> HALF = BlockStateProperties.HALF;
      public static final BooleanProperty POWERED = BlockStateProperties.POWERED;
-@@ -41,24 +44,24 @@
+@@ -41,24 +45,24 @@
  
      protected TrapDoorBlock(BlockBehaviour.Properties settings) {
          super(settings);
@@ -52,7 +60,7 @@
              }
          }
      }
-@@ -67,11 +70,11 @@
+@@ -67,11 +71,11 @@
      public boolean isPathfindable(BlockState state, BlockGetter world, BlockPos pos, PathComputationType type) {
          switch (type) {
              case LAND:
@@ -67,7 +75,7 @@
              default:
                  return false;
          }
-@@ -82,24 +85,26 @@
+@@ -82,42 +86,58 @@
          if (this.material == Material.METAL) {
              return InteractionResult.PASS;
          } else {
@@ -100,10 +108,12 @@
 +            world.levelEvent(player, i, pos, 0);
          }
  
-         world.gameEvent(player, open ? GameEvent.BLOCK_OPEN : GameEvent.BLOCK_CLOSE, pos);
-@@ -108,16 +113,30 @@
+-        world.gameEvent(player, open ? GameEvent.BLOCK_OPEN : GameEvent.BLOCK_CLOSE, pos);
++        world.gameEvent((Entity) player, open ? GameEvent.BLOCK_OPEN : GameEvent.BLOCK_CLOSE, pos);
+     }
+ 
      @Override
-     public void neighborChanged(BlockState state, Level world, BlockPos pos, Block block, BlockPos fromPos, boolean notify) {
+     public void neighborChanged(BlockState state, Level world, BlockPos pos, Block sourceBlock, BlockPos sourcePos, boolean notify) {
          if (!world.isClientSide) {
 -            boolean bl = world.hasNeighborSignal(pos);
 -            if (bl != state.getValue(POWERED)) {
@@ -120,7 +130,7 @@
 +                int power = bblock.getBlockPower();
 +                int oldPower = (Boolean) state.getValue(OPEN) ? 15 : 0;
 +
-+                if (oldPower == 0 ^ power == 0 || block.defaultBlockState().isSignalSource()) {
++                if (oldPower == 0 ^ power == 0 || sourceBlock.defaultBlockState().isSignalSource()) {
 +                    BlockRedstoneEvent eventRedstone = new BlockRedstoneEvent(bblock, oldPower, power);
 +                    world.getCraftServer().getPluginManager().callEvent(eventRedstone);
 +                    flag1 = eventRedstone.getNewCurrent() > 0;
@@ -140,7 +150,7 @@
                  }
              }
  
-@@ -126,36 +145,37 @@
+@@ -126,36 +146,37 @@
  
      @Override
      public BlockState getStateForPlacement(BlockPlaceContext ctx) {

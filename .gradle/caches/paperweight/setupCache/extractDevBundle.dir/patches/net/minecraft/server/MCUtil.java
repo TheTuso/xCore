@@ -32,8 +32,8 @@ import com.mojang.datafixers.util.Either;
 import it.unimi.dsi.fastutil.longs.Long2ObjectLinkedOpenHashMap;
 import org.bukkit.Location;
 import org.bukkit.block.BlockFace;
-import org.bukkit.craftbukkit.v1_18_R2.CraftWorld;
-import org.bukkit.craftbukkit.v1_18_R2.util.Waitable;
+import org.bukkit.craftbukkit.v1_19_R1.CraftWorld;
+import org.bukkit.craftbukkit.v1_19_R1.util.Waitable;
 import org.spigotmc.AsyncCatcher;
 
 import javax.annotation.Nonnull;
@@ -623,7 +623,7 @@ public final class MCUtil {
         for (org.bukkit.World bukkitWorld : worlds) {
             JsonObject worldData = new JsonObject();
 
-            ServerLevel world = ((org.bukkit.craftbukkit.v1_18_R2.CraftWorld)bukkitWorld).getHandle();
+            ServerLevel world = ((org.bukkit.craftbukkit.v1_19_R1.CraftWorld)bukkitWorld).getHandle();
             ChunkMap chunkMap = world.getChunkSource().chunkMap;
             Long2ObjectLinkedOpenHashMap<ChunkHolder> visibleChunks = chunkMap.updatingChunks.getVisibleMap(); // Paper
             DistanceManager chunkMapDistance = chunkMap.distanceManager;
@@ -650,7 +650,7 @@ public final class MCUtil {
             worldData.addProperty("view-distance", world.getChunkSource().chunkMap.playerChunkManager.getTargetNoTickViewDistance()); // Paper - replace chunk loader system
             worldData.addProperty("tick-view-distance", world.getChunkSource().chunkMap.playerChunkManager.getTargetTickViewDistance()); // Paper - replace chunk loader system
             worldData.addProperty("keep-spawn-loaded", world.keepSpawnInMemory);
-            worldData.addProperty("keep-spawn-loaded-range", world.paperConfig.keepLoadedRange);
+            worldData.addProperty("keep-spawn-loaded-range", world.paperConfig().spawn.keepSpawnLoadedRange * 16);
             worldData.addProperty("visible-chunk-count", visibleChunks.size());
             worldData.addProperty("loaded-chunk-count", chunkMap.entitiesInLevel.size());
             worldData.addProperty("verified-fully-loaded-chunks", fullLoadedChunks);

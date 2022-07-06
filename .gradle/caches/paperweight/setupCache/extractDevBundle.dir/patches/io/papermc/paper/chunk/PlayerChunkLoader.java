@@ -1,8 +1,8 @@
 package io.papermc.paper.chunk;
 
-import com.destroystokyo.paper.PaperConfig;
 import com.destroystokyo.paper.util.misc.PlayerAreaMap;
 import com.destroystokyo.paper.util.misc.PooledLinkedHashSets;
+import io.papermc.paper.configuration.GlobalConfiguration;
 import io.papermc.paper.util.CoordinateUtils;
 import io.papermc.paper.util.IntervalledCounter;
 import io.papermc.paper.util.TickThread;
@@ -20,7 +20,7 @@ import net.minecraft.util.Mth;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.chunk.LevelChunk;
 import org.apache.commons.lang3.mutable.MutableObject;
-import org.bukkit.craftbukkit.v1_18_R2.entity.CraftPlayer;
+import org.bukkit.craftbukkit.v1_19_R1.entity.CraftPlayer;
 import org.bukkit.entity.Player;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
@@ -377,21 +377,21 @@ public final class PlayerChunkLoader {
     }
 
     protected int getMaxConcurrentChunkSends() {
-        return PaperConfig.playerMaxConcurrentChunkSends;
+        return GlobalConfiguration.get().chunkLoading.maxConcurrentSends;
     }
 
     protected int getMaxChunkLoads() {
-        double config = PaperConfig.playerMaxConcurrentChunkLoads;
-        double max = PaperConfig.globalMaxConcurrentChunkLoads;
+        double config = GlobalConfiguration.get().chunkLoading.playerMaxConcurrentLoads;
+        double max = GlobalConfiguration.get().chunkLoading.globalMaxConcurrentLoads;
         return (int)Math.ceil(Math.min(config * MinecraftServer.getServer().getPlayerCount(), max <= 1.0 ? Double.MAX_VALUE : max));
     }
 
     protected long getTargetSendPerPlayerAddend() {
-        return PaperConfig.playerTargetChunkSendRate <= 1.0 ? 0L : (long)Math.round(1.0e9 / PaperConfig.playerTargetChunkSendRate);
+        return GlobalConfiguration.get().chunkLoading.targetPlayerChunkSendRate <= 1.0 ? 0L : (long)Math.round(1.0e9 / GlobalConfiguration.get().chunkLoading.targetPlayerChunkSendRate);
     }
 
     protected long getMaxSendAddend() {
-        return PaperConfig.globalMaxChunkSendRate <= 1.0 ? 0L : (long)Math.round(1.0e9 / PaperConfig.globalMaxChunkSendRate);
+        return GlobalConfiguration.get().chunkLoading.globalMaxChunkSendRate <= 1.0 ? 0L : (long)Math.round(1.0e9 / GlobalConfiguration.get().chunkLoading.globalMaxChunkSendRate);
     }
 
     public void onChunkPlayerTickReady(final int chunkX, final int chunkZ) {
@@ -672,8 +672,8 @@ public final class PlayerChunkLoader {
                 // priority >= 0.0 implies rate limited chunks
 
                 final int currentChunkLoads = this.concurrentChunkLoads;
-                if (currentChunkLoads >= maxLoads || (PaperConfig.globalMaxChunkLoadRate > 0 && (TICKET_ADDITION_COUNTER_SHORT.getRate() >= PaperConfig.globalMaxChunkLoadRate || TICKET_ADDITION_COUNTER_LONG.getRate() >= PaperConfig.globalMaxChunkLoadRate))
-                    || (PaperConfig.playerMaxChunkLoadRate > 0.0 && (data.ticketAdditionCounterShort.getRate() >= PaperConfig.playerMaxChunkLoadRate || data.ticketAdditionCounterLong.getRate() >= PaperConfig.playerMaxChunkLoadRate))) {
+                if (currentChunkLoads >= maxLoads || (GlobalConfiguration.get().chunkLoading.globalMaxChunkLoadRate > 0 && (TICKET_ADDITION_COUNTER_SHORT.getRate() >= GlobalConfiguration.get().chunkLoading.globalMaxChunkLoadRate || TICKET_ADDITION_COUNTER_LONG.getRate() >= GlobalConfiguration.get().chunkLoading.globalMaxChunkLoadRate))
+                    || (GlobalConfiguration.get().chunkLoading.playerMaxChunkLoadRate > 0.0 && (data.ticketAdditionCounterShort.getRate() >= GlobalConfiguration.get().chunkLoading.playerMaxChunkLoadRate || data.ticketAdditionCounterLong.getRate() >= GlobalConfiguration.get().chunkLoading.playerMaxChunkLoadRate))) {
                     // don't poll, we didn't load it
                     this.chunkLoadQueue.add(data);
                     break;
@@ -827,7 +827,7 @@ public final class PlayerChunkLoader {
             final int tickViewDistance = this.tickViewDistance == -1 ? this.loader.getTickDistance() : this.tickViewDistance;
             final int loadViewDistance = Math.max(tickViewDistance + 1, this.loadViewDistance == -1 ? this.loader.getLoadDistance() : this.loadViewDistance);
             final int clientViewDistance = this.getClientViewDistance();
-            final int sendViewDistance = Math.min(loadViewDistance, this.sendViewDistance == -1 ? (!PaperConfig.playerAutoConfigureSendViewDistance || clientViewDistance == -1 ? this.loader.getSendDistance() : clientViewDistance + 1) : this.sendViewDistance);
+            final int sendViewDistance = Math.min(loadViewDistance, this.sendViewDistance == -1 ? (!GlobalConfiguration.get().chunkLoading.autoconfigSendDistance || clientViewDistance == -1 ? this.loader.getSendDistance() : clientViewDistance + 1) : this.sendViewDistance);
             return sendViewDistance;
         }
 
@@ -944,14 +944,14 @@ public final class PlayerChunkLoader {
             final int loadViewDistance = Math.max(tickViewDistance + 1, this.loadViewDistance == -1 ? this.loader.getLoadDistance() : this.loadViewDistance);
             // send view cannot be greater-than load view
             final int clientViewDistance = this.getClientViewDistance();
-            final int sendViewDistance = Math.min(loadViewDistance, this.sendViewDistance == -1 ? (!PaperConfig.playerAutoConfigureSendViewDistance || clientViewDistance == -1 ? this.loader.getSendDistance() : clientViewDistance + 1) : this.sendViewDistance);
+            final int sendViewDistance = Math.min(loadViewDistance, this.sendViewDistance == -1 ? (!GlobalConfiguration.get().chunkLoading.autoconfigSendDistance || clientViewDistance == -1 ? this.loader.getSendDistance() : clientViewDistance + 1) : this.sendViewDistance);
 
             final double posX = this.player.getX();
             final double posZ = this.player.getZ();
             final float yaw = MCUtil.normalizeYaw(this.player.yRot + 90.0f); // mc yaw 0 is along the positive z axis, but obviously this is really dumb - offset so we are at positive x-axis
 
             // in general, we really only want to prioritise chunks in front if we know we're moving pretty fast into them.
-            final boolean useLookPriority = PaperConfig.playerFrustumPrioritisation && (this.player.getDeltaMovement().horizontalDistanceSqr() > LOOK_PRIORITY_SPEED_THRESHOLD ||
+            final boolean useLookPriority = GlobalConfiguration.get().chunkLoading.enableFrustumPriority && (this.player.getDeltaMovement().horizontalDistanceSqr() > LOOK_PRIORITY_SPEED_THRESHOLD ||
                     this.player.getAbilities().flying);
 
             // make sure we're in the send queue
@@ -1073,10 +1073,10 @@ public final class PlayerChunkLoader {
 
                     final double priority;
 
-                    if (squareDistance <= PaperConfig.playerMinChunkLoadRadius) {
+                    if (squareDistance <= GlobalConfiguration.get().chunkLoading.minLoadRadius) {
                         // priority should be negative, and we also want to order it from center outwards
                         // so we want (0,0) to be the smallest, and (minLoadedRadius,minLoadedRadius) to be the greatest
-                        priority = -((2 * PaperConfig.playerMinChunkLoadRadius + 1) - manhattanDistance);
+                        priority = -((2 * GlobalConfiguration.get().chunkLoading.minLoadRadius + 1) - manhattanDistance);
                     } else {
                         if (prioritised) {
                             // we don't prioritise these chunks above others because we also want to make sure some chunks

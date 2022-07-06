@@ -5,7 +5,7 @@
  package net.minecraft.world.item;
  
  import java.util.Collection;
-@@ -22,6 +23,7 @@
+@@ -21,6 +22,7 @@
  import net.minecraft.world.level.block.state.properties.Property;
  
  public class DebugStickItem extends Item {
@@ -13,7 +13,7 @@
      public DebugStickItem(Item.Properties settings) {
          super(settings);
      }
-@@ -42,46 +44,52 @@
+@@ -41,46 +43,52 @@
  
      @Override
      public InteractionResult useOn(UseOnContext context) {
@@ -51,8 +51,8 @@
 +            String s = Registry.BLOCK.getKey(block).toString();
 +
              if (collection.isEmpty()) {
--                message(player, new TranslatableComponent(this.getDescriptionId() + ".empty", string));
-+                DebugStickItem.message(player, new TranslatableComponent(this.getDescriptionId() + ".empty", new Object[]{s}));
+-                message(player, Component.translatable(this.getDescriptionId() + ".empty", string));
++                DebugStickItem.message(player, Component.translatable(this.getDescriptionId() + ".empty", s));
                  return false;
              } else {
 -                CompoundTag compoundTag = stack.getOrCreateTagElement("DebugProperty");
@@ -71,25 +71,25 @@
  
 -                    BlockState blockState = cycleState(state, property, player.isSecondaryUseActive());
 -                    world.setBlock(pos, blockState, 18);
--                    message(player, new TranslatableComponent(this.getDescriptionId() + ".update", property.getName(), getNameHelper(blockState, property)));
+-                    message(player, Component.translatable(this.getDescriptionId() + ".update", property.getName(), getNameHelper(blockState, property)));
 +                    BlockState iblockdata1 = DebugStickItem.cycleState(state, iblockstate, player.isSecondaryUseActive());
 +
 +                    world.setBlock(pos, iblockdata1, 18);
-+                    DebugStickItem.message(player, new TranslatableComponent(this.getDescriptionId() + ".update", new Object[]{iblockstate.getName(), DebugStickItem.getNameHelper(iblockdata1, iblockstate)}));
++                    DebugStickItem.message(player, Component.translatable(this.getDescriptionId() + ".update", iblockstate.getName(), DebugStickItem.getNameHelper(iblockdata1, iblockstate)));
                  } else {
 -                    property = getRelative(collection, property, player.isSecondaryUseActive());
 -                    String string3 = property.getName();
 -                    compoundTag.putString(string, string3);
--                    message(player, new TranslatableComponent(this.getDescriptionId() + ".select", string3, getNameHelper(state, property)));
+-                    message(player, Component.translatable(this.getDescriptionId() + ".select", string3, getNameHelper(state, property)));
 +                    iblockstate = (Property) DebugStickItem.getRelative(collection, iblockstate, player.isSecondaryUseActive());
 +                    String s2 = iblockstate.getName();
 +
 +                    nbttagcompound.putString(s, s2);
-+                    DebugStickItem.message(player, new TranslatableComponent(this.getDescriptionId() + ".select", new Object[]{s2, DebugStickItem.getNameHelper(state, iblockstate)}));
++                    DebugStickItem.message(player, Component.translatable(this.getDescriptionId() + ".select", s2, DebugStickItem.getNameHelper(state, iblockstate)));
                  }
  
                  return true;
-@@ -90,15 +98,15 @@
+@@ -89,15 +97,15 @@
      }
  
      private static <T extends Comparable<T>> BlockState cycleState(BlockState state, Property<T> property, boolean inverse) {
@@ -103,8 +103,8 @@
      }
  
      private static void message(Player player, Component message) {
--        ((ServerPlayer)player).sendMessage(message, ChatType.GAME_INFO, Util.NIL_UUID);
-+        ((ServerPlayer) player).sendMessage(message, ChatType.GAME_INFO, Util.NIL_UUID);
+-        ((ServerPlayer)player).sendSystemMessage(message, ChatType.GAME_INFO);
++        ((ServerPlayer) player).sendSystemMessage(message, ChatType.GAME_INFO);
      }
  
      private static <T extends Comparable<T>> String getNameHelper(BlockState state, Property<T> property) {

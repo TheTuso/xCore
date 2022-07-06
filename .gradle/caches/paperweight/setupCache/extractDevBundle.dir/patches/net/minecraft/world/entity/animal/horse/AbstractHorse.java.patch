@@ -18,13 +18,13 @@
  import net.minecraft.nbt.CompoundTag;
  import net.minecraft.network.syncher.EntityDataAccessor;
  import net.minecraft.network.syncher.EntityDataSerializers;
-@@ -67,15 +69,17 @@
+@@ -69,15 +71,17 @@
  import net.minecraft.world.level.gameevent.GameEvent;
  import net.minecraft.world.phys.AABB;
  import net.minecraft.world.phys.Vec3;
 +import org.bukkit.event.entity.EntityRegainHealthEvent.RegainReason; // CraftBukkit
  
- public abstract class AbstractHorse extends Animal implements ContainerListener, PlayerRideableJumping, Saddleable {
+ public abstract class AbstractHorse extends Animal implements ContainerListener, HasCustomInventoryScreen, PlayerRideableJumping, Saddleable {
 +
      public static final int EQUIPMENT_SLOT_OFFSET = 400;
      public static final int CHEST_SLOT_OFFSET = 499;
@@ -39,7 +39,7 @@
      private static final Ingredient FOOD_ITEMS = Ingredient.of(Items.WHEAT, Items.SUGAR, Blocks.HAY_BLOCK.asItem(), Items.APPLE, Items.GOLDEN_CARROT, Items.GOLDEN_APPLE, Items.ENCHANTED_GOLDEN_APPLE);
      private static final EntityDataAccessor<Byte> DATA_ID_FLAGS = SynchedEntityData.defineId(AbstractHorse.class, EntityDataSerializers.BYTE);
      private static final EntityDataAccessor<Optional<UUID>> DATA_ID_OWNER_UUID = SynchedEntityData.defineId(AbstractHorse.class, EntityDataSerializers.OPTIONAL_UUID);
-@@ -106,6 +110,7 @@
+@@ -108,6 +112,7 @@
      private float mouthAnimO;
      protected boolean canGallop = true;
      protected int gallopSoundCounter;
@@ -47,7 +47,7 @@
  
      protected AbstractHorse(EntityType<? extends AbstractHorse> type, Level world) {
          super(type, world);
-@@ -133,20 +138,21 @@
+@@ -135,20 +140,21 @@
      @Override
      protected void defineSynchedData() {
          super.defineSynchedData();
@@ -75,7 +75,7 @@
          }
  
      }
-@@ -157,11 +163,11 @@
+@@ -159,11 +165,11 @@
  
      @Nullable
      public UUID getOwnerUUID() {
@@ -89,7 +89,7 @@
      }
  
      public boolean isJumping() {
-@@ -209,7 +215,7 @@
+@@ -211,7 +217,7 @@
      public void equipSaddle(@Nullable SoundSource sound) {
          this.inventory.setItem(0, new ItemStack(Items.SADDLE));
          if (sound != null) {
@@ -98,7 +98,7 @@
          }
  
      }
-@@ -228,22 +234,24 @@
+@@ -230,22 +236,24 @@
      }
  
      public int modifyTemper(int difference) {
@@ -130,7 +130,7 @@
              }
          }
  
-@@ -256,13 +264,18 @@
+@@ -258,13 +266,18 @@
          }
  
          int i = this.calculateFallDamage(fallDistance, damageMultiplier);
@@ -152,7 +152,7 @@
                  }
              }
  
-@@ -281,16 +294,18 @@
+@@ -283,16 +296,18 @@
      }
  
      public void createInventory() {
@@ -180,7 +180,7 @@
                  }
              }
          }
-@@ -307,9 +322,10 @@
+@@ -309,9 +324,10 @@
  
      @Override
      public void containerChanged(Container sender) {
@@ -193,7 +193,7 @@
              this.playSound(SoundEvents.HORSE_SADDLE, 0.5F, 1.0F);
          }
  
-@@ -359,23 +375,24 @@
+@@ -361,23 +377,24 @@
      @Override
      protected void playStepSound(BlockPos pos, BlockState state) {
          if (!state.getMaterial().isLiquid()) {
@@ -227,7 +227,7 @@
              }
  
          }
-@@ -386,7 +403,7 @@
+@@ -388,7 +405,7 @@
      }
  
      public static AttributeSupplier.Builder createBaseHorseAttributes() {
@@ -236,7 +236,7 @@
      }
  
      @Override
-@@ -395,7 +412,7 @@
+@@ -397,7 +414,7 @@
      }
  
      public int getMaxTemper() {
@@ -245,10 +245,10 @@
      }
  
      @Override
-@@ -409,90 +426,88 @@
-     }
+@@ -412,90 +429,88 @@
  
-     public void openInventory(Player player) {
+     @Override
+     public void openCustomInventoryScreen(Player player) {
 -        if (!this.level.isClientSide && (!this.isVehicle() || this.hasPassenger(player)) && this.isTamed()) {
 +        if (!this.level.isClientSide && (!this.isVehicle() || this.hasPassenger((Entity) player)) && this.isTamed()) {
              player.openHorseInventory(this, this.inventory);
@@ -359,7 +359,7 @@
 -        if (bl) {
 +        if (flag) {
              this.eating();
-             this.gameEvent(GameEvent.EAT, this.eyeBlockPosition());
+             this.gameEvent(GameEvent.EAT);
          }
  
 -        return bl;
@@ -367,7 +367,7 @@
      }
  
      protected void doPlayerRide(Player player) {
-@@ -513,7 +528,7 @@
+@@ -516,7 +531,7 @@
  
      @Override
      public boolean isFood(ItemStack stack) {
@@ -376,7 +376,7 @@
      }
  
      private void moveTail() {
-@@ -524,10 +539,11 @@
+@@ -527,10 +542,11 @@
      protected void dropEquipment() {
          super.dropEquipment();
          if (this.inventory != null) {
@@ -392,7 +392,7 @@
                  }
              }
  
-@@ -543,7 +559,7 @@
+@@ -546,7 +562,7 @@
          super.aiStep();
          if (!this.level.isClientSide && this.isAlive()) {
              if (this.random.nextInt(900) == 0 && this.deathTime == 0) {
@@ -401,7 +401,7 @@
              }
  
              if (this.canEatGrass()) {
-@@ -563,9 +579,10 @@
+@@ -566,9 +582,10 @@
  
      protected void followMommy() {
          if (this.isBred() && this.isBaby() && !this.isEating()) {
@@ -415,7 +415,7 @@
              }
          }
  
-@@ -643,6 +660,14 @@
+@@ -646,6 +663,14 @@
  
      }
  
@@ -430,7 +430,7 @@
      private void openMouth() {
          if (!this.level.isClientSide) {
              this.mouthCounter = 1;
-@@ -655,6 +680,11 @@
+@@ -658,6 +683,11 @@
          this.setFlag(16, eatingGrass);
      }
  
@@ -442,7 +442,7 @@
      public void setStanding(boolean angry) {
          if (angry) {
              this.setEating(false);
-@@ -674,9 +704,10 @@
+@@ -677,9 +707,10 @@
      public void makeMad() {
          if (!this.isStanding()) {
              this.stand();
@@ -456,7 +456,7 @@
              }
          }
  
-@@ -686,10 +717,10 @@
+@@ -689,47 +720,51 @@
          this.setOwnerUUID(player.getUUID());
          this.setTamed(true);
          if (player instanceof ServerPlayer) {
@@ -469,14 +469,15 @@
          return true;
      }
  
-@@ -697,36 +728,40 @@
+     @Override
      public void travel(Vec3 movementInput) {
          if (this.isAlive()) {
-             if (this.isVehicle() && this.canBeControlledByRider() && this.isSaddled()) {
--                LivingEntity livingEntity = (LivingEntity)this.getControllingPassenger();
+-            LivingEntity livingEntity = this.getControllingPassenger();
+-            if (this.isVehicle() && livingEntity != null) {
 -                this.setYRot(livingEntity.getYRot());
-+                LivingEntity entityliving = (LivingEntity) this.getControllingPassenger();
++            LivingEntity entityliving = this.getControllingPassenger();
 +
++            if (this.isVehicle() && entityliving != null) {
 +                this.setYRot(entityliving.getYRot());
                  this.yRotO = this.getYRot();
 -                this.setXRot(livingEntity.getXRot() * 0.5F);
@@ -526,7 +527,7 @@
                      }
  
                      this.playerJumpPendingScale = 0.0F;
-@@ -734,9 +769,9 @@
+@@ -737,9 +772,9 @@
  
                  this.flyingSpeed = this.getSpeed() * 0.1F;
                  if (this.isControlledByLocalInstance()) {
@@ -539,7 +540,7 @@
                      this.setDeltaMovement(Vec3.ZERO);
                  }
  
-@@ -768,6 +803,7 @@
+@@ -771,6 +806,7 @@
          if (this.getOwnerUUID() != null) {
              nbt.putUUID("Owner", this.getOwnerUUID());
          }
@@ -547,7 +548,7 @@
  
          if (!this.inventory.getItem(0).isEmpty()) {
              nbt.put("SaddleItem", this.inventory.getItem(0).save(new CompoundTag()));
-@@ -782,22 +818,30 @@
+@@ -785,22 +821,30 @@
          this.setBred(nbt.getBoolean("Bred"));
          this.setTemper(nbt.getInt("Temper"));
          this.setTamed(nbt.getBoolean("Tame"));
@@ -569,11 +570,11 @@
 -            this.setOwnerUUID(uUID);
 +        if (uuid != null) {
 +            this.setOwnerUUID(uuid);
-+        }
+         }
 +        // CraftBukkit start
 +        if (nbt.contains("Bukkit.MaxDomestication")) {
 +            this.maxDomestication = nbt.getInt("Bukkit.MaxDomestication");
-         }
++        }
 +        // CraftBukkit end
  
          if (nbt.contains("SaddleItem", 10)) {
@@ -587,29 +588,29 @@
              }
          }
  
-@@ -820,12 +864,15 @@
+@@ -823,12 +867,15 @@
      }
  
      protected void setOffspringAttributes(AgeableMob mate, AbstractHorse child) {
--        double d = this.getAttributeBaseValue(Attributes.MAX_HEALTH) + mate.getAttributeBaseValue(Attributes.MAX_HEALTH) + (double)this.generateRandomMaxHealth();
+-        double d = this.getAttributeBaseValue(Attributes.MAX_HEALTH) + mate.getAttributeBaseValue(Attributes.MAX_HEALTH) + (double)this.generateRandomMaxHealth(this.random);
 -        child.getAttribute(Attributes.MAX_HEALTH).setBaseValue(d / 3.0D);
--        double e = this.getAttributeBaseValue(Attributes.JUMP_STRENGTH) + mate.getAttributeBaseValue(Attributes.JUMP_STRENGTH) + this.generateRandomJumpStrength();
+-        double e = this.getAttributeBaseValue(Attributes.JUMP_STRENGTH) + mate.getAttributeBaseValue(Attributes.JUMP_STRENGTH) + this.generateRandomJumpStrength(this.random);
 -        child.getAttribute(Attributes.JUMP_STRENGTH).setBaseValue(e / 3.0D);
--        double f = this.getAttributeBaseValue(Attributes.MOVEMENT_SPEED) + mate.getAttributeBaseValue(Attributes.MOVEMENT_SPEED) + this.generateRandomSpeed();
+-        double f = this.getAttributeBaseValue(Attributes.MOVEMENT_SPEED) + mate.getAttributeBaseValue(Attributes.MOVEMENT_SPEED) + this.generateRandomSpeed(this.random);
 -        child.getAttribute(Attributes.MOVEMENT_SPEED).setBaseValue(f / 3.0D);
-+        double d0 = this.getAttributeBaseValue(Attributes.MAX_HEALTH) + mate.getAttributeBaseValue(Attributes.MAX_HEALTH) + (double) this.generateRandomMaxHealth();
++        double d0 = this.getAttributeBaseValue(Attributes.MAX_HEALTH) + mate.getAttributeBaseValue(Attributes.MAX_HEALTH) + (double) this.generateRandomMaxHealth(this.random);
 +
 +        child.getAttribute(Attributes.MAX_HEALTH).setBaseValue(d0 / 3.0D);
-+        double d1 = this.getAttributeBaseValue(Attributes.JUMP_STRENGTH) + mate.getAttributeBaseValue(Attributes.JUMP_STRENGTH) + this.generateRandomJumpStrength();
++        double d1 = this.getAttributeBaseValue(Attributes.JUMP_STRENGTH) + mate.getAttributeBaseValue(Attributes.JUMP_STRENGTH) + this.generateRandomJumpStrength(this.random);
 +
 +        child.getAttribute(Attributes.JUMP_STRENGTH).setBaseValue(d1 / 3.0D);
-+        double d2 = this.getAttributeBaseValue(Attributes.MOVEMENT_SPEED) + mate.getAttributeBaseValue(Attributes.MOVEMENT_SPEED) + this.generateRandomSpeed();
++        double d2 = this.getAttributeBaseValue(Attributes.MOVEMENT_SPEED) + mate.getAttributeBaseValue(Attributes.MOVEMENT_SPEED) + this.generateRandomSpeed(this.random);
 +
 +        child.getAttribute(Attributes.MOVEMENT_SPEED).setBaseValue(d2 / 3.0D);
      }
  
-     @Override
-@@ -858,7 +905,7 @@
+     public float getEatAnim(float tickDelta) {
+@@ -856,7 +903,7 @@
              if (strength >= 90) {
                  this.playerJumpPendingScale = 1.0F;
              } else {
@@ -618,7 +619,7 @@
              }
  
          }
-@@ -871,23 +918,35 @@
+@@ -869,23 +916,35 @@
  
      @Override
      public void handleStartJump(int height) {
@@ -629,7 +630,7 @@
 +        } else {
 +            power = 0.4F + 0.4F * (float) height / 90.0F;
 +        }
-+        org.bukkit.event.entity.HorseJumpEvent event = org.bukkit.craftbukkit.v1_18_R2.event.CraftEventFactory.callHorseJumpEvent(this, power);
++        org.bukkit.event.entity.HorseJumpEvent event = org.bukkit.craftbukkit.v1_19_R1.event.CraftEventFactory.callHorseJumpEvent(this, power);
 +        if (event.isCancelled()) {
 +            return;
 +        }
@@ -662,7 +663,7 @@
          }
  
      }
-@@ -907,33 +966,36 @@
+@@ -905,33 +964,36 @@
      @Override
      public void positionRider(Entity passenger) {
          super.positionRider(passenger);
@@ -694,23 +695,23 @@
  
      }
  
-     protected float generateRandomMaxHealth() {
--        return 15.0F + (float)this.random.nextInt(8) + (float)this.random.nextInt(9);
-+        return 15.0F + (float) this.random.nextInt(8) + (float) this.random.nextInt(9);
+     protected float generateRandomMaxHealth(RandomSource random) {
+-        return 15.0F + (float)random.nextInt(8) + (float)random.nextInt(9);
++        return 15.0F + (float) random.nextInt(8) + (float) random.nextInt(9);
      }
  
-     protected double generateRandomJumpStrength() {
--        return (double)0.4F + this.random.nextDouble() * 0.2D + this.random.nextDouble() * 0.2D + this.random.nextDouble() * 0.2D;
-+        return 0.4000000059604645D + this.random.nextDouble() * 0.2D + this.random.nextDouble() * 0.2D + this.random.nextDouble() * 0.2D;
+     protected double generateRandomJumpStrength(RandomSource random) {
+-        return (double)0.4F + random.nextDouble() * 0.2D + random.nextDouble() * 0.2D + random.nextDouble() * 0.2D;
++        return 0.4000000059604645D + random.nextDouble() * 0.2D + random.nextDouble() * 0.2D + random.nextDouble() * 0.2D;
      }
  
-     protected double generateRandomSpeed() {
--        return ((double)0.45F + this.random.nextDouble() * 0.3D + this.random.nextDouble() * 0.3D + this.random.nextDouble() * 0.3D) * 0.25D;
-+        return (0.44999998807907104D + this.random.nextDouble() * 0.3D + this.random.nextDouble() * 0.3D + this.random.nextDouble() * 0.3D) * 0.25D;
+     protected double generateRandomSpeed(RandomSource random) {
+-        return ((double)0.45F + random.nextDouble() * 0.3D + random.nextDouble() * 0.3D + random.nextDouble() * 0.3D) * 0.25D;
++        return (0.44999998807907104D + random.nextDouble() * 0.3D + random.nextDouble() * 0.3D + random.nextDouble() * 0.3D) * 0.25D;
      }
  
      @Override
-@@ -980,27 +1042,29 @@
+@@ -978,36 +1040,41 @@
  
      @Override
      public SlotAccess getSlot(int mappedIndex) {
@@ -750,7 +751,22 @@
      }
  
      @Nullable
-@@ -1011,32 +1075,37 @@
+     @Override
+     public LivingEntity getControllingPassenger() {
+         if (this.isSaddled()) {
+-            Entity var2 = this.getFirstPassenger();
+-            if (var2 instanceof LivingEntity) {
+-                return (LivingEntity)var2;
++            Entity entity = this.getFirstPassenger();
++
++            if (entity instanceof LivingEntity) {
++                LivingEntity entityliving = (LivingEntity) entity;
++
++                return entityliving;
+             }
+         }
+ 
+@@ -1016,32 +1083,37 @@
  
      @Nullable
      private Vec3 getDismountLocationInDirection(Vec3 offset, LivingEntity passenger) {
@@ -806,7 +822,7 @@
                      break;
                  }
              }
-@@ -1047,19 +1116,20 @@
+@@ -1052,19 +1124,20 @@
  
      @Override
      public Vec3 getDismountLocationForPassenger(LivingEntity passenger) {
@@ -830,16 +846,16 @@
          }
      }
  
--    protected void randomizeAttributes() {
+-    protected void randomizeAttributes(RandomSource random) {
 -    }
-+    protected void randomizeAttributes() {}
++    protected void randomizeAttributes(RandomSource random) {}
  
      @Nullable
      @Override
-@@ -1069,7 +1139,7 @@
+@@ -1074,7 +1147,7 @@
          }
  
-         this.randomizeAttributes();
+         this.randomizeAttributes(world.getRandom());
 -        return super.finalizeSpawn(world, difficulty, spawnReason, entityData, entityNbt);
 +        return super.finalizeSpawn(world, difficulty, spawnReason, (SpawnGroupData) entityData, entityNbt);
      }

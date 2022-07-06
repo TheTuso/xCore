@@ -100,9 +100,9 @@
          this.blockTicks = blockTickScheduler;
          this.fluidTicks = fluidTickScheduler;
 +        // CraftBukkit start
-+        this.bukkitChunk = new org.bukkit.craftbukkit.v1_18_R2.CraftChunk(this);
-     }
- 
++        this.bukkitChunk = new org.bukkit.craftbukkit.v1_19_R1.CraftChunk(this);
++    }
++
 +    public org.bukkit.Chunk bukkitChunk;
 +    public org.bukkit.Chunk getBukkitChunk() {
 +        return this.bukkitChunk;
@@ -251,7 +251,7 @@
 +            default:
 +                throw new IllegalArgumentException("Radius not recognized: " + radius);
 +        }
-+    }
+     }
 +    // Paper end
 +    // Paper start - optimise checkDespawn
 +    private boolean playerGeneralAreaCacheSet;
@@ -345,7 +345,7 @@
 +        }
 +    }
 +    // Paper end - optimise checkDespawn
-+
+ 
      public LevelChunk(ServerLevel world, ProtoChunk protoChunk, @Nullable LevelChunk.PostLoadProcessor entityLoader) {
          this(world, protoChunk.getPos(), protoChunk.getUpgradeData(), protoChunk.unpackBlockTicks(), protoChunk.unpackFluidTicks(), protoChunk.getInhabitedTime(), protoChunk.getSections(), entityLoader, protoChunk.getBlendingData());
 +        // Paper start - rewrite light engine
@@ -394,23 +394,34 @@
      }
  
      @Override
-@@ -143,132 +426,193 @@
+@@ -143,137 +426,201 @@
          return new ChunkAccess.TicksToSave(this.blockTicks, this.fluidTicks);
      }
  
 +    // Paper start
 +    @Override
 +    public long getInhabitedTime() {
-+        return this.level.paperConfig.fixedInhabitedTime < 0 ? super.getInhabitedTime() : this.level.paperConfig.fixedInhabitedTime;
++        return this.level.paperConfig().chunks.fixedChunkInhabitedTime < 0 ? super.getInhabitedTime() : this.level.paperConfig().chunks.fixedChunkInhabitedTime;
 +    }
 +    // Paper end
 +
      @Override
      public GameEventDispatcher getEventDispatcher(int ySectionCoord) {
--        return this.gameEventDispatcherSections.computeIfAbsent(ySectionCoord, (sectionCoord) -> {
-+        return (GameEventDispatcher) this.gameEventDispatcherSections.computeIfAbsent(ySectionCoord, (j) -> {
-             return new EuclideanGameEventDispatcher(this.level);
-         });
+-        Level var3 = this.level;
+-        if (var3 instanceof ServerLevel serverLevel) {
+-            return this.gameEventDispatcherSections.computeIfAbsent(ySectionCoord, (sectionCoord) -> {
+-                return new EuclideanGameEventDispatcher(serverLevel);
++        Level world = this.level;
++
++        if (world instanceof ServerLevel) {
++            ServerLevel worldserver = (ServerLevel) world;
++
++            return (GameEventDispatcher) this.gameEventDispatcherSections.computeIfAbsent(ySectionCoord, (j) -> {
++                return new EuclideanGameEventDispatcher(worldserver);
+             });
+         } else {
+             return super.getEventDispatcher(ySectionCoord);
+         }
      }
  
 +    // Paper start - Optimize getBlockData to reduce instructions
@@ -647,7 +658,7 @@
                  }
              }
          }
-@@ -277,13 +621,13 @@
+@@ -282,13 +629,13 @@
      /** @deprecated */
      @Deprecated
      @Override
@@ -665,7 +676,7 @@
      }
  
      @Nullable
-@@ -292,32 +636,41 @@
+@@ -297,44 +644,55 @@
          return this.getBlockEntity(pos, LevelChunk.EntityCreationType.CHECK);
      }
  
@@ -719,8 +730,29 @@
 +        return tileentity;
      }
  
-     public void addAndRegisterBlockEntity(BlockEntity blockEntity) {
-@@ -337,56 +690,82 @@
+-    public void addAndRegisterBlockEntity(BlockEntity blockEntity) {
+-        this.setBlockEntity(blockEntity);
++    public void addAndRegisterBlockEntity(BlockEntity tileentity) {
++        this.setBlockEntity(tileentity);
+         if (this.isInLevel()) {
+-            Level var3 = this.level;
+-            if (var3 instanceof ServerLevel) {
+-                ServerLevel serverLevel = (ServerLevel)var3;
+-                this.addGameEventListener(blockEntity, serverLevel);
++            Level world = this.level;
++
++            if (world instanceof ServerLevel) {
++                ServerLevel worldserver = (ServerLevel) world;
++
++                this.addGameEventListener(tileentity, worldserver);
+             }
+ 
+-            this.updateBlockEntityTicker(blockEntity);
++            this.updateBlockEntityTicker(tileentity);
+         }
+ 
+     }
+@@ -347,76 +705,107 @@
          if (!this.level.getWorldBorder().isWithinBounds(pos)) {
              return false;
          } else {
@@ -810,8 +842,10 @@
          if (this.isInLevel()) {
 -            BlockEntity blockEntity = this.blockEntities.remove(pos);
 -            if (blockEntity != null) {
--                this.removeGameEventListener(blockEntity);
--                blockEntity.setRemoved();
+-                Level var4 = this.level;
+-                if (var4 instanceof ServerLevel) {
+-                    ServerLevel serverLevel = (ServerLevel)var4;
+-                    this.removeGameEventListener(blockEntity, serverLevel);
 +            BlockEntity tileentity = (BlockEntity) this.blockEntities.remove(pos);
 +
 +            // CraftBukkit start - SPIGOT-5561: Also remove from pending map
@@ -821,34 +855,44 @@
 +            // CraftBukkit end
 +
 +            if (tileentity != null) {
-+                this.removeGameEventListener(tileentity);
++                Level world = this.level;
++
++                if (world instanceof ServerLevel) {
++                    ServerLevel worldserver = (ServerLevel) world;
++
++                    this.removeGameEventListener(tileentity, worldserver);
+                 }
+ 
+-                blockEntity.setRemoved();
 +                tileentity.setRemoved();
              }
          }
  
-@@ -396,13 +775,16 @@
-     private <T extends BlockEntity> void removeGameEventListener(T blockEntity) {
-         if (!this.level.isClientSide) {
-             Block block = blockEntity.getBlockState().getBlock();
+         this.removeBlockEntityTicker(pos);
+     }
+ 
+-    private <T extends BlockEntity> void removeGameEventListener(T blockEntity, ServerLevel serverLevel) {
++    private <T extends BlockEntity> void removeGameEventListener(T blockEntity, ServerLevel worldserver) {
+         Block block = blockEntity.getBlockState().getBlock();
 +
-             if (block instanceof EntityBlock) {
--                GameEventListener gameEventListener = ((EntityBlock)block).getListener(this.level, blockEntity);
--                if (gameEventListener != null) {
-+                GameEventListener gameeventlistener = ((EntityBlock) block).getListener(this.level, blockEntity);
+         if (block instanceof EntityBlock) {
+-            GameEventListener gameEventListener = ((EntityBlock)block).getListener(serverLevel, blockEntity);
+-            if (gameEventListener != null) {
++            GameEventListener gameeventlistener = ((EntityBlock) block).getListener(worldserver, blockEntity);
 +
-+                if (gameeventlistener != null) {
-                     int i = SectionPos.blockToSectionCoord(blockEntity.getBlockPos().getY());
--                    GameEventDispatcher gameEventDispatcher = this.getEventDispatcher(i);
--                    gameEventDispatcher.unregister(gameEventListener);
--                    if (gameEventDispatcher.isEmpty()) {
-+                    GameEventDispatcher gameeventdispatcher = this.getEventDispatcher(i);
++            if (gameeventlistener != null) {
+                 int i = SectionPos.blockToSectionCoord(blockEntity.getBlockPos().getY());
+-                GameEventDispatcher gameEventDispatcher = this.getEventDispatcher(i);
+-                gameEventDispatcher.unregister(gameEventListener);
+-                if (gameEventDispatcher.isEmpty()) {
++                GameEventDispatcher gameeventdispatcher = this.getEventDispatcher(i);
 +
-+                    gameeventdispatcher.unregister(gameeventlistener);
-+                    if (gameeventdispatcher.isEmpty()) {
-                         this.gameEventDispatcherSections.remove(i);
-                     }
++                gameeventdispatcher.unregister(gameeventlistener);
++                if (gameeventdispatcher.isEmpty()) {
+                     this.gameEventDispatcherSections.remove(i);
                  }
-@@ -412,9 +794,10 @@
+             }
+@@ -425,9 +814,10 @@
      }
  
      private void removeBlockEntityTicker(BlockPos pos) {
@@ -862,7 +906,7 @@
          }
  
      }
-@@ -427,28 +810,129 @@
+@@ -440,28 +830,129 @@
  
      }
  
@@ -1002,7 +1046,7 @@
              }
  
          });
-@@ -468,27 +952,35 @@
+@@ -481,27 +972,35 @@
  
      @Override
      public Stream<BlockPos> getLights() {
@@ -1051,7 +1095,7 @@
                      }
                  }
  
-@@ -496,37 +988,47 @@
+@@ -509,37 +1008,47 @@
              }
          }
  
@@ -1113,7 +1157,7 @@
      }
  
      public void unpackTicks(long time) {
-@@ -550,7 +1052,7 @@
+@@ -563,7 +1072,7 @@
      }
  
      public ChunkHolder.FullChunkStatus getFullStatus() {
@@ -1122,7 +1166,7 @@
      }
  
      public void setFullStatus(Supplier<ChunkHolder.FullChunkStatus> levelTypeProvider) {
-@@ -560,27 +1062,30 @@
+@@ -573,50 +1082,59 @@
      public void clearAllBlockEntities() {
          this.blockEntities.values().forEach(BlockEntity::setRemoved);
          this.blockEntities.clear();
@@ -1136,33 +1180,41 @@
  
      public void registerAllBlockEntitiesAfterLevelLoad() {
 -        this.blockEntities.values().forEach((blockEntity) -> {
--            this.addGameEventListener(blockEntity);
--            this.updateBlockEntityTicker(blockEntity);
+-            Level level = this.level;
+-            if (level instanceof ServerLevel serverLevel) {
+-                this.addGameEventListener(blockEntity, serverLevel);
 +        this.blockEntities.values().forEach((tileentity) -> {
-+            this.addGameEventListener(tileentity);
++            Level world = this.level;
++
++            if (world instanceof ServerLevel) {
++                ServerLevel worldserver = (ServerLevel) world;
++
++                this.addGameEventListener(tileentity, worldserver);
+             }
+ 
+-            this.updateBlockEntityTicker(blockEntity);
 +            this.updateBlockEntityTicker(tileentity);
          });
      }
  
-     private <T extends BlockEntity> void addGameEventListener(T blockEntity) {
-         if (!this.level.isClientSide) {
-             Block block = blockEntity.getBlockState().getBlock();
+-    private <T extends BlockEntity> void addGameEventListener(T blockEntity, ServerLevel serverLevel) {
++    private <T extends BlockEntity> void addGameEventListener(T blockEntity, ServerLevel worldserver) {
+         Block block = blockEntity.getBlockState().getBlock();
 +
-             if (block instanceof EntityBlock) {
--                GameEventListener gameEventListener = ((EntityBlock)block).getListener(this.level, blockEntity);
--                if (gameEventListener != null) {
--                    GameEventDispatcher gameEventDispatcher = this.getEventDispatcher(SectionPos.blockToSectionCoord(blockEntity.getBlockPos().getY()));
--                    gameEventDispatcher.register(gameEventListener);
-+                GameEventListener gameeventlistener = ((EntityBlock) block).getListener(this.level, blockEntity);
+         if (block instanceof EntityBlock) {
+-            GameEventListener gameEventListener = ((EntityBlock)block).getListener(serverLevel, blockEntity);
+-            if (gameEventListener != null) {
+-                GameEventDispatcher gameEventDispatcher = this.getEventDispatcher(SectionPos.blockToSectionCoord(blockEntity.getBlockPos().getY()));
+-                gameEventDispatcher.register(gameEventListener);
++            GameEventListener gameeventlistener = ((EntityBlock) block).getListener(worldserver, blockEntity);
 +
-+                if (gameeventlistener != null) {
-+                    GameEventDispatcher gameeventdispatcher = this.getEventDispatcher(SectionPos.blockToSectionCoord(blockEntity.getBlockPos().getY()));
++            if (gameeventlistener != null) {
++                GameEventDispatcher gameeventdispatcher = this.getEventDispatcher(SectionPos.blockToSectionCoord(blockEntity.getBlockPos().getY()));
 +
-+                    gameeventdispatcher.register(gameeventlistener);
-                 }
++                gameeventdispatcher.register(gameeventlistener);
              }
+         }
  
-@@ -588,20 +1093,23 @@
      }
  
      private <T extends BlockEntity> void updateBlockEntityTicker(T blockEntity) {
@@ -1197,7 +1249,7 @@
                  } else {
                      return null;
                  }
-@@ -622,111 +1130,126 @@
+@@ -637,111 +1155,126 @@
          this.clientLightReady = shouldRenderOnUpdate;
      }
  

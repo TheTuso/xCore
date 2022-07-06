@@ -10,10 +10,10 @@
      public CoralBlock(Block deadCoralBlock, BlockBehaviour.Properties settings) {
 @@ -24,6 +25,11 @@
      @Override
-     public void tick(BlockState state, ServerLevel world, BlockPos pos, Random random) {
+     public void tick(BlockState state, ServerLevel world, BlockPos pos, RandomSource random) {
          if (!this.scanForWater(world, pos)) {
 +            // CraftBukkit start
-+            if (org.bukkit.craftbukkit.v1_18_R2.event.CraftEventFactory.callBlockFadeEvent(world, pos, this.deadBlock.defaultBlockState()).isCancelled()) {
++            if (org.bukkit.craftbukkit.v1_19_R1.event.CraftEventFactory.callBlockFadeEvent(world, pos, this.deadBlock.defaultBlockState()).isCancelled()) {
 +                return;
 +            }
 +            // CraftBukkit end

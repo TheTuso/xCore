@@ -13,7 +13,7 @@
  import net.minecraft.world.phys.shapes.Shapes;
  import net.minecraft.world.phys.shapes.VoxelShape;
 +// CraftBukkit start
-+import org.bukkit.craftbukkit.v1_18_R2.block.CraftBlock;
++import org.bukkit.craftbukkit.v1_19_R1.block.CraftBlock;
 +// CraftBukkit end
  
  public class CampfireBlock extends BaseEntityBlock implements SimpleWaterloggedBlock {
@@ -43,8 +43,8 @@
 +            Optional<CampfireCookingRecipe> optional = tileentitycampfire.getCookableRecipe(itemstack);
 +
              if (optional.isPresent()) {
--                if (!world.isClientSide && campfireBlockEntity.placeFood(player.getAbilities().instabuild ? itemStack.copy() : itemStack, optional.get().getCookingTime())) {
-+                if (!world.isClientSide && tileentitycampfire.placeFood(player.getAbilities().instabuild ? itemstack.copy() : itemstack, ((CampfireCookingRecipe) optional.get()).getCookingTime())) {
+-                if (!world.isClientSide && campfireBlockEntity.placeFood(player, player.getAbilities().instabuild ? itemStack.copy() : itemStack, optional.get().getCookingTime())) {
++                if (!world.isClientSide && tileentitycampfire.placeFood(player, player.getAbilities().instabuild ? itemstack.copy() : itemstack, ((CampfireCookingRecipe) optional.get()).getCookingTime())) {
                      player.awardStat(Stats.INTERACT_WITH_CAMPFIRE);
                      return InteractionResult.SUCCESS;
                  }
@@ -52,13 +52,13 @@
  
      @Override
      public void entityInside(BlockState state, Level world, BlockPos pos, Entity entity) {
--        if (!entity.fireImmune() && state.getValue(LIT) && entity instanceof LivingEntity && !EnchantmentHelper.hasFrostWalker((LivingEntity)entity)) {
+-        if (state.getValue(LIT) && entity instanceof LivingEntity && !EnchantmentHelper.hasFrostWalker((LivingEntity)entity)) {
 -            entity.hurt(DamageSource.IN_FIRE, (float)this.fireDamage);
-+        if (!new io.papermc.paper.event.entity.EntityInsideBlockEvent(entity.getBukkitEntity(), org.bukkit.craftbukkit.v1_18_R2.block.CraftBlock.at(world, pos)).callEvent()) { return; } // Paper
-+        if (!entity.fireImmune() && (Boolean) state.getValue(CampfireBlock.LIT) && entity instanceof LivingEntity && !EnchantmentHelper.hasFrostWalker((LivingEntity) entity)) {
-+            org.bukkit.craftbukkit.v1_18_R2.event.CraftEventFactory.blockDamage = CraftBlock.at(world, pos); // CraftBukkit
++        if (!new io.papermc.paper.event.entity.EntityInsideBlockEvent(entity.getBukkitEntity(), org.bukkit.craftbukkit.v1_19_R1.block.CraftBlock.at(world, pos)).callEvent()) { return; } // Paper
++        if ((Boolean) state.getValue(CampfireBlock.LIT) && entity instanceof LivingEntity && !EnchantmentHelper.hasFrostWalker((LivingEntity) entity)) {
++            org.bukkit.craftbukkit.v1_19_R1.event.CraftEventFactory.blockDamage = CraftBlock.at(world, pos); // CraftBukkit
 +            entity.hurt(DamageSource.IN_FIRE, (float) this.fireDamage);
-+            org.bukkit.craftbukkit.v1_18_R2.event.CraftEventFactory.blockDamage = null; // CraftBukkit
++            org.bukkit.craftbukkit.v1_19_R1.event.CraftEventFactory.blockDamage = null; // CraftBukkit
          }
  
          super.entityInside(state, world, pos, entity);
@@ -116,7 +116,7 @@
 @@ -138,14 +151,14 @@
  
      @Override
-     public void animateTick(BlockState state, Level world, BlockPos pos, Random random) {
+     public void animateTick(BlockState state, Level world, BlockPos pos, RandomSource random) {
 -        if (state.getValue(LIT)) {
 +        if ((Boolean) state.getValue(CampfireBlock.LIT)) {
              if (random.nextInt(10) == 0) {
@@ -189,7 +189,7 @@
 +
 +        if (!world.isClientSide && projectile.isOnFire() && projectile.mayInteract(world, blockposition) && !(Boolean) state.getValue(CampfireBlock.LIT) && !(Boolean) state.getValue(CampfireBlock.WATERLOGGED)) {
 +            // CraftBukkit start
-+            if (org.bukkit.craftbukkit.v1_18_R2.event.CraftEventFactory.callBlockIgniteEvent(world, blockposition, projectile).isCancelled()) {
++            if (org.bukkit.craftbukkit.v1_19_R1.event.CraftEventFactory.callBlockIgniteEvent(world, blockposition, projectile).isCancelled()) {
 +                return;
 +            }
 +            // CraftBukkit end
@@ -199,15 +199,16 @@
      }
  
      public static void makeParticles(Level world, BlockPos pos, boolean isSignal, boolean lotsOfSmoke) {
-         Random random = world.getRandom();
+-        RandomSource randomSource = world.getRandom();
 -        SimpleParticleType simpleParticleType = isSignal ? ParticleTypes.CAMPFIRE_SIGNAL_SMOKE : ParticleTypes.CAMPFIRE_COSY_SMOKE;
--        world.addAlwaysVisibleParticle(simpleParticleType, true, (double)pos.getX() + 0.5D + random.nextDouble() / 3.0D * (double)(random.nextBoolean() ? 1 : -1), (double)pos.getY() + random.nextDouble() + random.nextDouble(), (double)pos.getZ() + 0.5D + random.nextDouble() / 3.0D * (double)(random.nextBoolean() ? 1 : -1), 0.0D, 0.07D, 0.0D);
+-        world.addAlwaysVisibleParticle(simpleParticleType, true, (double)pos.getX() + 0.5D + randomSource.nextDouble() / 3.0D * (double)(randomSource.nextBoolean() ? 1 : -1), (double)pos.getY() + randomSource.nextDouble() + randomSource.nextDouble(), (double)pos.getZ() + 0.5D + randomSource.nextDouble() / 3.0D * (double)(randomSource.nextBoolean() ? 1 : -1), 0.0D, 0.07D, 0.0D);
++        RandomSource randomsource = world.getRandom();
 +        SimpleParticleType particletype = isSignal ? ParticleTypes.CAMPFIRE_SIGNAL_SMOKE : ParticleTypes.CAMPFIRE_COSY_SMOKE;
 +
-+        world.addAlwaysVisibleParticle(particletype, true, (double) pos.getX() + 0.5D + random.nextDouble() / 3.0D * (double) (random.nextBoolean() ? 1 : -1), (double) pos.getY() + random.nextDouble() + random.nextDouble(), (double) pos.getZ() + 0.5D + random.nextDouble() / 3.0D * (double) (random.nextBoolean() ? 1 : -1), 0.0D, 0.07D, 0.0D);
++        world.addAlwaysVisibleParticle(particletype, true, (double) pos.getX() + 0.5D + randomsource.nextDouble() / 3.0D * (double) (randomsource.nextBoolean() ? 1 : -1), (double) pos.getY() + randomsource.nextDouble() + randomsource.nextDouble(), (double) pos.getZ() + 0.5D + randomsource.nextDouble() / 3.0D * (double) (randomsource.nextBoolean() ? 1 : -1), 0.0D, 0.07D, 0.0D);
          if (lotsOfSmoke) {
--            world.addParticle(ParticleTypes.SMOKE, (double)pos.getX() + 0.5D + random.nextDouble() / 4.0D * (double)(random.nextBoolean() ? 1 : -1), (double)pos.getY() + 0.4D, (double)pos.getZ() + 0.5D + random.nextDouble() / 4.0D * (double)(random.nextBoolean() ? 1 : -1), 0.0D, 0.005D, 0.0D);
-+            world.addParticle(ParticleTypes.SMOKE, (double) pos.getX() + 0.5D + random.nextDouble() / 4.0D * (double) (random.nextBoolean() ? 1 : -1), (double) pos.getY() + 0.4D, (double) pos.getZ() + 0.5D + random.nextDouble() / 4.0D * (double) (random.nextBoolean() ? 1 : -1), 0.0D, 0.005D, 0.0D);
+-            world.addParticle(ParticleTypes.SMOKE, (double)pos.getX() + 0.5D + randomSource.nextDouble() / 4.0D * (double)(randomSource.nextBoolean() ? 1 : -1), (double)pos.getY() + 0.4D, (double)pos.getZ() + 0.5D + randomSource.nextDouble() / 4.0D * (double)(randomSource.nextBoolean() ? 1 : -1), 0.0D, 0.005D, 0.0D);
++            world.addParticle(ParticleTypes.SMOKE, (double) pos.getX() + 0.5D + randomsource.nextDouble() / 4.0D * (double) (randomsource.nextBoolean() ? 1 : -1), (double) pos.getY() + 0.4D, (double) pos.getZ() + 0.5D + randomsource.nextDouble() / 4.0D * (double) (randomsource.nextBoolean() ? 1 : -1), 0.0D, 0.005D, 0.0D);
          }
  
      }

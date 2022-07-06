@@ -17,7 +17,7 @@
  
 +// CraftBukkit start
 +import org.bukkit.Bukkit;
-+import org.bukkit.craftbukkit.v1_18_R2.event.CraftEventFactory;
++import org.bukkit.craftbukkit.v1_19_R1.event.CraftEventFactory;
 +import org.bukkit.event.entity.EntityTransformEvent;
 +import org.bukkit.event.entity.VillagerReplenishTradeEvent;
 +// CraftBukkit end
@@ -43,32 +43,28 @@
      private long lastGossipTime;
      private long lastGossipDecayTime;
      private int villagerXp;
-@@ -118,16 +128,16 @@
+@@ -118,15 +128,15 @@
      public int numberOfRestocksToday;
      private long lastRestockCheckDayTime;
      private boolean assignProfessionWhenSpawned;
 -    private static final ImmutableList<MemoryModuleType<?>> MEMORY_TYPES = ImmutableList.of(MemoryModuleType.HOME, MemoryModuleType.JOB_SITE, MemoryModuleType.POTENTIAL_JOB_SITE, MemoryModuleType.MEETING_POINT, MemoryModuleType.NEAREST_LIVING_ENTITIES, MemoryModuleType.NEAREST_VISIBLE_LIVING_ENTITIES, MemoryModuleType.VISIBLE_VILLAGER_BABIES, MemoryModuleType.NEAREST_PLAYERS, MemoryModuleType.NEAREST_VISIBLE_PLAYER, MemoryModuleType.NEAREST_VISIBLE_ATTACKABLE_PLAYER, MemoryModuleType.NEAREST_VISIBLE_WANTED_ITEM, MemoryModuleType.WALK_TARGET, MemoryModuleType.LOOK_TARGET, MemoryModuleType.INTERACTION_TARGET, MemoryModuleType.BREED_TARGET, MemoryModuleType.PATH, MemoryModuleType.DOORS_TO_CLOSE, MemoryModuleType.NEAREST_BED, MemoryModuleType.HURT_BY, MemoryModuleType.HURT_BY_ENTITY, MemoryModuleType.NEAREST_HOSTILE, MemoryModuleType.SECONDARY_JOB_SITE, MemoryModuleType.HIDING_PLACE, MemoryModuleType.HEARD_BELL_TIME, MemoryModuleType.CANT_REACH_WALK_TARGET_SINCE, MemoryModuleType.LAST_SLEPT, MemoryModuleType.LAST_WOKEN, MemoryModuleType.LAST_WORKED_AT_POI, MemoryModuleType.GOLEM_DETECTED_RECENTLY);
 +    private static final ImmutableList<MemoryModuleType<?>> MEMORY_TYPES = ImmutableList.of(MemoryModuleType.HOME, MemoryModuleType.JOB_SITE, MemoryModuleType.POTENTIAL_JOB_SITE, MemoryModuleType.MEETING_POINT, MemoryModuleType.NEAREST_LIVING_ENTITIES, MemoryModuleType.NEAREST_VISIBLE_LIVING_ENTITIES, MemoryModuleType.VISIBLE_VILLAGER_BABIES, MemoryModuleType.NEAREST_PLAYERS, MemoryModuleType.NEAREST_VISIBLE_PLAYER, MemoryModuleType.NEAREST_VISIBLE_ATTACKABLE_PLAYER, MemoryModuleType.NEAREST_VISIBLE_WANTED_ITEM, MemoryModuleType.WALK_TARGET, new MemoryModuleType[]{MemoryModuleType.LOOK_TARGET, MemoryModuleType.INTERACTION_TARGET, MemoryModuleType.BREED_TARGET, MemoryModuleType.PATH, MemoryModuleType.DOORS_TO_CLOSE, MemoryModuleType.NEAREST_BED, MemoryModuleType.HURT_BY, MemoryModuleType.HURT_BY_ENTITY, MemoryModuleType.NEAREST_HOSTILE, MemoryModuleType.SECONDARY_JOB_SITE, MemoryModuleType.HIDING_PLACE, MemoryModuleType.HEARD_BELL_TIME, MemoryModuleType.CANT_REACH_WALK_TARGET_SINCE, MemoryModuleType.LAST_SLEPT, MemoryModuleType.LAST_WOKEN, MemoryModuleType.LAST_WORKED_AT_POI, MemoryModuleType.GOLEM_DETECTED_RECENTLY});
      private static final ImmutableList<SensorType<? extends Sensor<? super Villager>>> SENSOR_TYPES = ImmutableList.of(SensorType.NEAREST_LIVING_ENTITIES, SensorType.NEAREST_PLAYERS, SensorType.NEAREST_ITEMS, SensorType.NEAREST_BED, SensorType.HURT_BY, SensorType.VILLAGER_HOSTILES, SensorType.VILLAGER_BABIES, SensorType.SECONDARY_POIS, SensorType.GOLEM_DETECTED);
--    public static final Map<MemoryModuleType<GlobalPos>, BiPredicate<Villager, PoiType>> POI_MEMORIES = ImmutableMap.of(MemoryModuleType.HOME, (villager, poiType) -> {
--        return poiType == PoiType.HOME;
--    }, MemoryModuleType.JOB_SITE, (villager, poiType) -> {
--        return villager.getVillagerData().getProfession().getJobPoiType() == poiType;
--    }, MemoryModuleType.POTENTIAL_JOB_SITE, (villager, poiType) -> {
--        return PoiType.ALL_JOBS.test(poiType);
--    }, MemoryModuleType.MEETING_POINT, (villager, poiType) -> {
--        return poiType == PoiType.MEETING;
-+    public static final Map<MemoryModuleType<GlobalPos>, BiPredicate<Villager, PoiType>> POI_MEMORIES = ImmutableMap.of(MemoryModuleType.HOME, (entityvillager, villageplacetype) -> {
-+        return villageplacetype == PoiType.HOME;
-+    }, MemoryModuleType.JOB_SITE, (entityvillager, villageplacetype) -> {
-+        return entityvillager.getVillagerData().getProfession().getJobPoiType() == villageplacetype;
-+    }, MemoryModuleType.POTENTIAL_JOB_SITE, (entityvillager, villageplacetype) -> {
-+        return PoiType.ALL_JOBS.test(villageplacetype);
-+    }, MemoryModuleType.MEETING_POINT, (entityvillager, villageplacetype) -> {
-+        return villageplacetype == PoiType.MEETING;
+-    public static final Map<MemoryModuleType<GlobalPos>, BiPredicate<Villager, Holder<PoiType>>> POI_MEMORIES = ImmutableMap.of(MemoryModuleType.HOME, (villager, holder) -> {
++    public static final Map<MemoryModuleType<GlobalPos>, BiPredicate<Villager, Holder<PoiType>>> POI_MEMORIES = ImmutableMap.of(MemoryModuleType.HOME, (entityvillager, holder) -> {
+         return holder.is(PoiTypes.HOME);
+-    }, MemoryModuleType.JOB_SITE, (villager, holder) -> {
+-        return villager.getVillagerData().getProfession().heldJobSite().test(holder);
+-    }, MemoryModuleType.POTENTIAL_JOB_SITE, (villager, holder) -> {
++    }, MemoryModuleType.JOB_SITE, (entityvillager, holder) -> {
++        return entityvillager.getVillagerData().getProfession().heldJobSite().test(holder);
++    }, MemoryModuleType.POTENTIAL_JOB_SITE, (entityvillager, holder) -> {
+         return VillagerProfession.ALL_ACQUIRABLE_JOBS.test(holder);
+-    }, MemoryModuleType.MEETING_POINT, (villager, holder) -> {
++    }, MemoryModuleType.MEETING_POINT, (entityvillager, holder) -> {
+         return holder.is(PoiTypes.MEETING);
      });
  
-     public Villager(EntityType<? extends Villager> entityType, Level world) {
 @@ -136,7 +146,8 @@
  
      public Villager(EntityType<? extends Villager> entityType, Level world, VillagerType type) {
@@ -522,10 +518,10 @@
      }
  
      public void playWorkSound() {
--        SoundEvent soundEvent = this.getVillagerData().getProfession().getWorkSound();
+-        SoundEvent soundEvent = this.getVillagerData().getProfession().workSound();
 -        if (soundEvent != null) {
 -            this.playSound(soundEvent, this.getSoundVolume(), this.getVoicePitch());
-+        SoundEvent soundeffect = this.getVillagerData().getProfession().getWorkSound();
++        SoundEvent soundeffect = this.getVillagerData().getProfession().workSound();
 +
 +        if (soundeffect != null) {
 +            this.playSound(soundeffect, this.getSoundVolume(), this.getVoicePitch());
@@ -592,10 +588,10 @@
 @@ -571,8 +666,9 @@
  
      @Override
-     public void die(DamageSource source) {
--        LOGGER.info("Villager {} died, message: '{}'", this, source.getLocalizedDeathMessage(this).getString());
-+        if (org.spigotmc.SpigotConfig.logVillagerDeaths) Villager.LOGGER.info("Villager {} died, message: '{}'", this, source.getLocalizedDeathMessage(this).getString()); // Spigot
-         Entity entity = source.getEntity();
+     public void die(DamageSource damageSource) {
+-        LOGGER.info("Villager {} died, message: '{}'", this, damageSource.getLocalizedDeathMessage(this).getString());
++        if (org.spigotmc.SpigotConfig.logVillagerDeaths) Villager.LOGGER.info("Villager {} died, message: '{}'", this, damageSource.getLocalizedDeathMessage(this).getString()); // Spigot
+         Entity entity = damageSource.getEntity();
 +
          if (entity != null) {
              this.tellWitnessesThatIWasMurdered(entity);
@@ -634,8 +630,8 @@
 -                ServerLevel serverLevel = minecraftServer.getLevel(pos.dimension());
 -                if (serverLevel != null) {
 -                    PoiManager poiManager = serverLevel.getPoiManager();
--                    Optional<PoiType> optional = poiManager.getType(pos.pos());
--                    BiPredicate<Villager, PoiType> biPredicate = POI_MEMORIES.get(memoryModuleType);
+-                    Optional<Holder<PoiType>> optional = poiManager.getType(pos.pos());
+-                    BiPredicate<Villager, Holder<PoiType>> biPredicate = POI_MEMORIES.get(memoryModuleType);
 -                    if (optional.isPresent() && biPredicate.test(this, optional.get())) {
 -                        poiManager.release(pos.pos());
 -                        DebugPackets.sendPoiTicketCountPacket(serverLevel, pos.pos());
@@ -646,10 +642,10 @@
 +
 +                if (worldserver != null) {
 +                    PoiManager villageplace = worldserver.getPoiManager();
-+                    Optional<PoiType> optional = villageplace.getType(globalpos.pos());
-+                    BiPredicate<Villager, PoiType> bipredicate = (BiPredicate) Villager.POI_MEMORIES.get(memorymoduletype);
++                    Optional<Holder<PoiType>> optional = villageplace.getType(globalpos.pos());
++                    BiPredicate<Villager, Holder<PoiType>> bipredicate = (BiPredicate) Villager.POI_MEMORIES.get(memorymoduletype);
 +
-+                    if (optional.isPresent() && bipredicate.test(this, (PoiType) optional.get())) {
++                    if (optional.isPresent() && bipredicate.test(this, (Holder) optional.get())) {
 +                        villageplace.release(globalpos.pos());
 +                        DebugPackets.sendPoiTicketCountPacket(worldserver, globalpos.pos());
                      }
@@ -699,10 +695,10 @@
  
      @Override
      protected Component getTypeName() {
--        return new TranslatableComponent(this.getType().getDescriptionId() + "." + Registry.VILLAGER_PROFESSION.getKey(this.getVillagerData().getProfession()).getPath());
+-        return Component.translatable(this.getType().getDescriptionId() + "." + Registry.VILLAGER_PROFESSION.getKey(this.getVillagerData().getProfession()).getPath());
 +        String s = this.getType().getDescriptionId();
 +
-+        return new TranslatableComponent(s + "." + Registry.VILLAGER_PROFESSION.getKey(this.getVillagerData().getProfession()).getPath());
++        return Component.translatable(s + "." + Registry.VILLAGER_PROFESSION.getKey(this.getVillagerData().getProfession()).getPath());
      }
  
      @Override
@@ -751,7 +747,7 @@
 +            Witch entitywitch = (Witch) EntityType.WITCH.create(world);
 +
 +            // Paper start
-+            if (org.bukkit.craftbukkit.v1_18_R2.event.CraftEventFactory.callEntityZapEvent(this, lightning, entitywitch).isCancelled()) {
++            if (org.bukkit.craftbukkit.v1_19_R1.event.CraftEventFactory.callEntityZapEvent(this, lightning, entitywitch).isCancelled()) {
 +                return;
 +            }
 +            // Paper end
@@ -780,64 +776,23 @@
              this.releaseAllPois();
              this.discard();
          } else {
-@@ -761,21 +887,31 @@
- 
-     @Override
-     protected void pickUpItem(ItemEntity item) {
--        ItemStack itemStack = item.getItem();
--        if (this.wantsToPickUp(itemStack)) {
--            SimpleContainer simpleContainer = this.getInventory();
--            boolean bl = simpleContainer.canAddItem(itemStack);
--            if (!bl) {
-+        ItemStack itemstack = item.getItem();
-+
-+        if (this.wantsToPickUp(itemstack)) {
-+            SimpleContainer inventorysubcontainer = this.getInventory();
-+            boolean flag = inventorysubcontainer.canAddItem(itemstack);
-+
-+            if (!flag) {
-                 return;
-             }
- 
-+            // CraftBukkit start
-+            ItemStack remaining = new SimpleContainer(inventorysubcontainer).addItem(itemstack);
-+            if (CraftEventFactory.callEntityPickupItemEvent(this, item, remaining.getCount(), false).isCancelled()) {
-+                return;
-+            }
-+            // CraftBukkit end
-+
-             this.onItemPickup(item);
--            this.take(item, itemStack.getCount());
--            ItemStack itemStack2 = simpleContainer.addItem(itemStack);
--            if (itemStack2.isEmpty()) {
-+            this.take(item, itemstack.getCount());
-+            ItemStack itemstack1 = inventorysubcontainer.addItem(itemstack);
-+
-+            if (itemstack1.isEmpty()) {
-                 item.discard();
-             } else {
--                itemStack.setCount(itemStack2.getCount());
-+                itemstack.setCount(itemstack1.getCount());
-             }
-         }
- 
-@@ -784,7 +920,8 @@
+@@ -767,7 +893,8 @@
      @Override
      public boolean wantsToPickUp(ItemStack stack) {
          Item item = stack.getItem();
--        return (WANTED_ITEMS.contains(item) || this.getVillagerData().getProfession().getRequestedItems().contains(item)) && this.getInventory().canAddItem(stack);
+-        return (WANTED_ITEMS.contains(item) || this.getVillagerData().getProfession().requestedItems().contains(item)) && this.getInventory().canAddItem(stack);
 +
-+        return (Villager.WANTED_ITEMS.contains(item) || this.getVillagerData().getProfession().getRequestedItems().contains(item)) && this.getInventory().canAddItem(stack);
++        return (Villager.WANTED_ITEMS.contains(item) || this.getVillagerData().getProfession().requestedItems().contains(item)) && this.getInventory().canAddItem(stack);
      }
  
      public boolean hasExcessFood() {
-@@ -796,9 +933,10 @@
+@@ -779,9 +906,10 @@
      }
  
      private int countFoodPointsInInventory() {
 -        SimpleContainer simpleContainer = this.getInventory();
--        return FOOD_POINTS.entrySet().stream().mapToInt((entry) -> {
--            return simpleContainer.countItem(entry.getKey()) * entry.getValue();
+-        return FOOD_POINTS.entrySet().stream().mapToInt((item) -> {
+-            return simpleContainer.countItem(item.getKey()) * item.getValue();
 +        SimpleContainer inventorysubcontainer = this.getInventory();
 +
 +        return Villager.FOOD_POINTS.entrySet().stream().mapToInt((entry) -> {
@@ -845,7 +800,7 @@
          }).sum();
      }
  
-@@ -808,13 +946,16 @@
+@@ -791,13 +919,16 @@
  
      @Override
      protected void updateTrades() {
@@ -869,7 +824,7 @@
              }
          }
      }
-@@ -829,25 +970,28 @@
+@@ -812,24 +943,26 @@
      }
  
      private void maybeDecayGossip() {
@@ -899,17 +854,14 @@
 +                return entityvillager.wantsToSpawnGolem(time);
              }).limit(5L).collect(Collectors.toList());
 -            if (list2.size() >= requiredCount) {
--                IronGolem ironGolem = this.trySpawnGolem(world);
--                if (ironGolem != null) {
+-                if (SpawnUtil.trySpawnMob(EntityType.IRON_GOLEM, MobSpawnType.MOB_SUMMONED, world, this.blockPosition(), 10, 8, 6, SpawnUtil.Strategy.LEGACY_IRON_GOLEM).isPresent()) {
 +
 +            if (list1.size() >= requiredCount) {
-+                IronGolem entityirongolem = this.trySpawnGolem(world);
-+
-+                if (entityirongolem != null) {
++                if (SpawnUtil.trySpawnMob(EntityType.IRON_GOLEM, MobSpawnType.MOB_SUMMONED, world, this.blockPosition(), 10, 8, 6, SpawnUtil.Strategy.LEGACY_IRON_GOLEM, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.VILLAGE_DEFENSE, () -> {GolemSensor.golemDetected(this);}).isPresent()) { // CraftBukkit // Paper - Set Golem Last Seen to stop it from spawning another one
                      list.forEach(GolemSensor::golemDetected);
                  }
              }
-@@ -855,30 +999,43 @@
+@@ -837,16 +970,21 @@
      }
  
      public boolean wantsToSpawnGolem(long time) {
@@ -921,90 +873,11 @@
 +        return !this.golemSpawnConditionsMet(this.level.getGameTime()) ? false : !this.brain.hasMemoryValue(MemoryModuleType.GOLEM_DETECTED_RECENTLY);
      }
  
-     @Nullable
-     private IronGolem trySpawnGolem(ServerLevel world) {
--        BlockPos blockPos = this.blockPosition();
-+        BlockPos blockposition = this.blockPosition();
- 
--        for(int i = 0; i < 10; ++i) {
--            double d = (double)(world.random.nextInt(16) - 8);
--            double e = (double)(world.random.nextInt(16) - 8);
--            BlockPos blockPos2 = this.findSpawnPositionForGolemInColumn(blockPos, d, e);
--            if (blockPos2 != null) {
--                IronGolem ironGolem = EntityType.IRON_GOLEM.create(world, (CompoundTag)null, (Component)null, (Player)null, blockPos2, MobSpawnType.MOB_SUMMONED, false, false);
--                if (ironGolem != null) {
--                    if (ironGolem.checkSpawnRules(world, MobSpawnType.MOB_SUMMONED) && ironGolem.checkSpawnObstruction(world)) {
--                        world.addFreshEntityWithPassengers(ironGolem);
--                        return ironGolem;
-+        for (int i = 0; i < 10; ++i) {
-+            double d0 = (double) (world.random.nextInt(16) - 8);
-+            double d1 = (double) (world.random.nextInt(16) - 8);
-+            BlockPos blockposition1 = this.findSpawnPositionForGolemInColumn(blockposition, d0, d1);
-+
-+            if (blockposition1 != null) {
-+                // Paper start - Call PreCreatureSpawnEvent
-+                com.destroystokyo.paper.event.entity.PreCreatureSpawnEvent event;
-+                event = new com.destroystokyo.paper.event.entity.PreCreatureSpawnEvent(
-+                    net.minecraft.server.MCUtil.toLocation(level, blockposition1),
-+                    org.bukkit.entity.EntityType.IRON_GOLEM,
-+                    org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.VILLAGE_DEFENSE
-+                );
-+                if (!event.callEvent()) {
-+                    if (event.shouldAbortSpawn()) {
-+                        GolemSensor.golemDetected(this); // Set Golem Last Seen to stop it from spawning another one
-+                        return null;
-                     }
-+                    break;
-+                }
-+                // Paper end
-+                IronGolem entityirongolem = (IronGolem) EntityType.IRON_GOLEM.create(world, (CompoundTag) null, (Component) null, (Player) null, blockposition1, MobSpawnType.MOB_SUMMONED, false, false);
- 
--                    ironGolem.discard();
-+                if (entityirongolem != null) {
-+                    if (entityirongolem.checkSpawnRules(world, MobSpawnType.MOB_SUMMONED) && entityirongolem.checkSpawnObstruction(world)) {
-+                        world.addFreshEntityWithPassengers(entityirongolem, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.VILLAGE_DEFENSE); // CraftBukkit
-+                        return entityirongolem;
-+                    }
-+
-+                    entityirongolem.discard();
-                 }
-             }
-         }
-@@ -888,17 +1045,18 @@
- 
-     @Nullable
-     private BlockPos findSpawnPositionForGolemInColumn(BlockPos pos, double x, double z) {
--        int i = 6;
--        BlockPos blockPos = pos.offset(x, 6.0D, z);
--        BlockState blockState = this.level.getBlockState(blockPos);
-+        boolean flag = true;
-+        BlockPos blockposition1 = pos.offset(x, 6.0D, z);
-+        BlockState iblockdata = this.level.getBlockState(blockposition1);
- 
--        for(int j = 6; j >= -6; --j) {
--            BlockPos blockPos2 = blockPos;
--            BlockState blockState2 = blockState;
--            blockPos = blockPos.below();
--            blockState = this.level.getBlockState(blockPos);
--            if ((blockState2.isAir() || blockState2.getMaterial().isLiquid()) && blockState.getMaterial().isSolidBlocking()) {
--                return blockPos2;
-+        for (int i = 6; i >= -6; --i) {
-+            BlockPos blockposition2 = blockposition1;
-+            BlockState iblockdata1 = iblockdata;
-+
-+            blockposition1 = blockposition1.below();
-+            iblockdata = this.level.getBlockState(blockposition1);
-+            if ((iblockdata1.isAir() || iblockdata1.getMaterial().isLiquid()) && iblockdata.getMaterial().isSolidBlocking()) {
-+                return blockposition2;
-             }
-         }
- 
-@@ -908,6 +1066,15 @@
      @Override
      public void onReputationEventFrom(ReputationEventType interaction, Entity entity) {
          if (interaction == ReputationEventType.ZOMBIE_VILLAGER_CURED) {
 +            // Paper start - fix MC-181190
-+            if (level.paperConfig.fixCuringZombieVillagerDiscountExploit) {
++            if (level.paperConfig().fixes.fixCuringZombieVillagerDiscountExploit) {
 +                final GossipContainer.EntityGossips playerReputation = this.getGossips().getReputations().get(entity.getUUID());
 +                if (playerReputation != null) {
 +                    playerReputation.remove(GossipType.MAJOR_POSITIVE);
@@ -1015,7 +888,7 @@
              this.gossips.add(entity.getUUID(), GossipType.MAJOR_POSITIVE, 20);
              this.gossips.add(entity.getUUID(), GossipType.MINOR_POSITIVE, 25);
          } else if (interaction == ReputationEventType.TRADE) {
-@@ -939,7 +1106,7 @@
+@@ -878,7 +1016,7 @@
      }
  
      public void setGossips(Tag nbt) {
@@ -1024,7 +897,7 @@
      }
  
      @Override
-@@ -951,7 +1118,7 @@
+@@ -890,7 +1028,7 @@
      @Override
      public void startSleeping(BlockPos pos) {
          super.startSleeping(pos);
@@ -1033,7 +906,7 @@
          this.brain.eraseMemory(MemoryModuleType.WALK_TARGET);
          this.brain.eraseMemory(MemoryModuleType.CANT_REACH_WALK_TARGET_SINCE);
      }
-@@ -959,15 +1126,12 @@
+@@ -898,15 +1036,12 @@
      @Override
      public void stopSleeping() {
          super.stopSleeping();

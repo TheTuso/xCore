@@ -7,9 +7,9 @@
 +import java.util.Iterator;
  import java.util.List;
 +import java.util.Objects;
- import java.util.Random;
  import java.util.function.Predicate;
  import javax.annotation.Nullable;
+ import net.minecraft.core.BlockPos;
 @@ -54,14 +56,17 @@
  import net.minecraft.world.item.Items;
  import net.minecraft.world.item.crafting.Ingredient;
@@ -327,20 +327,32 @@
      @Override
      protected void pickUpItem(ItemEntity item) {
 -        if (this.getItemBySlot(EquipmentSlot.MAINHAND).isEmpty() && PANDA_ITEMS.test(item)) {
-+        if (!org.bukkit.craftbukkit.v1_18_R2.event.CraftEventFactory.callEntityPickupItemEvent(this, item, 0, !(this.getItemBySlot(EquipmentSlot.MAINHAND).isEmpty() && Panda.PANDA_ITEMS.test(item))).isCancelled()) { // CraftBukkit
++        if (!org.bukkit.craftbukkit.v1_19_R1.event.CraftEventFactory.callEntityPickupItemEvent(this, item, 0, !(this.getItemBySlot(EquipmentSlot.MAINHAND).isEmpty() && Panda.PANDA_ITEMS.test(item))).isCancelled()) { // CraftBukkit
              this.onItemPickup(item);
 -            ItemStack itemStack = item.getItem();
 -            this.setItemSlot(EquipmentSlot.MAINHAND, itemStack);
 +            ItemStack itemstack = item.getItem();
 +
 +            this.setItemSlot(EquipmentSlot.MAINHAND, itemstack);
-             this.handDropChances[EquipmentSlot.MAINHAND.getIndex()] = 2.0F;
+             this.setGuaranteedDrop(EquipmentSlot.MAINHAND);
 -            this.take(item, itemStack.getCount());
 +            this.take(item, itemstack.getCount());
              item.discard();
          }
  
-@@ -542,7 +562,7 @@
+@@ -535,15 +555,16 @@
+     @Nullable
+     @Override
+     public SpawnGroupData finalizeSpawn(ServerLevelAccessor world, DifficultyInstance difficulty, MobSpawnType spawnReason, @Nullable SpawnGroupData entityData, @Nullable CompoundTag entityNbt) {
+-        RandomSource randomSource = world.getRandom();
+-        this.setMainGene(Panda.Gene.getRandom(randomSource));
+-        this.setHiddenGene(Panda.Gene.getRandom(randomSource));
++        RandomSource randomsource = world.getRandom();
++
++        this.setMainGene(Panda.Gene.getRandom(randomsource));
++        this.setHiddenGene(Panda.Gene.getRandom(randomsource));
+         this.setAttributes();
+         if (entityData == null) {
              entityData = new AgeableMob.AgeableMobGroupData(0.2F);
          }
  
@@ -349,7 +361,7 @@
      }
  
      public void setGeneFromParents(Panda mother, @Nullable Panda father) {
-@@ -582,7 +602,7 @@
+@@ -583,7 +604,7 @@
          }
  
          if (this.isLazy()) {
@@ -358,7 +370,7 @@
          }
  
      }
-@@ -598,23 +618,24 @@
+@@ -599,22 +620,23 @@
  
      @Override
      public InteractionResult mobInteract(Player player, InteractionHand hand) {
@@ -381,14 +393,13 @@
 -                this.ageUp((int)((float)(-this.getAge() / 20) * 0.1F), true);
 +                this.usePlayerItem(player, hand, itemstack);
 +                this.ageUp((int) ((float) (-this.getAge() / 20) * 0.1F), true);
-                 this.gameEvent(GameEvent.MOB_INTERACT, this.eyeBlockPosition());
              } else if (!this.level.isClientSide && this.getAge() == 0 && this.canFallInLove()) {
 -                this.usePlayerItem(player, hand, itemStack);
 +                this.usePlayerItem(player, hand, itemstack);
                  this.setInLove(player);
-                 this.gameEvent(GameEvent.MOB_INTERACT, this.eyeBlockPosition());
              } else {
-@@ -624,13 +645,14 @@
+                 if (this.level.isClientSide || this.isSitting() || this.isInWater()) {
+@@ -623,13 +645,14 @@
  
                  this.tryToSit();
                  this.eat(true);
@@ -408,7 +419,7 @@
              }
  
              return InteractionResult.SUCCESS;
-@@ -642,11 +664,7 @@
+@@ -641,11 +664,7 @@
      @Nullable
      @Override
      protected SoundEvent getAmbientSound() {
@@ -421,7 +432,7 @@
      }
  
      @Override
-@@ -679,16 +697,28 @@
+@@ -678,16 +697,28 @@
          return !this.isOnBack() && !this.isScared() && !this.isEating() && !this.isRolling() && !this.isSitting();
      }
  
@@ -458,7 +469,7 @@
              return new Panda.Gene[i];
          });
          private static final int MAX_GENE = 6;
-@@ -696,10 +726,10 @@
+@@ -695,10 +726,10 @@
          private final String name;
          private final boolean isRecessive;
  
@@ -473,7 +484,7 @@
          }
  
          public int getId() {
-@@ -715,78 +745,66 @@
+@@ -714,78 +745,66 @@
          }
  
          static Panda.Gene getVariantFromGenes(Panda.Gene mainGene, Panda.Gene hiddenGene) {
@@ -514,7 +525,7 @@
 +            return Panda.Gene.NORMAL;
          }
  
-         public static Panda.Gene getRandom(Random random) {
+         public static Panda.Gene getRandom(RandomSource random) {
              int i = random.nextInt(16);
 -            if (i == 0) {
 -                return LAZY;
@@ -581,7 +592,7 @@
          private final Panda panda;
          private int unhappyCooldown;
  
-@@ -803,8 +821,9 @@
+@@ -802,8 +821,9 @@
                          this.panda.setUnhappyCounter(32);
                          this.unhappyCooldown = this.panda.tickCount + 600;
                          if (this.panda.isEffectiveAi()) {
@@ -593,7 +604,7 @@
                          }
                      }
  
-@@ -818,15 +837,15 @@
+@@ -817,15 +837,15 @@
          }
  
          private boolean canFindBamboo() {
@@ -617,7 +628,7 @@
                                  return true;
                              }
                          }
-@@ -838,34 +857,102 @@
+@@ -837,34 +857,102 @@
          }
      }
  
@@ -692,9 +703,9 @@
 +        public void tick() {
 +            if (!Panda.this.isSitting() && !Panda.this.getItemBySlot(EquipmentSlot.MAINHAND).isEmpty()) {
 +                Panda.this.tryToSit();
-             }
- 
-         }
++            }
++
++        }
 +
 +        @Override
 +        public void start() {
@@ -719,10 +730,10 @@
 +                int i = Panda.this.isLazy() ? Panda.this.random.nextInt(50) + 10 : Panda.this.random.nextInt(150) + 10;
 +
 +                this.cooldown = Panda.this.tickCount + i * 20;
-+            }
-+
+             }
+ 
 +            Panda.this.sit(false);
-+        }
+         }
      }
  
 -    static class PandaLieOnBackGoal extends Goal {
@@ -731,7 +742,7 @@
          private final Panda panda;
          private int cooldown;
  
-@@ -880,11 +967,7 @@
+@@ -879,11 +967,7 @@
  
          @Override
          public boolean canContinueToUse() {
@@ -744,7 +755,7 @@
          }
  
          @Override
-@@ -900,7 +983,32 @@
+@@ -899,7 +983,32 @@
          }
      }
  
@@ -778,7 +789,7 @@
          private final Panda panda;
  
          public PandaLookAtPlayerGoal(Panda panda, Class<? extends LivingEntity> targetType, float range) {
-@@ -926,7 +1034,7 @@
+@@ -925,7 +1034,7 @@
                      if (this.lookAtType == Player.class) {
                          this.lookAt = this.mob.level.getNearestPlayer(this.lookAtContext, this.mob, this.mob.getX(), this.mob.getEyeY(), this.mob.getZ());
                      } else {
@@ -787,7 +798,7 @@
                              return true;
                          }), this.lookAtContext, this.mob, this.mob.getX(), this.mob.getEyeY(), this.mob.getZ());
                      }
-@@ -945,47 +1053,8 @@
+@@ -944,47 +1053,8 @@
          }
      }
  
@@ -836,7 +847,7 @@
          private final Panda panda;
  
          public PandaRollGoal(Panda panda) {
-@@ -999,18 +1068,13 @@
+@@ -998,18 +1068,13 @@
                  if (!this.panda.canPerformAction()) {
                      return false;
                  } else {
@@ -862,7 +873,7 @@
                  }
              } else {
                  return false;
-@@ -1033,94 +1097,31 @@
+@@ -1032,94 +1097,31 @@
          }
      }
  

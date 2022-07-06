@@ -1,11 +1,11 @@
 --- a/net/minecraft/world/Container.java
 +++ b/net/minecraft/world/Container.java
-@@ -4,8 +4,12 @@
+@@ -5,8 +5,12 @@
  import net.minecraft.world.entity.player.Player;
  import net.minecraft.world.item.Item;
  import net.minecraft.world.item.ItemStack;
 +import net.minecraft.world.item.crafting.Recipe;
-+import org.bukkit.craftbukkit.v1_18_R2.entity.CraftHumanEntity;
++import org.bukkit.craftbukkit.v1_19_R1.entity.CraftHumanEntity;
 +// CraftBukkit end
  
  public interface Container extends Clearable {
@@ -13,7 +13,7 @@
      int LARGE_MAX_STACK_SIZE = 64;
  
      int getContainerSize();
-@@ -20,19 +24,15 @@
+@@ -21,19 +25,15 @@
  
      void setItem(int slot, ItemStack stack);
  
@@ -36,7 +36,7 @@
  
      default boolean canPlaceItem(int slot, ItemStack stack) {
          return true;
-@@ -41,10 +41,11 @@
+@@ -42,10 +42,11 @@
      default int countItem(Item item) {
          int i = 0;
  
@@ -52,17 +52,25 @@
              }
          }
  
-@@ -52,13 +53,39 @@
+@@ -53,19 +54,45 @@
      }
  
      default boolean hasAnyOf(Set<Item> items) {
+-        return this.hasAnyMatching((stack) -> {
+-            return !stack.isEmpty() && items.contains(stack.getItem());
++        return this.hasAnyMatching((itemstack) -> {
++            return !itemstack.isEmpty() && items.contains(itemstack.getItem());
+         });
+     }
+ 
+     default boolean hasAnyMatching(Predicate<ItemStack> predicate) {
 -        for(int i = 0; i < this.getContainerSize(); ++i) {
 -            ItemStack itemStack = this.getItem(i);
--            if (items.contains(itemStack.getItem()) && itemStack.getCount() > 0) {
+-            if (predicate.test(itemStack)) {
 +        for (int i = 0; i < this.getContainerSize(); ++i) {
 +            ItemStack itemstack = this.getItem(i);
 +
-+            if (items.contains(itemstack.getItem()) && itemstack.getCount() > 0) {
++            if (predicate.test(itemstack)) {
                  return true;
              }
          }

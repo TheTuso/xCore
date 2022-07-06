@@ -540,16 +540,6 @@ public final class PaperFileIOThread extends QueueExecutorThread {
                 write = this.inProgressWrite;
             }
 
-            // check if another process is writing
-            /*try { TODO: Can we restore this?
-                ((WorldServer)this.world).checkSession();
-            } catch (final Exception ex) {
-                LOGGER.fatal("Couldn't save chunk; already in use by another instance of Minecraft?", ex);
-                // we don't need to set the write counter to -1 as we know at this stage there's no point in re-scheduling
-                // writes since they'll fail anyways.
-                return;
-            }
-*/
             for (;;) {
                 final long writeCounter;
                 final CompoundTag data;

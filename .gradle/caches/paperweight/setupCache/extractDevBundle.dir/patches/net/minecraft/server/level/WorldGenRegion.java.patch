@@ -1,6 +1,6 @@
 --- a/net/minecraft/server/level/WorldGenRegion.java
 +++ b/net/minecraft/server/level/WorldGenRegion.java
-@@ -53,6 +53,7 @@
+@@ -55,6 +55,7 @@
  import org.slf4j.Logger;
  
  public class WorldGenRegion implements WorldGenLevel {
@@ -8,9 +8,9 @@
      private static final Logger LOGGER = LogUtils.getLogger();
      private final List<ChunkAccess> cache;
      private final ChunkAccess center;
-@@ -62,11 +63,11 @@
+@@ -64,11 +65,11 @@
      private final LevelData levelData;
-     private final Random random;
+     private final RandomSource random;
      private final DimensionType dimensionType;
 -    private final WorldGenTickAccess<Block> blockTicks = new WorldGenTickAccess<>((pos) -> {
 -        return this.getChunk(pos).getBlockTicks();
@@ -24,7 +24,7 @@
      });
      private final BiomeManager biomeManager;
      private final ChunkPos firstPos;
-@@ -81,21 +82,22 @@
+@@ -84,21 +85,22 @@
      public WorldGenRegion(ServerLevel world, List<ChunkAccess> chunks, ChunkStatus status, int placementRadius) {
          this.generatingStatus = status;
          this.writeRadiusCutoff = placementRadius;
@@ -44,17 +44,18 @@
              this.level = world;
              this.seed = world.getSeed();
              this.levelData = world.getLevelData();
-             this.random = world.getRandom();
+-            this.random = world.getChunkSource().randomState().getOrCreateRandomFactory(WORLDGEN_REGION_RANDOM).at(this.center.getPos().getWorldPosition());
++            this.random = world.getChunkSource().randomState().getOrCreateRandomFactory(WorldGenRegion.WORLDGEN_REGION_RANDOM).at(this.center.getPos().getWorldPosition());
              this.dimensionType = world.dimensionType();
              this.biomeManager = new BiomeManager(this, BiomeManager.obfuscateSeed(this.seed));
 -            this.firstPos = chunks.get(0).getPos();
 -            this.lastPos = chunks.get(chunks.size() - 1).getPos();
 +            this.firstPos = ((ChunkAccess) chunks.get(0)).getPos();
 +            this.lastPos = ((ChunkAccess) chunks.get(chunks.size() - 1)).getPos();
-             this.structureFeatureManager = world.structureFeatureManager().forWorldGenRegion(this);
+             this.structureManager = world.structureManager().forWorldGenRegion(this);
          }
      }
-@@ -117,27 +119,29 @@
+@@ -124,27 +126,29 @@
      @Nullable
      @Override
      public ChunkAccess getChunk(int chunkX, int chunkZ, ChunkStatus leastStatus, boolean create) {
@@ -96,7 +97,7 @@
              }
          }
      }
-@@ -147,6 +151,26 @@
+@@ -154,6 +158,26 @@
          return chunkX >= this.firstPos.x && chunkX <= this.lastPos.x && chunkZ >= this.firstPos.z && chunkZ <= this.lastPos.z;
      }
  
@@ -123,7 +124,7 @@
      @Override
      public BlockState getBlockState(BlockPos pos) {
          return this.getChunk(SectionPos.blockToSectionCoord(pos.getX()), SectionPos.blockToSectionCoord(pos.getZ())).getBlockState(pos);
-@@ -190,13 +214,15 @@
+@@ -197,13 +221,15 @@
  
      @Override
      public boolean destroyBlock(BlockPos pos, boolean drop, @Nullable Entity breakingEntity, int maxUpdateDepth) {
@@ -144,7 +145,7 @@
              }
  
              return this.setBlock(pos, Blocks.AIR.defaultBlockState(), 3, maxUpdateDepth);
-@@ -206,56 +232,69 @@
+@@ -213,56 +239,69 @@
      @Nullable
      @Override
      public BlockEntity getBlockEntity(BlockPos pos) {
@@ -236,7 +237,7 @@
              return false;
          }
      }
-@@ -265,30 +304,33 @@
+@@ -272,30 +311,33 @@
          if (!this.ensureCanWrite(pos)) {
              return false;
          } else {
@@ -287,7 +288,7 @@
              }
  
              if (state.hasPostProcess(this, pos)) {
-@@ -305,8 +347,16 @@
+@@ -312,8 +354,16 @@
  
      @Override
      public boolean addFreshEntity(Entity entity) {
@@ -304,7 +305,7 @@
          this.getChunk(i, j).addEntity(entity);
          return true;
      }
-@@ -394,20 +444,16 @@
+@@ -401,20 +451,16 @@
      }
  
      @Override
@@ -323,13 +324,13 @@
 +    public void levelEvent(@Nullable Player player, int eventId, BlockPos pos, int data) {}
  
      @Override
--    public void gameEvent(@Nullable Entity entity, GameEvent event, BlockPos pos) {
+-    public void gameEvent(GameEvent event, Vec3 emitterPos, GameEvent.Context emitter) {
 -    }
-+    public void gameEvent(@Nullable Entity entity, GameEvent event, BlockPos pos) {}
++    public void gameEvent(GameEvent event, Vec3 emitterPos, GameEvent.Context emitter) {}
  
      @Override
      public DimensionType dimensionType() {
-@@ -453,4 +499,21 @@
+@@ -460,4 +506,21 @@
      public long nextSubTickCount() {
          return this.subTickCount.getAndIncrement();
      }

@@ -17,7 +17,7 @@
  import net.minecraft.world.phys.AABB;
  import net.minecraft.world.phys.Vec3;
 +// CraftBukkit start
-+import org.bukkit.craftbukkit.v1_18_R2.event.CraftEventFactory;
++import org.bukkit.craftbukkit.v1_19_R1.event.CraftEventFactory;
 +// CraftBukkit end
  
  public class Pig extends Animal implements ItemSteerable, Saddleable {
@@ -43,21 +43,25 @@
          this.goalSelector.addGoal(5, new FollowParentGoal(this, 1.1D));
          this.goalSelector.addGoal(6, new WaterAvoidingRandomStrollGoal(this, 1.0D));
          this.goalSelector.addGoal(7, new LookAtPlayerGoal(this, Player.class, 6.0F));
-@@ -83,16 +90,19 @@
+@@ -78,12 +85,15 @@
      @Override
-     public boolean canBeControlledByRider() {
-         Entity entity = this.getControllingPassenger();
--        if (!(entity instanceof Player player)) {
+     public Entity getControllingPassenger() {
+         Entity entity = this.getFirstPassenger();
 +
-+        if (!(entity instanceof Player)) {
-             return false;
-         } else {
+         return entity != null && this.canBeControlledBy(entity) ? entity : null;
+     }
+ 
+     private boolean canBeControlledBy(Entity entity) {
+-        if (this.isSaddled() && entity instanceof Player player) {
 -            return player.getMainHandItem().is(Items.CARROT_ON_A_STICK) || player.getOffhandItem().is(Items.CARROT_ON_A_STICK);
++        if (this.isSaddled() && entity instanceof Player) {
 +            Player entityhuman = (Player) entity;
 +
 +            return entityhuman.getMainHandItem().is(Items.CARROT_ON_A_STICK) || entityhuman.getOffhandItem().is(Items.CARROT_ON_A_STICK);
+         } else {
+             return false;
          }
-     }
+@@ -91,7 +101,7 @@
  
      @Override
      public void onSyncedDataUpdated(EntityDataAccessor<?> data) {
@@ -66,7 +70,7 @@
              this.steering.onSynced();
          }
  
-@@ -102,8 +112,8 @@
+@@ -101,8 +111,8 @@
      @Override
      protected void defineSynchedData() {
          super.defineSynchedData();
@@ -77,7 +81,7 @@
      }
  
      @Override
-@@ -140,20 +150,23 @@
+@@ -139,20 +149,23 @@
  
      @Override
      public InteractionResult mobInteract(Player player, InteractionHand hand) {
@@ -108,7 +112,7 @@
              }
          }
      }
-@@ -167,7 +180,7 @@
+@@ -166,7 +179,7 @@
      protected void dropEquipment() {
          super.dropEquipment();
          if (this.isSaddled()) {
@@ -117,7 +121,7 @@
          }
  
      }
-@@ -181,32 +194,41 @@
+@@ -180,32 +193,41 @@
      public void equipSaddle(@Nullable SoundSource sound) {
          this.steering.setSaddle(true);
          if (sound != null) {
@@ -175,7 +179,7 @@
                          }
                      }
                  }
-@@ -219,18 +241,25 @@
+@@ -218,18 +240,25 @@
      @Override
      public void thunderHit(ServerLevel world, LightningBolt lightning) {
          if (world.getDifficulty() != Difficulty.PEACEFUL) {
@@ -210,7 +214,7 @@
              this.discard();
          } else {
              super.thunderHit(world, lightning);
-@@ -245,7 +274,7 @@
+@@ -244,7 +273,7 @@
  
      @Override
      public float getSteeringSpeed() {
@@ -219,7 +223,7 @@
      }
  
      @Override
-@@ -259,17 +288,17 @@
+@@ -258,17 +287,17 @@
      }
  
      @Override

@@ -8,7 +8,7 @@
  import java.util.Optional;
  import java.util.UUID;
  import java.util.function.Predicate;
-@@ -28,152 +29,182 @@
+@@ -28,89 +29,110 @@
  import net.minecraft.world.phys.Vec3;
  
  public class BehaviorUtils {
@@ -70,41 +70,51 @@
      }
  
      public static void setWalkAndLookTargetMemories(LivingEntity entity, Entity target, float speed, int completionRange) {
--        WalkTarget walkTarget = new WalkTarget(new EntityTracker(target, false), speed, completionRange);
--        entity.getBrain().setMemory(MemoryModuleType.LOOK_TARGET, new EntityTracker(target, true));
--        entity.getBrain().setMemory(MemoryModuleType.WALK_TARGET, walkTarget);
-+        WalkTarget memorytarget = new WalkTarget(new EntityTracker(target, false), speed, completionRange);
-+
-+        entity.getBrain().setMemory(MemoryModuleType.LOOK_TARGET, (new EntityTracker(target, true))); // CraftBukkit - decompile error
-+        entity.getBrain().setMemory(MemoryModuleType.WALK_TARGET, memorytarget); // CraftBukkit - decompile error
+-        setWalkAndLookTargetMemories(entity, new EntityTracker(target, true), speed, completionRange);
++        BehaviorUtils.setWalkAndLookTargetMemories(entity, (PositionTracker) (new EntityTracker(target, true)), speed, completionRange);
      }
  
      public static void setWalkAndLookTargetMemories(LivingEntity entity, BlockPos target, float speed, int completionRange) {
--        WalkTarget walkTarget = new WalkTarget(new BlockPosTracker(target), speed, completionRange);
--        entity.getBrain().setMemory(MemoryModuleType.LOOK_TARGET, new BlockPosTracker(target));
+-        setWalkAndLookTargetMemories(entity, new BlockPosTracker(target), speed, completionRange);
++        BehaviorUtils.setWalkAndLookTargetMemories(entity, (PositionTracker) (new BlockPosTracker(target)), speed, completionRange);
+     }
+ 
+     public static void setWalkAndLookTargetMemories(LivingEntity entity, PositionTracker target, float speed, int completionRange) {
+-        WalkTarget walkTarget = new WalkTarget(target, speed, completionRange);
+-        entity.getBrain().setMemory(MemoryModuleType.LOOK_TARGET, target);
 -        entity.getBrain().setMemory(MemoryModuleType.WALK_TARGET, walkTarget);
-+        WalkTarget memorytarget = new WalkTarget(new BlockPosTracker(target), speed, completionRange);
++        WalkTarget memorytarget = new WalkTarget(target, speed, completionRange);
 +
-+        entity.getBrain().setMemory(MemoryModuleType.LOOK_TARGET, (new BlockPosTracker(target))); // CraftBukkit - decompile error
++        entity.getBrain().setMemory(MemoryModuleType.LOOK_TARGET, target); // CraftBukkit - decompile error
 +        entity.getBrain().setMemory(MemoryModuleType.WALK_TARGET, memorytarget); // CraftBukkit - decompile error
      }
  
      public static void throwItem(LivingEntity entity, ItemStack stack, Vec3 targetLocation) {
--        double d = entity.getEyeY() - (double)0.3F;
+-        Vec3 vec3 = new Vec3((double)0.3F, (double)0.3F, (double)0.3F);
+-        throwItem(entity, stack, targetLocation, vec3, 0.3F);
++        Vec3 vec3d1 = new Vec3(0.30000001192092896D, 0.30000001192092896D, 0.30000001192092896D);
++
++        BehaviorUtils.throwItem(entity, stack, targetLocation, vec3d1, 0.3F);
+     }
+ 
+     public static void throwItem(LivingEntity entity, ItemStack stack, Vec3 targetLocation, Vec3 velocityFactor, float yOffset) {
+-        double d = entity.getEyeY() - (double)yOffset;
 -        ItemEntity itemEntity = new ItemEntity(entity.level, entity.getX(), d, entity.getZ(), stack);
-+        if (stack.isEmpty()) return; // CraftBukkit - SPIGOT-4940: no empty loot
-+        double d0 = entity.getEyeY() - 0.30000001192092896D;
-+        ItemEntity entityitem = new ItemEntity(entity.level, entity.getX(), d0, entity.getZ(), stack);
-         float f = 0.3F;
+-        itemEntity.setThrower(entity.getUUID());
 -        Vec3 vec3 = targetLocation.subtract(entity.position());
--        vec3 = vec3.normalize().scale((double)0.3F);
+-        vec3 = vec3.normalize().multiply(velocityFactor.x, velocityFactor.y, velocityFactor.z);
 -        itemEntity.setDeltaMovement(vec3);
 -        itemEntity.setDefaultPickUpDelay();
 -        entity.level.addFreshEntity(itemEntity);
-+        Vec3 vec3d1 = targetLocation.subtract(entity.position());
++        if (stack.isEmpty()) return; // CraftBukkit - SPIGOT-4940: no empty loot
++        double d0 = entity.getEyeY() - (double) yOffset;
++        ItemEntity entityitem = new ItemEntity(entity.level, entity.getX(), d0, entity.getZ(), stack);
 +
-+        vec3d1 = vec3d1.normalize().scale(0.30000001192092896D);
-+        entityitem.setDeltaMovement(vec3d1);
++        entityitem.setThrower(entity.getUUID());
++        Vec3 vec3d2 = targetLocation.subtract(entity.position());
++
++        vec3d2 = vec3d2.normalize().multiply(velocityFactor.x, velocityFactor.y, velocityFactor.z);
++        entityitem.setDeltaMovement(vec3d2);
 +        entityitem.setDefaultPickUpDelay();
 +        // CraftBukkit start
 +        org.bukkit.event.entity.EntityDropItemEvent event = new org.bukkit.event.entity.EntityDropItemEvent(entity.getBukkitEntity(), (org.bukkit.entity.Item) entityitem.getBukkitEntity());
@@ -147,17 +157,7 @@
              }
          }
  
--        return isWithinMeleeAttackRange(mob, target);
-+        return BehaviorUtils.isWithinMeleeAttackRange(mob, target);
-     }
- 
-     public static boolean isWithinMeleeAttackRange(Mob source, LivingEntity target) {
--        double d = source.distanceToSqr(target.getX(), target.getY(), target.getZ());
--        return d <= source.getMeleeAttackRangeSqr(target);
-+        double d0 = source.distanceToSqr(target.getX(), target.getY(), target.getZ());
-+
-+        return d0 <= source.getMeleeAttackRangeSqr(target);
-     }
+@@ -119,64 +141,73 @@
  
      public static boolean isOtherTargetMuchFurtherAwayThanCurrentAttackTarget(LivingEntity source, LivingEntity target, double extraDistance) {
          Optional<LivingEntity> optional = source.getBrain().getMemory(MemoryModuleType.ATTACK_TARGET);
@@ -253,4 +253,5 @@
 -        return vec3;
 +        return vec3d;
      }
- }
+ 
+     public static boolean isBreeding(LivingEntity entity) {

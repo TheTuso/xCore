@@ -1,6 +1,6 @@
 --- a/net/minecraft/world/entity/ai/behavior/VillagerMakeLove.java
 +++ b/net/minecraft/world/entity/ai/behavior/VillagerMakeLove.java
-@@ -7,6 +7,7 @@
+@@ -8,6 +8,7 @@
  import net.minecraft.network.protocol.game.DebugPackets;
  import net.minecraft.server.level.ServerLevel;
  import net.minecraft.world.entity.AgeableMob;
@@ -8,7 +8,7 @@
  import net.minecraft.world.entity.EntityType;
  import net.minecraft.world.entity.ai.Brain;
  import net.minecraft.world.entity.ai.memory.MemoryModuleType;
-@@ -16,6 +17,7 @@
+@@ -18,6 +19,7 @@
  import net.minecraft.world.level.pathfinder.Path;
  
  public class VillagerMakeLove extends Behavior<Villager> {
@@ -16,7 +16,7 @@
      private static final int INTERACT_DIST_SQR = 5;
      private static final float SPEED_MODIFIER = 0.5F;
      private long birthTimestamp;
-@@ -24,38 +26,37 @@
+@@ -26,38 +28,37 @@
          super(ImmutableMap.of(MemoryModuleType.BREED_TARGET, MemoryStatus.VALUE_PRESENT, MemoryModuleType.NEAREST_VISIBLE_LIVING_ENTITIES, MemoryStatus.VALUE_PRESENT), 350, 350);
      }
  
@@ -78,7 +78,7 @@
              }
  
          }
-@@ -63,66 +64,72 @@
+@@ -65,68 +66,74 @@
  
      private void tryToGiveBirth(ServerLevel world, Villager first, Villager second) {
          Optional<BlockPos> optional = this.takeVacantBed(world, first);
@@ -131,17 +131,21 @@
      }
  
      private Optional<BlockPos> takeVacantBed(ServerLevel world, Villager villager) {
--        return world.getPoiManager().take(PoiType.HOME.getPredicate(), (blockPos) -> {
--            return this.canReach(villager, blockPos);
-+        return world.getPoiManager().take(PoiType.HOME.getPredicate(), (blockposition) -> {
-+            return this.canReach(villager, blockposition);
+-        return world.getPoiManager().take((poiType) -> {
+-            return poiType.is(PoiTypes.HOME);
+-        }, (poiType, pos) -> {
+-            return this.canReach(villager, pos, poiType);
++        return world.getPoiManager().take((holder) -> {
++            return holder.is(PoiTypes.HOME);
++        }, (holder, blockposition) -> {
++            return this.canReach(villager, blockposition, holder);
          }, villager.blockPosition(), 48);
      }
  
-     private boolean canReach(Villager villager, BlockPos pos) {
--        Path path = villager.getNavigation().createPath(pos, PoiType.HOME.getValidRange());
+     private boolean canReach(Villager villager, BlockPos pos, Holder<PoiType> poiType) {
+-        Path path = villager.getNavigation().createPath(pos, poiType.value().validRange());
 -        return path != null && path.canReach();
-+        Path pathentity = villager.getNavigation().createPath(pos, PoiType.HOME.getValidRange());
++        Path pathentity = villager.getNavigation().createPath(pos, ((PoiType) poiType.value()).validRange());
 +
 +        return pathentity != null && pathentity.canReach();
      }
@@ -157,7 +161,7 @@
 +            // CraftBukkit start - call EntityBreedEvent
 +            entityvillager2.setAge(-24000);
 +            entityvillager2.moveTo(parent.getX(), parent.getY(), parent.getZ(), 0.0F, 0.0F);
-+            if (org.bukkit.craftbukkit.v1_18_R2.event.CraftEventFactory.callEntityBreedEvent(entityvillager2, parent, partner, null, null, 0).isCancelled()) {
++            if (org.bukkit.craftbukkit.v1_19_R1.event.CraftEventFactory.callEntityBreedEvent(entityvillager2, parent, partner, null, null, 0).isCancelled()) {
 +                return Optional.empty();
 +            }
 +            // CraftBukkit end

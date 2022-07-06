@@ -5,8 +5,8 @@ import java.util.Set;
 import net.kyori.adventure.audience.Audience;
 import net.minecraft.server.MinecraftServer;
 import org.bukkit.Bukkit;
-import org.bukkit.craftbukkit.v1_18_R2.util.LazyHashSet;
-import org.bukkit.craftbukkit.v1_18_R2.util.LazyPlayerSet;
+import org.bukkit.craftbukkit.v1_19_R1.util.LazyHashSet;
+import org.bukkit.craftbukkit.v1_19_R1.util.LazyPlayerSet;
 import org.bukkit.entity.Player;
 
 final class LazyChatAudienceSet extends LazyHashSet<Audience> {

@@ -5,8 +5,8 @@
  import net.minecraft.world.entity.ai.memory.MemoryStatus;
  
 +// CraftBukkit start
-+import org.bukkit.craftbukkit.v1_18_R2.entity.CraftLivingEntity;
-+import org.bukkit.craftbukkit.v1_18_R2.event.CraftEventFactory;
++import org.bukkit.craftbukkit.v1_19_R1.entity.CraftLivingEntity;
++import org.bukkit.craftbukkit.v1_19_R1.event.CraftEventFactory;
 +import org.bukkit.event.entity.EntityTargetEvent;
 +// CraftBukkit end
 +
@@ -14,17 +14,17 @@
 +
      private static final int TIMEOUT_TO_GET_WITHIN_ATTACK_RANGE = 200;
      private final Predicate<LivingEntity> stopAttackingWhen;
-     private final Consumer<E> onTargetErased;
-@@ -22,36 +29,36 @@
+     private final BiConsumer<E, LivingEntity> onTargetErased;
+@@ -28,36 +35,36 @@
      }
  
-     public StopAttackingIfTargetInvalid(Predicate<LivingEntity> alternativeCondition) {
--        this(alternativeCondition, (mob) -> {
-+        this(alternativeCondition, (entityinsentient) -> {
+     public StopAttackingIfTargetInvalid(Predicate<LivingEntity> alternativePredicate) {
+-        this(alternativePredicate, (mob, livingEntity) -> {
++        this(alternativePredicate, (entityinsentient, entityliving) -> {
          });
      }
  
-     public StopAttackingIfTargetInvalid(Consumer<E> forgetCallback) {
+     public StopAttackingIfTargetInvalid(BiConsumer<E, LivingEntity> forgetCallback) {
 -        this((target) -> {
 +        this((entityliving) -> {
              return false;
@@ -35,8 +35,8 @@
 -        this((target) -> {
 +        this((entityliving) -> {
              return false;
--        }, (mob) -> {
-+        }, (entityinsentient) -> {
+-        }, (mob, livingEntity) -> {
++        }, (entityinsentient, entityliving) -> {
          });
      }
  
@@ -45,13 +45,13 @@
 -        LivingEntity livingEntity = this.getAttackTarget(entity);
 -        if (!entity.canAttack(livingEntity)) {
 -            this.clearAttackTarget(entity);
--        } else if (isTiredOfTryingToReachTarget(entity)) {
+-        } else if (this.canGrowTiredOfTryingToReachTarget && isTiredOfTryingToReachTarget(entity)) {
 -            this.clearAttackTarget(entity);
 +        LivingEntity entityliving = this.getAttackTarget(entity);
 +
 +        if (!entity.canAttack(entityliving)) {
 +            this.clearAttackTarget(entity, org.bukkit.event.entity.EntityTargetEvent.TargetReason.TARGET_INVALID); // Paper
-+        } else if (StopAttackingIfTargetInvalid.isTiredOfTryingToReachTarget(entity)) {
++        } else if (this.canGrowTiredOfTryingToReachTarget && StopAttackingIfTargetInvalid.isTiredOfTryingToReachTarget(entity)) {
 +            this.clearAttackTarget(entity, org.bukkit.event.entity.EntityTargetEvent.TargetReason.FORGOT_TARGET); // Paper
          } else if (this.isCurrentTargetDeadOrRemoved(entity)) {
 -            this.clearAttackTarget(entity);
@@ -65,7 +65,7 @@
          }
      }
  
-@@ -60,20 +67,36 @@
+@@ -66,20 +73,36 @@
      }
  
      private LivingEntity getAttackTarget(E entity) {
@@ -91,18 +91,18 @@
 +    protected void clearAttackTarget(E entity, EntityTargetEvent.TargetReason reason) {
 +        // CraftBukkit start
 +        // Paper start - fix this event
-+        //EntityLiving old = e0.getBehaviorController().getMemory(MemoryModuleType.ATTACK_TARGET).orElse(null);
++        // LivingEntity old = entity.getBrain().getMemory(MemoryModuleType.ATTACK_TARGET).orElse(null);
 +        EntityTargetEvent event = CraftEventFactory.callEntityTargetLivingEvent(entity, null, reason);
 +        if (event.isCancelled()) {
 +            return;
 +        }
 +        // comment out, bad logic - bad
 +        /*if (event.getTarget() != null) {
-+            e0.getBehaviorController().setMemory(MemoryModuleType.ATTACK_TARGET, ((CraftLivingEntity) event.getTarget()).getHandle());
++            entity.getBrain().setMemory(MemoryModuleType.ATTACK_TARGET, ((CraftLivingEntity) event.getTarget()).getHandle());
 +            return;
 +        }*/
 +        // Paper end
 +        // CraftBukkit end
-         this.onTargetErased.accept(entity);
+         this.onTargetErased.accept(entity, this.getAttackTarget(entity));
          entity.getBrain().eraseMemory(MemoryModuleType.ATTACK_TARGET);
      }

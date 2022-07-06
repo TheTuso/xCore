@@ -12,7 +12,7 @@
  import java.util.function.BiConsumer;
  import java.util.function.Function;
  import java.util.function.Supplier;
-@@ -25,78 +29,87 @@
+@@ -25,79 +29,88 @@
  import org.slf4j.Logger;
  
  public class GameRules {
@@ -106,6 +106,7 @@
 -    public static final GameRules.Key<GameRules.BooleanValue> RULE_FREEZE_DAMAGE = register("freezeDamage", GameRules.Category.PLAYER, GameRules.BooleanValue.create(true));
 -    public static final GameRules.Key<GameRules.BooleanValue> RULE_DO_PATROL_SPAWNING = register("doPatrolSpawning", GameRules.Category.SPAWNING, GameRules.BooleanValue.create(true));
 -    public static final GameRules.Key<GameRules.BooleanValue> RULE_DO_TRADER_SPAWNING = register("doTraderSpawning", GameRules.Category.SPAWNING, GameRules.BooleanValue.create(true));
+-    public static final GameRules.Key<GameRules.BooleanValue> RULE_DO_WARDEN_SPAWNING = register("doWardenSpawning", GameRules.Category.SPAWNING, GameRules.BooleanValue.create(true));
 -    public static final GameRules.Key<GameRules.BooleanValue> RULE_FORGIVE_DEAD_PLAYERS = register("forgiveDeadPlayers", GameRules.Category.MOBS, GameRules.BooleanValue.create(true));
 -    public static final GameRules.Key<GameRules.BooleanValue> RULE_UNIVERSAL_ANGER = register("universalAnger", GameRules.Category.MOBS, GameRules.BooleanValue.create(false));
 -    public static final GameRules.Key<GameRules.IntegerValue> RULE_PLAYERS_SLEEPING_PERCENTAGE = register("playersSleepingPercentage", GameRules.Category.PLAYER, GameRules.IntegerValue.create(100));
@@ -115,6 +116,7 @@
 +    public static final GameRules.Key<GameRules.BooleanValue> RULE_FREEZE_DAMAGE = GameRules.register("freezeDamage", GameRules.Category.PLAYER, GameRules.BooleanValue.create(true));
 +    public static final GameRules.Key<GameRules.BooleanValue> RULE_DO_PATROL_SPAWNING = GameRules.register("doPatrolSpawning", GameRules.Category.SPAWNING, GameRules.BooleanValue.create(true));
 +    public static final GameRules.Key<GameRules.BooleanValue> RULE_DO_TRADER_SPAWNING = GameRules.register("doTraderSpawning", GameRules.Category.SPAWNING, GameRules.BooleanValue.create(true));
++    public static final GameRules.Key<GameRules.BooleanValue> RULE_DO_WARDEN_SPAWNING = GameRules.register("doWardenSpawning", GameRules.Category.SPAWNING, GameRules.BooleanValue.create(true));
 +    public static final GameRules.Key<GameRules.BooleanValue> RULE_FORGIVE_DEAD_PLAYERS = GameRules.register("forgiveDeadPlayers", GameRules.Category.MOBS, GameRules.BooleanValue.create(true));
 +    public static final GameRules.Key<GameRules.BooleanValue> RULE_UNIVERSAL_ANGER = GameRules.register("universalAnger", GameRules.Category.MOBS, GameRules.BooleanValue.create(false));
 +    public static final GameRules.Key<GameRules.IntegerValue> RULE_PLAYERS_SLEEPING_PERCENTAGE = GameRules.register("playersSleepingPercentage", GameRules.Category.PLAYER, GameRules.IntegerValue.create(100));
@@ -150,7 +152,7 @@
          }));
      }
  
-@@ -105,70 +118,201 @@
+@@ -106,70 +119,201 @@
      }
  
      public <T extends GameRules.Value<T>> T getRule(GameRules.Key<T> key) {
@@ -378,7 +380,7 @@
              });
          }
  
-@@ -178,15 +322,18 @@
+@@ -179,15 +323,18 @@
          }
  
          @Override
@@ -400,7 +402,7 @@
              this.value = value;
              this.onChanged(server);
          }
-@@ -197,7 +344,7 @@
+@@ -198,7 +345,7 @@
          }
  
          @Override
@@ -409,7 +411,7 @@
              this.value = Boolean.parseBoolean(value);
          }
  
-@@ -216,55 +363,24 @@
+@@ -217,55 +364,24 @@
              return new GameRules.BooleanValue(this.type, this.value);
          }
  
@@ -471,7 +473,7 @@
              });
          }
  
-@@ -274,15 +390,18 @@
+@@ -275,15 +391,18 @@
          }
  
          @Override
@@ -493,7 +495,7 @@
              this.value = value;
              this.onChanged(server);
          }
-@@ -293,15 +412,15 @@
+@@ -294,15 +413,15 @@
          }
  
          @Override
@@ -512,7 +514,7 @@
                  return false;
              }
          }
-@@ -310,8 +429,8 @@
+@@ -311,8 +430,8 @@
              if (!input.isEmpty()) {
                  try {
                      return Integer.parseInt(input);
@@ -523,7 +525,7 @@
                  }
              }
  
-@@ -333,120 +452,14 @@
+@@ -334,120 +453,14 @@
              return new GameRules.IntegerValue(this.type, this.value);
          }
  

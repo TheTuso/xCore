@@ -1,6 +1,6 @@
 --- a/net/minecraft/world/level/block/PointedDripstoneBlock.java
 +++ b/net/minecraft/world/level/block/PointedDripstoneBlock.java
-@@ -8,8 +8,8 @@
+@@ -7,8 +7,8 @@
  import javax.annotation.Nullable;
  import net.minecraft.core.BlockPos;
  import net.minecraft.core.Direction;
@@ -9,14 +9,14 @@
 +import net.minecraft.core.particles.SimpleParticleType;
  import net.minecraft.server.level.ServerLevel;
  import net.minecraft.tags.FluidTags;
- import net.minecraft.world.damagesource.DamageSource;
-@@ -42,8 +42,13 @@
+ import net.minecraft.util.RandomSource;
+@@ -43,8 +43,13 @@
  import net.minecraft.world.phys.shapes.CollisionContext;
  import net.minecraft.world.phys.shapes.Shapes;
  import net.minecraft.world.phys.shapes.VoxelShape;
 +// CraftBukkit start
-+import org.bukkit.craftbukkit.v1_18_R2.block.CraftBlock;
-+import org.bukkit.craftbukkit.v1_18_R2.event.CraftEventFactory;
++import org.bukkit.craftbukkit.v1_19_R1.block.CraftBlock;
++import org.bukkit.craftbukkit.v1_19_R1.event.CraftEventFactory;
 +// CraftBukkit end
  
  public class PointedDripstoneBlock extends Block implements Fallable, SimpleWaterloggedBlock {
@@ -24,7 +24,7 @@
      public static final DirectionProperty TIP_DIRECTION = BlockStateProperties.VERTICAL_DIRECTION;
      public static final EnumProperty<DripstoneThickness> THICKNESS = BlockStateProperties.DRIPSTONE_THICKNESS;
      public static final BooleanProperty WATERLOGGED = BlockStateProperties.WATERLOGGED;
-@@ -76,60 +81,70 @@
+@@ -77,60 +82,70 @@
  
      public PointedDripstoneBlock(BlockBehaviour.Properties settings) {
          super(settings);
@@ -113,31 +113,31 @@
          } else {
              super.fallOn(world, state, pos, entity, fallDistance);
          }
-@@ -138,13 +153,14 @@
+@@ -139,13 +154,14 @@
  
      @Override
-     public void animateTick(BlockState state, Level world, BlockPos pos, Random random) {
+     public void animateTick(BlockState state, Level world, BlockPos pos, RandomSource random) {
 -        if (canDrip(state)) {
 +        if (PointedDripstoneBlock.canDrip(state)) {
              float f = random.nextFloat();
 -            if (!(f > 0.12F)) {
 -                getFluidAboveStalactite(world, pos, state).filter((fluid) -> {
--                    return f < 0.02F || canFillCauldron(fluid);
+-                    return f < 0.02F || canFillCauldron(fluid.fluid);
 -                }).ifPresent((fluid) -> {
--                    spawnDripParticle(world, pos, state, fluid);
+-                    spawnDripParticle(world, pos, state, fluid.fluid);
 +
 +            if (f <= 0.12F) {
-+                PointedDripstoneBlock.getFluidAboveStalactite(world, pos, state).filter((fluidtype) -> {
-+                    return f < 0.02F || PointedDripstoneBlock.canFillCauldron(fluidtype);
-+                }).ifPresent((fluidtype) -> {
-+                    PointedDripstoneBlock.spawnDripParticle(world, pos, state, fluidtype);
++                PointedDripstoneBlock.getFluidAboveStalactite(world, pos, state).filter((pointeddripstoneblock_a) -> {
++                    return f < 0.02F || PointedDripstoneBlock.canFillCauldron(pointeddripstoneblock_a.fluid);
++                }).ifPresent((pointeddripstoneblock_a) -> {
++                    PointedDripstoneBlock.spawnDripParticle(world, pos, state, pointeddripstoneblock_a.fluid);
                  });
              }
          }
-@@ -152,49 +168,53 @@
+@@ -153,58 +169,64 @@
  
      @Override
-     public void tick(BlockState state, ServerLevel world, BlockPos pos, Random random) {
+     public void tick(BlockState state, ServerLevel world, BlockPos pos, RandomSource random) {
 -        if (isStalagmite(state) && !this.canSurvive(state, world, pos)) {
 +        if (PointedDripstoneBlock.isStalagmite(state) && !this.canSurvive(state, world, pos)) {
              world.destroyBlock(pos, true);
@@ -149,11 +149,11 @@
      }
  
      @Override
-     public void randomTick(BlockState state, ServerLevel world, BlockPos pos, Random random) {
--        maybeFillCauldron(state, world, pos, random.nextFloat());
+     public void randomTick(BlockState state, ServerLevel world, BlockPos pos, RandomSource random) {
+-        maybeTransferFluid(state, world, pos, random.nextFloat());
 -        if (random.nextFloat() < 0.011377778F && isStalactiteStartPos(state, world, pos)) {
 -            growStalactiteOrStalagmiteIfPossible(state, world, pos, random);
-+        PointedDripstoneBlock.maybeFillCauldron(state, world, pos, random.nextFloat());
++        PointedDripstoneBlock.maybeTransferFluid(state, world, pos, random.nextFloat());
 +        if (random.nextFloat() < 0.011377778F && PointedDripstoneBlock.isStalactiteStartPos(state, world, pos)) {
 +            PointedDripstoneBlock.growStalactiteOrStalagmiteIfPossible(state, world, pos, random);
          }
@@ -161,56 +161,74 @@
      }
  
      @VisibleForTesting
-     public static void maybeFillCauldron(BlockState state, ServerLevel world, BlockPos pos, float dripChance) {
+     public static void maybeTransferFluid(BlockState state, ServerLevel world, BlockPos pos, float dripChance) {
 -        if (!(dripChance > 0.17578125F) || !(dripChance > 0.05859375F)) {
 -            if (isStalactiteStartPos(state, world, pos)) {
--                Fluid fluid = getCauldronFillFluidType(world, pos);
--                float f;
--                if (fluid == Fluids.WATER) {
--                    f = 0.17578125F;
+-                Optional<PointedDripstoneBlock.FluidInfo> optional = getFluidAboveStalactite(world, pos, state);
 +        if (dripChance <= 0.17578125F || dripChance <= 0.05859375F) {
 +            if (PointedDripstoneBlock.isStalactiteStartPos(state, world, pos)) {
-+                Fluid fluidtype = PointedDripstoneBlock.getCauldronFillFluidType(world, pos);
-+                float f1;
++                Optional<PointedDripstoneBlock.FluidInfo> optional = PointedDripstoneBlock.getFluidAboveStalactite(world, pos, state);
 +
-+                if (fluidtype == Fluids.WATER) {
-+                    f1 = 0.17578125F;
-                 } else {
--                    if (fluid != Fluids.LAVA) {
-+                    if (fluidtype != Fluids.LAVA) {
-                         return;
-                     }
- 
--                    f = 0.05859375F;
-+                    f1 = 0.05859375F;
-                 }
- 
--                if (!(dripChance >= f)) {
--                    BlockPos blockPos = findTip(state, world, pos, 11, false);
--                    if (blockPos != null) {
--                        BlockPos blockPos2 = findFillableCauldronBelowStalactiteTip(world, blockPos, fluid);
--                        if (blockPos2 != null) {
--                            world.levelEvent(1504, blockPos, 0);
--                            int i = blockPos.getY() - blockPos2.getY();
-+                if (dripChance < f1) {
-+                    BlockPos blockposition1 = PointedDripstoneBlock.findTip(state, world, pos, 11, false);
+                 if (!optional.isEmpty()) {
+-                    Fluid fluid = (optional.get()).fluid;
+-                    float f;
+-                    if (fluid == Fluids.WATER) {
+-                        f = 0.17578125F;
++                    Fluid fluidtype = ((PointedDripstoneBlock.FluidInfo) optional.get()).fluid;
++                    float f1;
 +
-+                    if (blockposition1 != null) {
-+                        BlockPos blockposition2 = PointedDripstoneBlock.findFillableCauldronBelowStalactiteTip(world, blockposition1, fluidtype);
-+
-+                        if (blockposition2 != null) {
-+                            world.levelEvent(1504, blockposition1, 0);
-+                            int i = blockposition1.getY() - blockposition2.getY();
-                             int j = 50 + i;
--                            BlockState blockState = world.getBlockState(blockPos2);
--                            world.scheduleTick(blockPos2, blockState.getBlock(), j);
-+                            BlockState iblockdata1 = world.getBlockState(blockposition2);
-+
-+                            world.scheduleTick(blockposition2, iblockdata1.getBlock(), j);
++                    if (fluidtype == Fluids.WATER) {
++                        f1 = 0.17578125F;
+                     } else {
+-                        if (fluid != Fluids.LAVA) {
++                        if (fluidtype != Fluids.LAVA) {
+                             return;
                          }
+ 
+-                        f = 0.05859375F;
++                        f1 = 0.05859375F;
                      }
-                 }
-@@ -210,22 +230,24 @@
+ 
+-                    if (!(dripChance >= f)) {
+-                        BlockPos blockPos = findTip(state, world, pos, 11, false);
+-                        if (blockPos != null) {
+-                            if ((optional.get()).sourceState.is(Blocks.MUD) && fluid == Fluids.WATER) {
+-                                BlockState blockState = Blocks.CLAY.defaultBlockState();
+-                                world.setBlockAndUpdate((optional.get()).pos, blockState);
+-                                Block.pushEntitiesUp((optional.get()).sourceState, blockState, world, (optional.get()).pos);
+-                                world.gameEvent(GameEvent.BLOCK_CHANGE, (optional.get()).pos, GameEvent.Context.of(blockState));
+-                                world.levelEvent(1504, blockPos, 0);
++                    if (dripChance < f1) {
++                        BlockPos blockposition1 = PointedDripstoneBlock.findTip(state, world, pos, 11, false);
++
++                        if (blockposition1 != null) {
++                            if (((PointedDripstoneBlock.FluidInfo) optional.get()).sourceState.is(Blocks.MUD) && fluidtype == Fluids.WATER) {
++                                BlockState iblockdata1 = Blocks.CLAY.defaultBlockState();
++
++                                world.setBlockAndUpdate(((PointedDripstoneBlock.FluidInfo) optional.get()).pos, iblockdata1);
++                                Block.pushEntitiesUp(((PointedDripstoneBlock.FluidInfo) optional.get()).sourceState, iblockdata1, world, ((PointedDripstoneBlock.FluidInfo) optional.get()).pos);
++                                world.gameEvent(GameEvent.BLOCK_CHANGE, ((PointedDripstoneBlock.FluidInfo) optional.get()).pos, GameEvent.Context.of(iblockdata1));
++                                world.levelEvent(1504, blockposition1, 0);
+                             } else {
+-                                BlockPos blockPos2 = findFillableCauldronBelowStalactiteTip(world, blockPos, fluid);
+-                                if (blockPos2 != null) {
+-                                    world.levelEvent(1504, blockPos, 0);
+-                                    int i = blockPos.getY() - blockPos2.getY();
++                                BlockPos blockposition2 = PointedDripstoneBlock.findFillableCauldronBelowStalactiteTip(world, blockposition1, fluidtype);
++
++                                if (blockposition2 != null) {
++                                    world.levelEvent(1504, blockposition1, 0);
++                                    int i = blockposition1.getY() - blockposition2.getY();
+                                     int j = 50 + i;
+-                                    BlockState blockState2 = world.getBlockState(blockPos2);
+-                                    world.scheduleTick(blockPos2, blockState2.getBlock(), j);
++                                    BlockState iblockdata2 = world.getBlockState(blockposition2);
++
++                                    world.scheduleTick(blockposition2, iblockdata2.getBlock(), j);
+                                 }
+                             }
+                         }
+@@ -222,22 +244,24 @@
      @Nullable
      @Override
      public BlockState getStateForPlacement(BlockPlaceContext ctx) {
@@ -244,7 +262,7 @@
      }
  
      @Override
-@@ -235,26 +257,28 @@
+@@ -247,26 +271,28 @@
  
      @Override
      public VoxelShape getShape(BlockState state, BlockGetter world, BlockPos pos, CollisionContext context) {
@@ -288,7 +306,7 @@
      }
  
      @Override
-@@ -291,35 +315,40 @@
+@@ -298,35 +324,40 @@
      }
  
      private static void spawnFallingStalactite(BlockState state, ServerLevel world, BlockPos pos) {
@@ -319,7 +337,7 @@
      }
  
      @VisibleForTesting
-     public static void growStalactiteOrStalagmiteIfPossible(BlockState state, ServerLevel world, BlockPos pos, Random random) {
+     public static void growStalactiteOrStalagmiteIfPossible(BlockState state, ServerLevel world, BlockPos pos, RandomSource random) {
 -        BlockState blockState = world.getBlockState(pos.above(1));
 -        BlockState blockState2 = world.getBlockState(pos.above(2));
 -        if (canGrow(blockState, blockState2)) {
@@ -346,7 +364,7 @@
                      }
  
                  }
-@@ -328,26 +357,27 @@
+@@ -335,26 +366,27 @@
      }
  
      private static void growStalagmiteBelow(ServerLevel world, BlockPos pos) {
@@ -384,7 +402,7 @@
                  return;
              }
          }
-@@ -355,96 +385,105 @@
+@@ -362,96 +394,105 @@
      }
  
      private static void grow(ServerLevel world, BlockPos pos, Direction direction) {
@@ -411,7 +429,7 @@
 +    private static void createDripstone(LevelAccessor generatoraccess, BlockPos blockposition, Direction enumdirection, DripstoneThickness dripstonethickness, BlockPos source) { // CraftBukkit
 +        BlockState iblockdata = (BlockState) ((BlockState) ((BlockState) Blocks.POINTED_DRIPSTONE.defaultBlockState().setValue(PointedDripstoneBlock.TIP_DIRECTION, enumdirection)).setValue(PointedDripstoneBlock.THICKNESS, dripstonethickness)).setValue(PointedDripstoneBlock.WATERLOGGED, generatoraccess.getFluidState(blockposition).getType() == Fluids.WATER);
 +
-+        org.bukkit.craftbukkit.v1_18_R2.event.CraftEventFactory.handleBlockSpreadEvent(generatoraccess, source, blockposition, iblockdata, 3); // CraftBukkit
++        org.bukkit.craftbukkit.v1_19_R1.event.CraftEventFactory.handleBlockSpreadEvent(generatoraccess, source, blockposition, iblockdata, 3); // CraftBukkit
      }
  
      private static void createMergedTips(BlockState state, LevelAccessor world, BlockPos pos) {
@@ -441,9 +459,9 @@
  
      public static void spawnDripParticle(Level world, BlockPos pos, BlockState state) {
 -        getFluidAboveStalactite(world, pos, state).ifPresent((fluid) -> {
--            spawnDripParticle(world, pos, state, fluid);
-+        PointedDripstoneBlock.getFluidAboveStalactite(world, pos, state).ifPresent((fluidtype) -> {
-+            PointedDripstoneBlock.spawnDripParticle(world, pos, state, fluidtype);
+-            spawnDripParticle(world, pos, state, fluid.fluid);
++        PointedDripstoneBlock.getFluidAboveStalactite(world, pos, state).ifPresent((pointeddripstoneblock_a) -> {
++            PointedDripstoneBlock.spawnDripParticle(world, pos, state, pointeddripstoneblock_a.fluid);
          });
      }
  
@@ -540,7 +558,7 @@
              } else {
                  return DripstoneThickness.FRUSTUM;
              }
-@@ -452,59 +491,59 @@
+@@ -459,59 +500,59 @@
      }
  
      public static boolean canDrip(BlockState state) {
@@ -623,7 +641,7 @@
      }
  
      @Override
-@@ -513,35 +552,37 @@
+@@ -520,46 +561,49 @@
      }
  
      private static boolean isPointedDripstoneWithDirection(BlockState state, Direction direction) {
@@ -660,20 +678,39 @@
 +        return (BlockPos) PointedDripstoneBlock.findBlockVertical(world, pos, Direction.UP.getAxisDirection(), bipredicate, PointedDripstoneBlock::canDrip, 11).orElse(null); // CraftBukkit - decompile error
      }
  
-     public static Fluid getCauldronFillFluidType(Level world, BlockPos pos) {
--        return getFluidAboveStalactite(world, pos, world.getBlockState(pos)).filter(PointedDripstoneBlock::canFillCauldron).orElse(Fluids.EMPTY);
-+        return (Fluid) PointedDripstoneBlock.getFluidAboveStalactite(world, pos, world.getBlockState(pos)).filter(PointedDripstoneBlock::canFillCauldron).orElse(Fluids.EMPTY);
+     public static Fluid getCauldronFillFluidType(ServerLevel world, BlockPos pos) {
+-        return getFluidAboveStalactite(world, pos, world.getBlockState(pos)).map((fluid) -> {
+-            return fluid.fluid;
++        return (Fluid) PointedDripstoneBlock.getFluidAboveStalactite(world, pos, world.getBlockState(pos)).map((pointeddripstoneblock_a) -> {
++            return pointeddripstoneblock_a.fluid;
+         }).filter(PointedDripstoneBlock::canFillCauldron).orElse(Fluids.EMPTY);
      }
  
-     private static Optional<Fluid> getFluidAboveStalactite(Level world, BlockPos pos, BlockState state) {
+     private static Optional<PointedDripstoneBlock.FluidInfo> getFluidAboveStalactite(Level world, BlockPos pos, BlockState state) {
 -        return !isStalactite(state) ? Optional.empty() : findRootBlock(world, pos, state, 11).map((posx) -> {
--            return world.getFluidState(posx.above()).getType();
+-            BlockPos blockPos = posx.above();
+-            BlockState blockState = world.getBlockState(blockPos);
+-            Fluid fluid;
+-            if (blockState.is(Blocks.MUD) && !world.dimensionType().ultraWarm()) {
+-                fluid = Fluids.WATER;
 +        return !PointedDripstoneBlock.isStalactite(state) ? Optional.empty() : PointedDripstoneBlock.findRootBlock(world, pos, state, 11).map((blockposition1) -> {
-+            return world.getFluidState(blockposition1.above()).getType();
++            BlockPos blockposition2 = blockposition1.above();
++            BlockState iblockdata1 = world.getBlockState(blockposition2);
++            Object object;
++
++            if (iblockdata1.is(Blocks.MUD) && !world.dimensionType().ultraWarm()) {
++                object = Fluids.WATER;
+             } else {
+-                fluid = world.getFluidState(blockPos).getType();
++                object = world.getFluidState(blockposition2).getType();
+             }
+ 
+-            return new PointedDripstoneBlock.FluidInfo(blockPos, fluid, blockState);
++            return new PointedDripstoneBlock.FluidInfo(blockposition2, (Fluid) object, iblockdata1);
          });
      }
  
-@@ -554,25 +595,22 @@
+@@ -572,25 +616,22 @@
      }
  
      private static Fluid getDripFluid(Level world, Fluid fluid) {
@@ -709,7 +746,7 @@
                  return Optional.empty();
              }
          }
-@@ -588,8 +626,9 @@
+@@ -606,11 +647,13 @@
          } else if (!state.getFluidState().isEmpty()) {
              return false;
          } else {
@@ -719,5 +756,9 @@
 +
 +            return !Shapes.joinIsNotEmpty(PointedDripstoneBlock.REQUIRED_SPACE_TO_DRIP_THROUGH_NON_SOLID_BLOCK, voxelshape, BooleanOp.AND);
          }
+     }
+ 
+     static record FluidInfo(BlockPos pos, Fluid fluid, BlockState sourceState) {
++
      }
  }

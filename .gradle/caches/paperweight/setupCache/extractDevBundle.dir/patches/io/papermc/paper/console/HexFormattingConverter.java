@@ -1,6 +1,6 @@
 package io.papermc.paper.console;
 
-import com.destroystokyo.paper.PaperConfig;
+import io.papermc.paper.configuration.GlobalConfiguration;
 import io.papermc.paper.adventure.PaperAdventure;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextColor;
@@ -67,7 +67,7 @@ public final class HexFormattingConverter extends LogEventPatternConverter {
         formatHexAnsi(NamedTextColor.YELLOW),        // Yellow §e
         formatHexAnsi(NamedTextColor.WHITE),         // White §f
         "\u001B[5m",                                 // Obfuscated §k
-        "\u001B[21m",                                // Bold §l
+        "\u001B[1m",                                 // Bold §l
         "\u001B[9m",                                 // Strikethrough §m
         "\u001B[4m",                                 // Underline §n
         "\u001B[3m",                                 // Italic §o
@@ -91,7 +91,7 @@ public final class HexFormattingConverter extends LogEventPatternConverter {
         "\u001B[0;33;1m",  // Yellow §e
         "\u001B[0;37;1m",  // White §f
         "\u001B[5m",       // Obfuscated §k
-        "\u001B[21m",      // Bold §l
+        "\u001B[1m",       // Bold §l
         "\u001B[9m",       // Strikethrough §m
         "\u001B[4m",       // Underline §n
         "\u001B[3m",       // Italic §o
@@ -168,7 +168,7 @@ public final class HexFormattingConverter extends LogEventPatternConverter {
 
         Matcher matcher = NAMED_PATTERN.matcher(content);
         StringBuilder buffer = new StringBuilder();
-        final String[] ansiCodes = PaperConfig.useRgbForNamedTextColors ? RGB_ANSI_CODES : ANSI_ANSI_CODES;
+        final String[] ansiCodes = GlobalConfiguration.get().logging.useRgbForNamedTextColors ? RGB_ANSI_CODES : ANSI_ANSI_CODES;
         while (matcher.find()) {
             int format = LOOKUP.indexOf(Character.toLowerCase(matcher.group().charAt(1)));
             if (format != -1) {

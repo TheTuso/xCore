@@ -15,15 +15,15 @@
 -import net.minecraft.commands.Commands;
  import net.minecraft.commands.arguments.EntityArgument;
  import net.minecraft.commands.arguments.MobEffectArgument;
- import net.minecraft.network.chat.TranslatableComponent;
-@@ -19,83 +21,95 @@
+ import net.minecraft.network.chat.Component;
+@@ -19,81 +21,93 @@
  import net.minecraft.world.entity.LivingEntity;
  
  public class EffectCommands {
 +
-     private static final SimpleCommandExceptionType ERROR_GIVE_FAILED = new SimpleCommandExceptionType(new TranslatableComponent("commands.effect.give.failed"));
-     private static final SimpleCommandExceptionType ERROR_CLEAR_EVERYTHING_FAILED = new SimpleCommandExceptionType(new TranslatableComponent("commands.effect.clear.everything.failed"));
-     private static final SimpleCommandExceptionType ERROR_CLEAR_SPECIFIC_FAILED = new SimpleCommandExceptionType(new TranslatableComponent("commands.effect.clear.specific.failed"));
+     private static final SimpleCommandExceptionType ERROR_GIVE_FAILED = new SimpleCommandExceptionType(Component.translatable("commands.effect.give.failed"));
+     private static final SimpleCommandExceptionType ERROR_CLEAR_EVERYTHING_FAILED = new SimpleCommandExceptionType(Component.translatable("commands.effect.clear.everything.failed"));
+     private static final SimpleCommandExceptionType ERROR_CLEAR_SPECIFIC_FAILED = new SimpleCommandExceptionType(Component.translatable("commands.effect.clear.specific.failed"));
  
 +    public EffectCommands() {}
 +
@@ -109,11 +109,11 @@
 +            throw EffectCommands.ERROR_GIVE_FAILED.create();
          } else {
              if (targets.size() == 1) {
--                source.sendSuccess(new TranslatableComponent("commands.effect.give.success.single", effect.getDisplayName(), targets.iterator().next().getDisplayName(), j / 20), true);
-+                source.sendSuccess(new TranslatableComponent("commands.effect.give.success.single", new Object[]{effect.getDisplayName(), ((Entity) targets.iterator().next()).getDisplayName(), k / 20}), true);
+-                source.sendSuccess(Component.translatable("commands.effect.give.success.single", effect.getDisplayName(), targets.iterator().next().getDisplayName(), j / 20), true);
++                source.sendSuccess(Component.translatable("commands.effect.give.success.single", effect.getDisplayName(), ((Entity) targets.iterator().next()).getDisplayName(), k / 20), true);
              } else {
--                source.sendSuccess(new TranslatableComponent("commands.effect.give.success.multiple", effect.getDisplayName(), targets.size(), j / 20), true);
-+                source.sendSuccess(new TranslatableComponent("commands.effect.give.success.multiple", new Object[]{effect.getDisplayName(), targets.size(), k / 20}), true);
+-                source.sendSuccess(Component.translatable("commands.effect.give.success.multiple", effect.getDisplayName(), targets.size(), j / 20), true);
++                source.sendSuccess(Component.translatable("commands.effect.give.success.multiple", effect.getDisplayName(), targets.size(), k / 20), true);
              }
  
 -            return i;
@@ -140,15 +140,12 @@
 +            throw EffectCommands.ERROR_CLEAR_EVERYTHING_FAILED.create();
          } else {
              if (targets.size() == 1) {
--                source.sendSuccess(new TranslatableComponent("commands.effect.clear.everything.success.single", targets.iterator().next().getDisplayName()), true);
-+                source.sendSuccess(new TranslatableComponent("commands.effect.clear.everything.success.single", new Object[]{((Entity) targets.iterator().next()).getDisplayName()}), true);
+-                source.sendSuccess(Component.translatable("commands.effect.clear.everything.success.single", targets.iterator().next().getDisplayName()), true);
++                source.sendSuccess(Component.translatable("commands.effect.clear.everything.success.single", ((Entity) targets.iterator().next()).getDisplayName()), true);
              } else {
--                source.sendSuccess(new TranslatableComponent("commands.effect.clear.everything.success.multiple", targets.size()), true);
-+                source.sendSuccess(new TranslatableComponent("commands.effect.clear.everything.success.multiple", new Object[]{targets.size()}), true);
+                 source.sendSuccess(Component.translatable("commands.effect.clear.everything.success.multiple", targets.size()), true);
              }
- 
-             return i;
-@@ -104,20 +118,23 @@
+@@ -104,18 +118,21 @@
  
      private static int clearEffect(CommandSourceStack source, Collection<? extends Entity> targets, MobEffect effect) throws CommandSyntaxException {
          int i = 0;
@@ -169,11 +166,8 @@
 +            throw EffectCommands.ERROR_CLEAR_SPECIFIC_FAILED.create();
          } else {
              if (targets.size() == 1) {
--                source.sendSuccess(new TranslatableComponent("commands.effect.clear.specific.success.single", effect.getDisplayName(), targets.iterator().next().getDisplayName()), true);
-+                source.sendSuccess(new TranslatableComponent("commands.effect.clear.specific.success.single", new Object[]{effect.getDisplayName(), ((Entity) targets.iterator().next()).getDisplayName()}), true);
+-                source.sendSuccess(Component.translatable("commands.effect.clear.specific.success.single", effect.getDisplayName(), targets.iterator().next().getDisplayName()), true);
++                source.sendSuccess(Component.translatable("commands.effect.clear.specific.success.single", effect.getDisplayName(), ((Entity) targets.iterator().next()).getDisplayName()), true);
              } else {
--                source.sendSuccess(new TranslatableComponent("commands.effect.clear.specific.success.multiple", effect.getDisplayName(), targets.size()), true);
-+                source.sendSuccess(new TranslatableComponent("commands.effect.clear.specific.success.multiple", new Object[]{effect.getDisplayName(), targets.size()}), true);
+                 source.sendSuccess(Component.translatable("commands.effect.clear.specific.success.multiple", effect.getDisplayName(), targets.size()), true);
              }
- 
-             return i;

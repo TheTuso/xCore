@@ -14,8 +14,8 @@
  
 +// CraftBukkit start
 +import org.bukkit.Location;
-+import org.bukkit.craftbukkit.v1_18_R2.inventory.CraftInventoryStonecutter;
-+import org.bukkit.craftbukkit.v1_18_R2.inventory.CraftInventoryView;
++import org.bukkit.craftbukkit.v1_19_R1.inventory.CraftInventoryStonecutter;
++import org.bukkit.craftbukkit.v1_19_R1.inventory.CraftInventoryView;
 +import org.bukkit.entity.Player;
 +// CraftBukkit end
 +
@@ -179,9 +179,9 @@
 +                    return false;
 +                }
 +                int newRecipeIndex;
-+                if (!this.getRecipes().get(recipeIndex).getId().equals(org.bukkit.craftbukkit.v1_18_R2.util.CraftNamespacedKey.toMinecraft(event.getStonecuttingRecipe().getKey()))) { // If the recipe did NOT stay the same
++                if (!this.getRecipes().get(recipeIndex).getId().equals(org.bukkit.craftbukkit.v1_19_R1.util.CraftNamespacedKey.toMinecraft(event.getStonecuttingRecipe().getKey()))) { // If the recipe did NOT stay the same
 +                    for (newRecipeIndex = 0; newRecipeIndex < this.getRecipes().size(); newRecipeIndex++) {
-+                        if (this.getRecipes().get(newRecipeIndex).getId().equals(org.bukkit.craftbukkit.v1_18_R2.util.CraftNamespacedKey.toMinecraft(event.getStonecuttingRecipe().getKey()))) {
++                        if (this.getRecipes().get(newRecipeIndex).getId().equals(org.bukkit.craftbukkit.v1_19_R1.util.CraftNamespacedKey.toMinecraft(event.getStonecuttingRecipe().getKey()))) {
 +                            recipeIndex = newRecipeIndex;
 +                            break;
 +                        }
@@ -209,7 +209,7 @@
 +            this.setupRecipeList(inventory, itemstack);
          }
  
-+        org.bukkit.craftbukkit.v1_18_R2.event.CraftEventFactory.callPrepareResultEvent(this, 1); // Paper
++        org.bukkit.craftbukkit.v1_19_R1.event.CraftEventFactory.callPrepareResultEvent(this, RESULT_SLOT); // Paper
      }
  
      private void setupRecipeList(Container input, ItemStack stack) {

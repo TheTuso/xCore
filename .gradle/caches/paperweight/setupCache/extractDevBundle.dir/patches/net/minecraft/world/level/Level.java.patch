@@ -14,10 +14,10 @@
  import java.util.Iterator;
  import java.util.List;
 +import java.util.Objects;
- import java.util.Random;
  import java.util.function.Consumer;
  import java.util.function.Predicate;
-@@ -23,8 +29,10 @@
+ import java.util.function.Supplier;
+@@ -22,8 +28,10 @@
  import net.minecraft.network.protocol.Packet;
  import net.minecraft.resources.ResourceKey;
  import net.minecraft.resources.ResourceLocation;
@@ -51,7 +51,7 @@
  import net.minecraft.world.level.entity.EntityTypeTest;
  import net.minecraft.world.level.entity.LevelEntityGetter;
  import net.minecraft.world.level.gameevent.GameEvent;
-@@ -61,9 +73,36 @@
+@@ -63,9 +75,36 @@
  import net.minecraft.world.level.storage.LevelData;
  import net.minecraft.world.level.storage.WritableLevelData;
  import net.minecraft.world.phys.AABB;
@@ -71,13 +71,13 @@
 +import net.minecraft.network.protocol.game.ClientboundSetBorderWarningDistancePacket;
 +import org.bukkit.Bukkit;
 +import org.bukkit.Location;
-+import org.bukkit.craftbukkit.v1_18_R2.CraftServer;
-+import org.bukkit.craftbukkit.v1_18_R2.CraftWorld;
-+import org.bukkit.craftbukkit.v1_18_R2.block.CapturedBlockState;
-+import org.bukkit.craftbukkit.v1_18_R2.block.CraftBlockState;
-+import org.bukkit.craftbukkit.v1_18_R2.block.data.CraftBlockData;
-+import org.bukkit.craftbukkit.v1_18_R2.util.CraftSpawnCategory;
-+import org.bukkit.craftbukkit.v1_18_R2.util.CraftNamespacedKey;
++import org.bukkit.craftbukkit.v1_19_R1.CraftServer;
++import org.bukkit.craftbukkit.v1_19_R1.CraftWorld;
++import org.bukkit.craftbukkit.v1_19_R1.block.CapturedBlockState;
++import org.bukkit.craftbukkit.v1_19_R1.block.CraftBlockState;
++import org.bukkit.craftbukkit.v1_19_R1.block.data.CraftBlockData;
++import org.bukkit.craftbukkit.v1_19_R1.util.CraftSpawnCategory;
++import org.bukkit.craftbukkit.v1_19_R1.util.CraftNamespacedKey;
 +import org.bukkit.entity.SpawnCategory;
 +import org.bukkit.event.block.BlockPhysicsEvent;
 +import org.bukkit.event.world.GenericGameEvent;
@@ -85,25 +85,28 @@
 +
  public abstract class Level implements LevelAccessor, AutoCloseable {
 +
-     public static final Codec<ResourceKey<Level>> RESOURCE_KEY_CODEC = ResourceLocation.CODEC.xmap(ResourceKey.elementKey(Registry.DIMENSION_REGISTRY), ResourceKey::location);
+     public static final Codec<ResourceKey<Level>> RESOURCE_KEY_CODEC = ResourceKey.codec(Registry.DIMENSION_REGISTRY);
      public static final ResourceKey<Level> OVERWORLD = ResourceKey.create(Registry.DIMENSION_REGISTRY, new ResourceLocation("overworld"));
      public static final ResourceKey<Level> NETHER = ResourceKey.create(Registry.DIMENSION_REGISTRY, new ResourceLocation("the_nether"));
-@@ -76,7 +115,7 @@
+@@ -78,7 +117,7 @@
      public static final int TICKS_PER_DAY = 24000;
      public static final int MAX_ENTITY_SPAWN_Y = 20000000;
      public static final int MIN_ENTITY_SPAWN_Y = -20000000;
 -    protected final List<TickingBlockEntity> blockEntityTickers = Lists.newArrayList();
 +    protected final List<TickingBlockEntity> blockEntityTickers = Lists.newArrayList(); public final int getTotalTileEntityTickers() { return this.blockEntityTickers.size(); } // Paper
+     protected final NeighborUpdater neighborUpdater;
      private final List<TickingBlockEntity> pendingBlockEntityTickers = Lists.newArrayList();
      private boolean tickingBlockEntities;
-     public final Thread thread;
-@@ -99,23 +138,159 @@
+@@ -105,26 +144,168 @@
      private final ResourceKey<Level> dimension;
      private long subTickCount;
  
--    protected Level(WritableLevelData properties, ResourceKey<Level> registryRef, Holder<DimensionType> holder, Supplier<ProfilerFiller> profiler, boolean isClient, boolean debugWorld, long seed) {
+-    protected Level(WritableLevelData properties, ResourceKey<Level> registryRef, Holder<DimensionType> dimension, Supplier<ProfilerFiller> profiler, boolean isClient, boolean debugWorld, long seed, int maxChainedNeighborUpdates) {
 -        this.profiler = profiler;
 -        this.levelData = properties;
+-        this.dimensionTypeRegistration = dimension;
+-        this.dimensionTypeId = dimension.unwrapKey().orElseThrow(() -> {
+-            return new IllegalArgumentException("Dimension must be registered, got " + dimension);
 +    // CraftBukkit start Added the following
 +    private final CraftWorld world;
 +    public boolean pvpMode;
@@ -114,7 +117,7 @@
 +    public boolean preventPoiUpdated = false; // CraftBukkit - SPIGOT-5710
 +    public boolean captureBlockStates = false;
 +    public boolean captureTreeGeneration = false;
-+    public Map<BlockPos, org.bukkit.craftbukkit.v1_18_R2.block.CraftBlockState> capturedBlockStates = new java.util.LinkedHashMap<>(); // Paper
++    public Map<BlockPos, org.bukkit.craftbukkit.v1_19_R1.block.CraftBlockState> capturedBlockStates = new java.util.LinkedHashMap<>(); // Paper
 +    public Map<BlockPos, BlockEntity> capturedTileEntities = new java.util.LinkedHashMap<>(); // Paper
 +    public List<ItemEntity> captureDrops;
 +    public final it.unimi.dsi.fastutil.objects.Object2LongOpenHashMap<SpawnCategory> ticksPerSpawnCategory = new it.unimi.dsi.fastutil.objects.Object2LongOpenHashMap<>();
@@ -126,8 +129,13 @@
 +    // Paper end
 +    public boolean populating;
 +    public final org.spigotmc.SpigotWorldConfig spigotConfig; // Spigot
++    // Paper start
++    private final io.papermc.paper.configuration.WorldConfiguration paperConfig;
++    public io.papermc.paper.configuration.WorldConfiguration paperConfig() {
++        return this.paperConfig;
++    }
++    // Paper end
 +
-+    public final com.destroystokyo.paper.PaperWorldConfig paperConfig; // Paper
 +    public final com.destroystokyo.paper.antixray.ChunkPacketBlockController chunkPacketBlockController; // Paper - Anti-Xray
 +
 +    public final co.aikar.timings.WorldTimingsHandler timings; // Paper
@@ -141,9 +149,13 @@
 +    // Paper start - fix and optimise world upgrading
 +    // copied from below
 +    public static ResourceKey<DimensionType> getDimensionKey(DimensionType manager) {
-+        return ((org.bukkit.craftbukkit.v1_18_R2.CraftServer)org.bukkit.Bukkit.getServer()).getHandle().getServer().registryHolder.ownedRegistryOrThrow(net.minecraft.core.Registry.DIMENSION_TYPE_REGISTRY).getResourceKey(manager).orElseThrow(() -> {
++        return ((org.bukkit.craftbukkit.v1_19_R1.CraftServer)org.bukkit.Bukkit.getServer()).getHandle().getServer().registryHolder.ownedRegistryOrThrow(net.minecraft.core.Registry.DIMENSION_TYPE_REGISTRY).getResourceKey(manager).orElseThrow(() -> {
 +            return new IllegalStateException("Unregistered dimension type: " + manager);
-+        });
+         });
+-        final DimensionType dimensionType = dimension.value();
+-        this.dimension = registryRef;
+-        this.isClientSide = isClient;
+-        if (dimensionType.coordinateScale() != 1.0D) {
 +    }
 +    // Paper end - fix and optimise world upgrading
 +
@@ -227,9 +239,9 @@
 +
 +    public abstract ResourceKey<LevelStem> getTypeKey();
 +
-+    protected Level(WritableLevelData worlddatamutable, ResourceKey<Level> resourcekey, Holder<DimensionType> holder, Supplier<ProfilerFiller> supplier, boolean flag, boolean flag1, long i, org.bukkit.generator.ChunkGenerator gen, org.bukkit.generator.BiomeProvider biomeProvider, org.bukkit.World.Environment env, java.util.concurrent.Executor executor) { // Paper - Async-Anti-Xray - Pass executor
++    protected Level(WritableLevelData worlddatamutable, ResourceKey<Level> resourcekey, Holder<DimensionType> holder, Supplier<ProfilerFiller> supplier, boolean flag, boolean flag1, long i, int j, org.bukkit.generator.ChunkGenerator gen, org.bukkit.generator.BiomeProvider biomeProvider, org.bukkit.World.Environment env, java.util.function.Function<org.spigotmc.SpigotWorldConfig, io.papermc.paper.configuration.WorldConfiguration> paperWorldConfigCreator, java.util.concurrent.Executor executor) { // Paper - Async-Anti-Xray - Pass executor
 +        this.spigotConfig = new org.spigotmc.SpigotWorldConfig(((net.minecraft.world.level.storage.PrimaryLevelData) worlddatamutable).getLevelName()); // Spigot
-+        this.paperConfig = new com.destroystokyo.paper.PaperWorldConfig(((net.minecraft.world.level.storage.PrimaryLevelData) worlddatamutable).getLevelName(), this.spigotConfig); // Paper
++        this.paperConfig = paperWorldConfigCreator.apply(this.spigotConfig); // Paper
 +        this.generator = gen;
 +        this.world = new CraftWorld((ServerLevel) this, gen, biomeProvider, env);
 +
@@ -243,36 +255,39 @@
 +        // CraftBukkit end
 +        this.profiler = supplier;
 +        this.levelData = worlddatamutable;
-         this.dimensionTypeRegistration = holder;
--        this.dimensionType = holder.value();
--        this.dimension = registryRef;
--        this.isClientSide = isClient;
-+        this.dimensionType = (DimensionType) holder.value();
++        this.dimensionTypeRegistration = holder;
++        this.dimensionTypeId = (ResourceKey) holder.unwrapKey().orElseThrow(() -> {
++            return new IllegalArgumentException("Dimension must be registered, got " + holder);
++        });
++        final DimensionType dimensionmanager = (DimensionType) holder.value();
++
 +        this.dimension = resourcekey;
 +        this.isClientSide = flag;
-         if (this.dimensionType.coordinateScale() != 1.0D) {
++        if (dimensionmanager.coordinateScale() != 1.0D) {
              this.worldBorder = new WorldBorder() {
                  @Override
                  public double getCenterX() {
--                    return super.getCenterX() / Level.this.dimensionType.coordinateScale();
+-                    return super.getCenterX() / dimensionType.coordinateScale();
 +                    return super.getCenterX(); // CraftBukkit
                  }
  
                  @Override
                  public double getCenterZ() {
--                    return super.getCenterZ() / Level.this.dimensionType.coordinateScale();
+-                    return super.getCenterZ() / dimensionType.coordinateScale();
 +                    return super.getCenterZ(); // CraftBukkit
                  }
              };
          } else {
-@@ -123,10 +298,91 @@
+@@ -132,11 +313,92 @@
          }
  
          this.thread = Thread.currentThread();
 -        this.biomeManager = new BiomeManager(this, seed);
 -        this.isDebug = debugWorld;
+-        this.neighborUpdater = new CollectingNeighborUpdater(this, maxChainedNeighborUpdates);
 +        this.biomeManager = new BiomeManager(this, i);
 +        this.isDebug = flag1;
++        this.neighborUpdater = new CollectingNeighborUpdater(this, j);
 +        // CraftBukkit start
 +        this.getWorldBorder().world = (ServerLevel) this;
 +        // From PlayerList.setPlayerFileData
@@ -310,10 +325,10 @@
 +        });
 +        // CraftBukkit end
 +        timings = new co.aikar.timings.WorldTimingsHandler(this); // Paper - code below can generate new world and access timings
-+        this.keepSpawnInMemory = this.paperConfig.keepSpawnInMemory; // Paper
++        this.keepSpawnInMemory = this.paperConfig().spawn.keepSpawnLoaded; // Paper
 +        this.entityLimiter = new org.spigotmc.TickLimiter(spigotConfig.entityMaxTickTime);
 +        this.tileLimiter = new org.spigotmc.TickLimiter(spigotConfig.tileMaxTickTime);
-+        this.chunkPacketBlockController = this.paperConfig.antiXray ? new com.destroystokyo.paper.antixray.ChunkPacketBlockControllerAntiXray(this, executor) : com.destroystokyo.paper.antixray.ChunkPacketBlockController.NO_OPERATION_INSTANCE; // Paper - Anti-Xray
++        this.chunkPacketBlockController = this.paperConfig().anticheat.antiXray.enabled ? new com.destroystokyo.paper.antixray.ChunkPacketBlockControllerAntiXray(this, executor) : com.destroystokyo.paper.antixray.ChunkPacketBlockController.NO_OPERATION_INSTANCE; // Paper - Anti-Xray
 +        this.entitySliceManager = new io.papermc.paper.world.EntitySliceManager((ServerLevel)this); // Paper
      }
  
@@ -359,7 +374,7 @@
      @Override
      public boolean isClientSide() {
          return this.isClientSide;
-@@ -139,11 +395,11 @@
+@@ -149,11 +411,11 @@
      }
  
      public boolean isInWorldBounds(BlockPos pos) {
@@ -373,7 +388,7 @@
      }
  
      private static boolean isInWorldBoundsHorizontal(BlockPos pos) {
-@@ -154,118 +410,301 @@
+@@ -164,118 +426,301 @@
          return y < -20000000 || y >= 20000000;
      }
  
@@ -574,7 +589,7 @@
  
 -                    this.onBlockStateChange(pos, blockState, blockState2);
 +                    this.onBlockStateChange(blockposition, iblockdata1, iblockdata2);
-                 }
++                }
 +                */
 +
 +                // CraftBukkit start
@@ -587,7 +602,7 @@
 +                        Level.lastPhysicsProblem = new BlockPos(pos);
 +                    }
 +                    // Spigot end
-+                }
+                 }
 +                // CraftBukkit end
  
                  return true;
@@ -701,10 +716,11 @@
  
 -            boolean bl = this.setBlock(pos, fluidState.createLegacyBlock(), 3, maxUpdateDepth);
 -            if (bl) {
+-                this.gameEvent(GameEvent.BLOCK_DESTROY, pos, GameEvent.Context.of(breakingEntity, blockState));
 +            boolean flag1 = this.setBlock(pos, fluid.createLegacyBlock(), 3, maxUpdateDepth);
 +
 +            if (flag1) {
-                 this.gameEvent(breakingEntity, GameEvent.BLOCK_DESTROY, pos);
++                this.gameEvent(GameEvent.BLOCK_DESTROY, pos, GameEvent.Context.of(breakingEntity, iblockdata));
              }
  
 -            return bl;
@@ -718,7 +734,7 @@
  
      public boolean setBlockAndUpdate(BlockPos pos, BlockState state) {
          return this.setBlock(pos, state, 3);
-@@ -273,10 +712,10 @@
+@@ -283,20 +728,15 @@
  
      public abstract void sendBlockUpdated(BlockPos pos, BlockState oldState, BlockState newState, int flags);
  
@@ -726,59 +742,25 @@
 -    }
 +    public void setBlocksDirty(BlockPos pos, BlockState old, BlockState updated) {}
  
-     public void updateNeighborsAt(BlockPos pos, Block block) {
-+        if (captureBlockStates) { return; } // Paper - Cancel all physics during placement
-         this.neighborChanged(pos.west(), block, pos);
-         this.neighborChanged(pos.east(), block, pos);
-         this.neighborChanged(pos.below(), block, pos);
-@@ -314,40 +753,57 @@
+-    public void updateNeighborsAt(BlockPos pos, Block sourceBlock) {
+-    }
++    public void updateNeighborsAt(BlockPos pos, Block sourceBlock) {}
  
-     public void neighborChanged(BlockPos pos, Block sourceBlock, BlockPos neighborPos) {
-         if (!this.isClientSide) {
--            BlockState blockState = this.getBlockState(pos);
-+            BlockState iblockdata = this.getBlockState(pos);
+-    public void updateNeighborsAtExceptFromFacing(BlockPos pos, Block sourceBlock, Direction direction) {
+-    }
++    public void updateNeighborsAtExceptFromFacing(BlockPos pos, Block sourceBlock, Direction direction) {}
  
-             try {
--                blockState.neighborChanged(this, pos, sourceBlock, neighborPos, false);
--            } catch (Throwable var8) {
--                CrashReport crashReport = CrashReport.forThrowable(var8, "Exception while updating neighbours");
--                CrashReportCategory crashReportCategory = crashReport.addCategory("Block being updated");
--                crashReportCategory.setDetail("Source block type", () -> {
-+                // CraftBukkit start
-+                CraftWorld world = ((ServerLevel) this).getWorld();
-+                if (world != null && ((ServerLevel)this).hasPhysicsEvent) { // Paper
-+                    BlockPhysicsEvent event = new BlockPhysicsEvent(world.getBlockAt(pos.getX(), pos.getY(), pos.getZ()), CraftBlockData.fromData(iblockdata), world.getBlockAt(neighborPos.getX(), neighborPos.getY(), neighborPos.getZ()));
-+                    this.getCraftServer().getPluginManager().callEvent(event);
-+
-+                    if (event.isCancelled()) {
-+                        return;
-+                    }
-+                }
-+                // CraftBukkit end
-+                iblockdata.neighborChanged(this, pos, sourceBlock, neighborPos, false);
-+            // Spigot Start
-+            } catch (StackOverflowError ex) {
-+                Level.lastPhysicsProblem = new BlockPos(pos);
-+                // Spigot End
-+            } catch (Throwable throwable) {
-+                CrashReport crashreport = CrashReport.forThrowable(throwable, "Exception while updating neighbours");
-+                CrashReportCategory crashreportsystemdetails = crashreport.addCategory("Block being updated");
-+
-+                crashreportsystemdetails.setDetail("Source block type", () -> {
-                     try {
-                         return String.format("ID #%s (%s // %s)", Registry.BLOCK.getKey(sourceBlock), sourceBlock.getDescriptionId(), sourceBlock.getClass().getCanonicalName());
--                    } catch (Throwable var2) {
-+                    } catch (Throwable throwable1) {
-                         return "ID #" + Registry.BLOCK.getKey(sourceBlock);
-                     }
-                 });
--                CrashReportCategory.populateBlockDetails(crashReportCategory, this, pos, blockState);
--                throw new ReportedException(crashReport);
-+                CrashReportCategory.populateBlockDetails(crashreportsystemdetails, this, pos, iblockdata);
-+                throw new ReportedException(crashreport);
-             }
-         }
-     }
+-    public void neighborChanged(BlockPos pos, Block sourceBlock, BlockPos sourcePos) {
+-    }
++    public void neighborChanged(BlockPos pos, Block sourceBlock, BlockPos sourcePos) {}
+ 
+-    public void neighborChanged(BlockState state, BlockPos pos, Block sourceBlock, BlockPos sourcePos, boolean notify) {
+-    }
++    public void neighborChanged(BlockState state, BlockPos pos, Block sourceBlock, BlockPos sourcePos, boolean notify) {}
+ 
+     @Override
+     public void neighborShapeChanged(Direction direction, BlockState neighborState, BlockPos pos, BlockPos neighborPos, int flags, int maxUpdateDepth) {
+@@ -305,18 +745,19 @@
  
      @Override
      public int getHeight(Heightmap.Types heightmap, int x, int z) {
@@ -803,7 +785,7 @@
      }
  
      @Override
-@@ -357,11 +813,20 @@
+@@ -326,11 +767,20 @@
  
      @Override
      public BlockState getBlockState(BlockPos pos) {
@@ -826,7 +808,7 @@
          }
      }
  
-@@ -370,8 +835,9 @@
+@@ -339,8 +789,9 @@
          if (this.isOutsideBuildHeight(pos)) {
              return Fluids.EMPTY.defaultFluidState();
          } else {
@@ -838,7 +820,7 @@
          }
      }
  
-@@ -385,32 +851,28 @@
+@@ -354,7 +805,7 @@
  
      @Override
      public void playSound(@Nullable Player player, BlockPos pos, SoundEvent sound, SoundSource category, float volume, float pitch) {
@@ -846,9 +828,10 @@
 +        this.playSound(player, (double) pos.getX() + 0.5D, (double) pos.getY() + 0.5D, (double) pos.getZ() + 0.5D, sound, category, volume, pitch);
      }
  
-     public abstract void playSound(@Nullable Player except, double x, double y, double z, SoundEvent sound, SoundSource category, float volume, float pitch);
- 
-     public abstract void playSound(@Nullable Player except, Entity entity, SoundEvent sound, SoundSource category, float volume, float pitch);
+     public abstract void playSeededSound(@Nullable Player except, double x, double y, double z, SoundEvent sound, SoundSource category, float volume, float pitch, long seed);
+@@ -369,25 +820,21 @@
+         this.playSeededSound(player, entity, sound, category, volume, pitch, this.threadSafeRandom.nextLong());
+     }
  
 -    public void playLocalSound(double x, double y, double z, SoundEvent sound, SoundSource category, float volume, float pitch, boolean useDistance) {
 -    }
@@ -880,7 +863,7 @@
      }
  
      public void addBlockEntityTicker(TickingBlockEntity ticker) {
-@@ -418,39 +880,78 @@
+@@ -395,39 +842,78 @@
      }
  
      protected void tickBlockEntities() {
@@ -919,14 +902,14 @@
 -            TickingBlockEntity tickingBlockEntity = iterator.next();
 -            if (tickingBlockEntity.isRemoved()) {
 -                iterator.remove();
--            } else if (this.shouldTickBlocksAt(ChunkPos.asLong(tickingBlockEntity.getPos()))) {
+-            } else if (this.shouldTickBlocksAt(tickingBlockEntity.getPos())) {
 -                tickingBlockEntity.tick();
 +            if (tickingblockentity.isRemoved()) {
 +                // Spigot start
 +                tilesThisCycle--;
 +                toRemove.add(tickingblockentity); // Paper - use removeAll
 +                // Spigot end
-+            } else if (this.shouldTickBlocksAt(ChunkPos.asLong(tickingblockentity.getPos()))) {
++            } else if (this.shouldTickBlocksAt(tickingblockentity.getPos())) {
 +                tickingblockentity.tick();
 +                // Paper start - execute chunk tasks during tick
 +                if ((this.tileTickPosition & 7) == 0) {
@@ -967,14 +950,14 @@
 +    // Paper start - Prevent armor stands from doing entity lookups
 +    @Override
 +    public boolean noCollision(@Nullable Entity entity, AABB box) {
-+        if (entity instanceof net.minecraft.world.entity.decoration.ArmorStand && !entity.level.paperConfig.armorStandEntityLookups) return false;
++        if (entity instanceof net.minecraft.world.entity.decoration.ArmorStand && !entity.level.paperConfig().entities.armorStands.doCollisionEntityLookups) return false;
 +        return LevelAccessor.super.noCollision(entity, box);
 +    }
 +    // Paper end
  
      public boolean shouldTickDeath(Entity entity) {
          return true;
-@@ -461,15 +962,16 @@
+@@ -442,15 +928,16 @@
      }
  
      public Explosion explode(@Nullable Entity entity, double x, double y, double z, float power, Explosion.BlockInteraction destructionType) {
@@ -993,7 +976,7 @@
          explosion.explode();
          explosion.finalizeExplosion(true);
          return explosion;
-@@ -480,17 +982,33 @@
+@@ -461,17 +948,33 @@
      @Nullable
      @Override
      public BlockEntity getBlockEntity(BlockPos pos) {
@@ -1034,7 +1017,7 @@
          }
      }
  
-@@ -508,8 +1026,9 @@
+@@ -489,8 +992,9 @@
          if (this.isOutsideBuildHeight(pos)) {
              return false;
          } else {
@@ -1046,7 +1029,7 @@
          }
      }
  
-@@ -518,10 +1037,11 @@
+@@ -499,10 +1003,11 @@
      }
  
      public void updateSkyBrightness() {
@@ -1062,7 +1045,25 @@
      }
  
      public void setSpawnSettings(boolean spawnMonsters, boolean spawnAnimals) {
-@@ -538,7 +1058,6 @@
+@@ -510,12 +1015,13 @@
+     }
+ 
+     public BlockPos getSharedSpawnPos() {
+-        BlockPos blockPos = new BlockPos(this.levelData.getXSpawn(), this.levelData.getYSpawn(), this.levelData.getZSpawn());
+-        if (!this.getWorldBorder().isWithinBounds(blockPos)) {
+-            blockPos = this.getHeightmapPos(Heightmap.Types.MOTION_BLOCKING, new BlockPos(this.getWorldBorder().getCenterX(), 0.0D, this.getWorldBorder().getCenterZ()));
++        BlockPos blockposition = new BlockPos(this.levelData.getXSpawn(), this.levelData.getYSpawn(), this.levelData.getZSpawn());
++
++        if (!this.getWorldBorder().isWithinBounds(blockposition)) {
++            blockposition = this.getHeightmapPos(Heightmap.Types.MOTION_BLOCKING, new BlockPos(this.getWorldBorder().getCenterX(), 0.0D, this.getWorldBorder().getCenterZ()));
+         }
+ 
+-        return blockPos;
++        return blockposition;
+     }
+ 
+     public float getSharedSpawnAngle() {
+@@ -532,7 +1038,6 @@
  
      }
  
@@ -1070,7 +1071,7 @@
      public void close() throws IOException {
          this.getChunkSource().close();
      }
-@@ -553,20 +1072,7 @@
+@@ -547,20 +1052,7 @@
      public List<Entity> getEntities(@Nullable Entity except, AABB box, Predicate<? super Entity> predicate) {
          this.getProfiler().incrementCounter("getEntities");
          List<Entity> list = Lists.newArrayList();
@@ -1092,7 +1093,7 @@
          return list;
      }
  
-@@ -574,21 +1080,23 @@
+@@ -568,21 +1060,23 @@
      public <T extends Entity> List<T> getEntities(EntityTypeTest<Entity, T> filter, AABB box, Predicate<? super T> predicate) {
          this.getProfiler().incrementCounter("getEntities");
          List<T> list = Lists.newArrayList();
@@ -1129,7 +1130,7 @@
          return list;
      }
  
-@@ -608,8 +1116,9 @@
+@@ -602,8 +1096,9 @@
      }
  
      public int getDirectSignalTo(BlockPos pos) {
@@ -1141,7 +1142,7 @@
          if (i >= 15) {
              return i;
          } else {
-@@ -643,46 +1152,38 @@
+@@ -637,46 +1132,38 @@
      }
  
      public int getSignal(BlockPos pos, Direction direction) {
@@ -1203,7 +1204,7 @@
  
      public long getGameTime() {
          return this.levelData.getGameTime();
-@@ -696,8 +1197,7 @@
+@@ -690,8 +1177,7 @@
          return true;
      }
  
@@ -1213,7 +1214,7 @@
  
      public void blockEvent(BlockPos pos, Block block, int type, int data) {
          this.getBlockState(pos).triggerEvent(this, pos, type, data);
-@@ -717,9 +1217,10 @@
+@@ -711,9 +1197,10 @@
      }
  
      public void setThunderLevel(float thunderGradient) {
@@ -1227,7 +1228,7 @@
      }
  
      public float getRainLevel(float delta) {
-@@ -727,21 +1228,18 @@
+@@ -721,21 +1208,18 @@
      }
  
      public void setRainLevel(float rainGradient) {
@@ -1255,7 +1256,7 @@
      }
  
      public boolean isRainingAt(BlockPos pos) {
-@@ -752,14 +1250,16 @@
+@@ -746,14 +1230,16 @@
          } else if (this.getHeightmapPos(Heightmap.Types.MOTION_BLOCKING, pos).getY() > pos.getY()) {
              return false;
          } else {
@@ -1276,7 +1277,7 @@
      }
  
      @Nullable
-@@ -769,47 +1269,56 @@
+@@ -763,47 +1249,56 @@
  
      public abstract int getFreeMapId();
  
@@ -1332,12 +1333,12 @@
 -            if (this.hasChunkAt(blockPos)) {
 -                BlockState blockState = this.getBlockState(blockPos);
 -                if (blockState.is(Blocks.COMPARATOR)) {
--                    blockState.neighborChanged(this, blockPos, block, pos, false);
+-                    this.neighborChanged(blockState, blockPos, block, pos, false);
 -                } else if (blockState.isRedstoneConductor(this, blockPos)) {
 -                    blockPos = blockPos.relative(direction);
 -                    blockState = this.getBlockState(blockPos);
 -                    if (blockState.is(Blocks.COMPARATOR)) {
--                        blockState.neighborChanged(this, blockPos, block, pos, false);
+-                        this.neighborChanged(blockState, blockPos, block, pos, false);
 +        Iterator iterator = Direction.Plane.HORIZONTAL.iterator();
 +
 +        while (iterator.hasNext()) {
@@ -1348,16 +1349,16 @@
 +                BlockState iblockdata = this.getBlockState(blockposition1);
 +
 +                if (iblockdata.is(Blocks.COMPARATOR)) {
-+                    iblockdata.neighborChanged(this, blockposition1, block, pos, false);
++                    this.neighborChanged(iblockdata, blockposition1, block, pos, false);
 +                } else if (iblockdata.isRedstoneConductor(this, blockposition1)) {
 +                    blockposition1 = blockposition1.relative(enumdirection);
 +                    iblockdata = this.getBlockState(blockposition1);
 +                    if (iblockdata.is(Blocks.COMPARATOR)) {
-+                        iblockdata.neighborChanged(this, blockposition1, block, pos, false);
++                        this.neighborChanged(iblockdata, blockposition1, block, pos, false);
                      }
                  }
              }
-@@ -819,14 +1328,15 @@
+@@ -813,14 +1308,15 @@
  
      @Override
      public DifficultyInstance getCurrentDifficultyAt(BlockPos pos) {
@@ -1376,7 +1377,7 @@
      }
  
      @Override
-@@ -834,8 +1344,7 @@
+@@ -828,8 +1324,7 @@
          return this.skyDarken;
      }
  
@@ -1386,7 +1387,16 @@
  
      @Override
      public WorldBorder getWorldBorder() {
-@@ -876,10 +1385,19 @@
+@@ -842,7 +1337,7 @@
+ 
+     @Override
+     public DimensionType dimensionType() {
+-        return this.dimensionTypeRegistration.value();
++        return (DimensionType) this.dimensionTypeRegistration.value();
+     }
+ 
+     public ResourceKey<DimensionType> dimensionTypeId() {
+@@ -874,10 +1369,19 @@
  
      public abstract RecipeManager getRecipeManager();
  
@@ -1409,7 +1419,7 @@
      }
  
      public boolean noSave() {
-@@ -887,7 +1405,7 @@
+@@ -885,7 +1389,7 @@
      }
  
      public ProfilerFiller getProfiler() {
@@ -1418,54 +1428,13 @@
      }
  
      public Supplier<ProfilerFiller> getProfilerSupplier() {
-@@ -906,19 +1424,28 @@
-     public abstract LevelEntityGetter<Entity> getEntities();
- 
-     protected void postGameEventInRadius(@Nullable Entity entity, GameEvent gameEvent, BlockPos pos, int range) {
--        int i = SectionPos.blockToSectionCoord(pos.getX() - range);
--        int j = SectionPos.blockToSectionCoord(pos.getZ() - range);
--        int k = SectionPos.blockToSectionCoord(pos.getX() + range);
--        int l = SectionPos.blockToSectionCoord(pos.getZ() + range);
--        int m = SectionPos.blockToSectionCoord(pos.getY() - range);
--        int n = SectionPos.blockToSectionCoord(pos.getY() + range);
-+        // CraftBukkit start
-+        GenericGameEvent event = new GenericGameEvent(org.bukkit.GameEvent.getByKey(CraftNamespacedKey.fromMinecraft(Registry.GAME_EVENT.getKey(gameEvent))), new Location(this.getWorld(), pos.getX(), pos.getY(), pos.getZ()), (entity == null) ? null : entity.getBukkitEntity(), range);
-+        this.getCraftServer().getPluginManager().callEvent(event);
-+        if (event.isCancelled()) {
-+            return;
-+        }
-+        range = event.getRadius();
-+        // CraftBukkit end
-+        int j = SectionPos.blockToSectionCoord(pos.getX() - range);
-+        int k = SectionPos.blockToSectionCoord(pos.getZ() - range);
-+        int l = SectionPos.blockToSectionCoord(pos.getX() + range);
-+        int i1 = SectionPos.blockToSectionCoord(pos.getZ() + range);
-+        int j1 = SectionPos.blockToSectionCoord(pos.getY() - range);
-+        int k1 = SectionPos.blockToSectionCoord(pos.getY() + range);
- 
--        for(int o = i; o <= k; ++o) {
--            for(int p = j; p <= l; ++p) {
--                ChunkAccess chunkAccess = this.getChunkSource().getChunkNow(o, p);
--                if (chunkAccess != null) {
--                    for(int q = m; q <= n; ++q) {
--                        chunkAccess.getEventDispatcher(q).post(gameEvent, entity, pos);
-+        for (int l1 = j; l1 <= l; ++l1) {
-+            for (int i2 = k; i2 <= i1; ++i2) {
-+                LevelChunk chunk = (LevelChunk) this.getChunkIfLoadedImmediately(l1, i2); // Paper
-+
-+                if (chunk != null) {
-+                    for (int j2 = j1; j2 <= k1; ++j2) {
-+                        chunk.getEventDispatcher(j2).post(gameEvent, entity, pos);
-                     }
-                 }
-             }
-@@ -928,6 +1455,59 @@
+@@ -905,6 +1409,59 @@
  
      @Override
      public long nextSubTickCount() {
 -        return (long)(this.subTickCount++);
 +        return (long) (this.subTickCount++);
-     }
++    }
 +
 +    // Paper start
 +    protected final io.papermc.paper.world.EntitySliceManager entitySliceManager;
@@ -1517,6 +1486,6 @@
 +        // only so this method can be called without casting
 +        // an instance of Level to ServerLevel.
 +        return null;
-+    }
+     }
 +    // Paper end
  }

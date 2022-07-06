@@ -1,6 +1,6 @@
 --- a/net/minecraft/server/network/ServerStatusPacketListenerImpl.java
 +++ b/net/minecraft/server/network/ServerStatusPacketListenerImpl.java
-@@ -1,16 +1,28 @@
+@@ -1,15 +1,27 @@
  package net.minecraft.server.network;
  
 +import net.minecraft.server.MinecraftServer;
@@ -12,7 +12,6 @@
 +import net.minecraft.SharedConstants;
  import net.minecraft.network.Connection;
  import net.minecraft.network.chat.Component;
- import net.minecraft.network.chat.TranslatableComponent;
  import net.minecraft.network.protocol.status.ClientboundPongResponsePacket;
  import net.minecraft.network.protocol.status.ClientboundStatusResponsePacket;
 +import net.minecraft.network.protocol.status.ServerStatus;
@@ -20,17 +19,17 @@
  import net.minecraft.network.protocol.status.ServerboundPingRequestPacket;
  import net.minecraft.network.protocol.status.ServerboundStatusRequestPacket;
 -import net.minecraft.server.MinecraftServer;
-+import org.bukkit.craftbukkit.v1_18_R2.util.CraftChatMessage;
-+import org.bukkit.craftbukkit.v1_18_R2.util.CraftIconCache;
++import org.bukkit.craftbukkit.v1_19_R1.util.CraftChatMessage;
++import org.bukkit.craftbukkit.v1_19_R1.util.CraftIconCache;
 +import org.bukkit.entity.Player;
 +// CraftBukkit end
  
  public class ServerStatusPacketListenerImpl implements ServerStatusPacketListener {
 +
-     private static final Component DISCONNECT_REASON = new TranslatableComponent("multiplayer.status.request_handled");
+     private static final Component DISCONNECT_REASON = Component.translatable("multiplayer.status.request_handled");
      private final MinecraftServer server;
      private final Connection connection;
-@@ -22,8 +34,7 @@
+@@ -21,8 +33,7 @@
      }
  
      @Override
@@ -40,7 +39,7 @@
  
      @Override
      public Connection getConnection() {
-@@ -33,16 +44,123 @@
+@@ -32,16 +43,124 @@
      @Override
      public void handleStatusRequest(ServerboundStatusRequestPacket packet) {
          if (this.hasRequestedStatus) {
@@ -59,13 +58,13 @@
 +                CraftIconCache icon = server.server.getServerIcon();
 +
 +                ServerListPingEvent() {
-+                    super(((InetSocketAddress) ServerStatusPacketListenerImpl.this.connection.getRemoteAddress()).getAddress(), ServerStatusPacketListenerImpl.this.server.server.getMotd(), ServerStatusPacketListenerImpl.this.server.getPlayerList().getMaxPlayers()); // Paper - Adventure
++                    super(((InetSocketAddress) ServerStatusPacketListenerImpl.this.connection.getRemoteAddress()).getAddress(), ServerStatusPacketListenerImpl.this.server.server.getMotd(), ServerStatusPacketListenerImpl.this.server.previewsChat(), ServerStatusPacketListenerImpl.this.server.getPlayerList().getMaxPlayers()); // Paper - Adventure
 +                }
 +
 +                @Override
 +                public void setServerIcon(org.bukkit.util.CachedServerIcon icon) {
 +                    if (!(icon instanceof CraftIconCache)) {
-+                        throw new IllegalArgumentException(icon + " was not created by " + org.bukkit.craftbukkit.v1_18_R2.CraftServer.class);
++                        throw new IllegalArgumentException(icon + " was not created by " + org.bukkit.craftbukkit.v1_19_R1.CraftServer.class);
 +                    }
 +                    this.icon = (CraftIconCache) icon;
 +                }
@@ -146,6 +145,7 @@
 +            }
 +
 +            ServerStatus ping = new ServerStatus();
++            ping.setPreviewsChat(event.shouldSendChatPreviews());
 +            ping.setFavicon(event.icon.value);
 +            ping.setDescription(CraftChatMessage.fromString(event.getMotd(), true)[0]);
 +            ping.setPlayers(playerSample);

@@ -1,13 +1,13 @@
 --- a/net/minecraft/world/level/NaturalSpawner.java
 +++ b/net/minecraft/world/level/NaturalSpawner.java
-@@ -44,188 +44,323 @@
- import net.minecraft.world.level.levelgen.structure.BuiltinStructures;
+@@ -45,188 +45,323 @@
+ import net.minecraft.world.level.levelgen.structure.structures.NetherFortressStructure;
  import net.minecraft.world.level.material.FluidState;
  import net.minecraft.world.level.pathfinder.PathComputationType;
 +import net.minecraft.world.level.storage.LevelData;
  import net.minecraft.world.phys.Vec3;
  import org.slf4j.Logger;
-+import org.bukkit.craftbukkit.v1_18_R2.util.CraftSpawnCategory;
++import org.bukkit.craftbukkit.v1_19_R1.util.CraftSpawnCategory;
 +import org.bukkit.entity.SpawnCategory;
 +import org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason;
 +// CraftBukkit end
@@ -31,8 +31,8 @@
 -    private NaturalSpawner() {
 +    private NaturalSpawner() {}
 +
-+    // Paper start - add countMobs parameter
 +    public static NaturalSpawner.SpawnState createState(int spawningChunkCount, Iterable<Entity> entities, NaturalSpawner.ChunkGetter chunkSource, LocalMobCapCalculator localmobcapcalculator) {
++        // Paper start - add countMobs parameter
 +        return createState(spawningChunkCount, entities, chunkSource, localmobcapcalculator, false);
      }
  
@@ -70,7 +70,7 @@
 +
 +            if (enumcreaturetype != MobCategory.MISC) {
 +                // Paper start - Only count natural spawns
-+                if (!entity.level.paperConfig.countAllMobsForSpawning &&
++                if (!entity.level.paperConfig().entities.spawning.countAllMobsForSpawning &&
 +                    !(entity.spawnReason == org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.NATURAL ||
 +                        entity.spawnReason == org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.CHUNK_GEN)) {
 +                    continue;
@@ -150,7 +150,7 @@
 +            int k1 = limit * info.getSpawnableChunkCount() / NaturalSpawner.MAGIC_NUMBER;
 +            int difference = k1 - currEntityCount;
 +
-+            if (world.paperConfig.perPlayerMobSpawns) {
++            if (world.paperConfig().entities.spawning.perPlayerMobSpawns) {
 +                int minDiff = Integer.MAX_VALUE;
 +                final com.destroystokyo.paper.util.misc.PooledLinkedHashSets.PooledObjectLinkedOpenHashSet<net.minecraft.server.level.ServerPlayer> inRange = world.getChunkSource().chunkMap.playerMobDistanceMap.getObjectsInRange(chunk.getPos());
 +                if (inRange != null) {
@@ -173,7 +173,7 @@
 +                Objects.requireNonNull(info);
 +                // Paper start
 +                int spawnCount = NaturalSpawner.spawnCategoryForChunk(enumcreaturetype, world, chunk, spawnercreature_c, info::afterSpawn,
-+                    difference, world.paperConfig.perPlayerMobSpawns ? world.getChunkSource().chunkMap::updatePlayerMobTypeMap : null);
++                    difference, world.paperConfig().entities.spawning.perPlayerMobSpawns ? world.getChunkSource().chunkMap::updatePlayerMobTypeMap : null);
 +                info.mobCategoryCounts.mergeInt(enumcreaturetype, spawnCount, Integer::sum);
 +                // Paper end
              }
@@ -193,11 +193,11 @@
 +    }
 +    // Paper end
 +
-+    // Paper start - add parameters and int ret type
      public static void spawnCategoryForChunk(MobCategory group, ServerLevel world, LevelChunk chunk, NaturalSpawner.SpawnPredicate checker, NaturalSpawner.AfterSpawnCallback runner) {
 -        BlockPos blockPos = getRandomPosWithin(world, chunk);
 -        if (blockPos.getY() >= world.getMinBuildHeight() + 1) {
 -            spawnCategoryForPosition(group, world, chunk, blockPos, checker, runner);
++        // Paper start - add parameters and int ret type
 +        spawnCategoryForChunk(group, world, chunk, checker, runner, Integer.MAX_VALUE, null);
 +    }
 +    public static int spawnCategoryForChunk(MobCategory group, ServerLevel world, LevelChunk chunk, NaturalSpawner.SpawnPredicate checker, NaturalSpawner.AfterSpawnCallback runner, int maxSpawns, Consumer<Entity> trackEntity) {
@@ -222,13 +222,13 @@
  
 +    // Paper start - add maxSpawns parameter and return spawned mobs
      public static void spawnCategoryForPosition(MobCategory group, ServerLevel world, ChunkAccess chunk, BlockPos pos, NaturalSpawner.SpawnPredicate checker, NaturalSpawner.AfterSpawnCallback runner) {
--        StructureFeatureManager structureFeatureManager = world.structureFeatureManager();
+-        StructureManager structureManager = world.structureManager();
 -        ChunkGenerator chunkGenerator = world.getChunkSource().getGenerator();
 +        spawnCategoryForPosition(group, world,chunk, pos, checker, runner, Integer.MAX_VALUE, null);
 +    }
 +    public static int spawnCategoryForPosition(MobCategory group, ServerLevel world, ChunkAccess chunk, BlockPos pos, NaturalSpawner.SpawnPredicate checker, NaturalSpawner.AfterSpawnCallback runner, int maxSpawns, Consumer<Entity> trackEntity) {
 +    // Paper end - add maxSpawns parameter and return spawned mobs
-+        StructureFeatureManager structuremanager = world.structureFeatureManager();
++        StructureManager structuremanager = world.structureManager();
 +        ChunkGenerator chunkgenerator = world.getChunkSource().getGenerator();
          int i = pos.getY();
 -        BlockState blockState = chunk.getBlockState(pos);
@@ -271,7 +271,7 @@
 -                        double f = player.distanceToSqr(d, (double)i, e);
 -                        if (isRightDistanceToPlayerAndSpawnPoint(world, chunk, mutableBlockPos, f)) {
 -                            if (spawnerData == null) {
--                                Optional<MobSpawnSettings.SpawnerData> optional = getRandomSpawnMobAt(world, structureFeatureManager, chunkGenerator, group, world.random, mutableBlockPos);
+-                                Optional<MobSpawnSettings.SpawnerData> optional = getRandomSpawnMobAt(world, structureManager, chunkGenerator, group, world.random, mutableBlockPos);
 -                                if (optional.isEmpty()) {
 -                                    break;
 -                                }
@@ -292,7 +292,7 @@
 +                            if (entityhuman != null) {
 +                                double d2 = entityhuman.distanceToSqr(d0, (double) i, d1);
  
--                            if (isValidSpawnPostitionForType(world, group, structureFeatureManager, chunkGenerator, spawnerData, mutableBlockPos, f) && checker.test(spawnerData.type, mutableBlockPos, chunk)) {
+-                            if (isValidSpawnPostitionForType(world, group, structureManager, chunkGenerator, spawnerData, mutableBlockPos, f) && checker.test(spawnerData.type, mutableBlockPos, chunk)) {
 -                                Mob mob = getMobForSpawn(world, spawnerData.type);
 -                                if (mob == null) {
 -                                    return;
@@ -386,7 +386,7 @@
 +        return squaredDistance <= 576.0D ? false : (world.getSharedSpawnPos().closerToCenterThan(new Vec3((double) pos.getX() + 0.5D, (double) pos.getY(), (double) pos.getZ() + 0.5D), 24.0D) ? false : Objects.equals(new ChunkPos(pos), chunk.getPos()) || world.isNaturalSpawningAllowed((BlockPos) pos)); // Paper - diff on change, copy into caller
      }
  
--    private static boolean isValidSpawnPostitionForType(ServerLevel world, MobCategory group, StructureFeatureManager structureAccessor, ChunkGenerator chunkGenerator, MobSpawnSettings.SpawnerData spawnEntry, BlockPos.MutableBlockPos pos, double squaredDistance) {
+-    private static boolean isValidSpawnPostitionForType(ServerLevel world, MobCategory group, StructureManager structureAccessor, ChunkGenerator chunkGenerator, MobSpawnSettings.SpawnerData spawnEntry, BlockPos.MutableBlockPos pos, double squaredDistance) {
 -        EntityType<?> entityType = spawnEntry.type;
 -        if (entityType.getCategory() == MobCategory.MISC) {
 -            return false;
@@ -397,7 +397,7 @@
 -            if (!isSpawnPositionOk(type, world, pos, entityType)) {
 -                return false;
 -            } else if (!SpawnPlacements.checkSpawnRules(entityType, world, MobSpawnType.NATURAL, pos, world.random)) {
-+    private static Boolean isValidSpawnPostitionForType(ServerLevel world, MobCategory group, StructureFeatureManager structureAccessor, ChunkGenerator chunkGenerator, MobSpawnSettings.SpawnerData spawnEntry, BlockPos.MutableBlockPos pos, double squaredDistance) { // Paper
++    private static Boolean isValidSpawnPostitionForType(ServerLevel world, MobCategory group, StructureManager structureAccessor, ChunkGenerator chunkGenerator, MobSpawnSettings.SpawnerData spawnEntry, BlockPos.MutableBlockPos pos, double squaredDistance) { // Paper
 +        EntityType<?> entitytypes = spawnEntry.type;
 +
 +        // Paper start
@@ -429,7 +429,7 @@
          } else {
              return false;
          }
-@@ -235,91 +370,82 @@
+@@ -236,41 +371,43 @@
      private static Mob getMobForSpawn(ServerLevel world, EntityType<?> type) {
          try {
              Entity entity = type.create(world);
@@ -460,33 +460,32 @@
 +        return squaredDistance > (double) (entity.getType().getCategory().getDespawnDistance() * entity.getType().getCategory().getDespawnDistance()) && entity.removeWhenFarAway(squaredDistance) ? false : entity.checkSpawnRules(world, MobSpawnType.NATURAL) && entity.checkSpawnObstruction(world);
      }
  
-     private static Optional<MobSpawnSettings.SpawnerData> getRandomSpawnMobAt(ServerLevel world, StructureFeatureManager structureAccessor, ChunkGenerator chunkGenerator, MobCategory spawnGroup, Random random, BlockPos pos) {
+     private static Optional<MobSpawnSettings.SpawnerData> getRandomSpawnMobAt(ServerLevel world, StructureManager structureAccessor, ChunkGenerator chunkGenerator, MobCategory spawnGroup, RandomSource random, BlockPos pos) {
          Holder<Biome> holder = world.getBiome(pos);
--        return spawnGroup == MobCategory.WATER_AMBIENT && Biome.getBiomeCategory(holder) == Biome.BiomeCategory.RIVER && random.nextFloat() < 0.98F ? Optional.empty() : mobsAt(world, structureAccessor, chunkGenerator, spawnGroup, pos, holder).getRandom(random);
+-        return spawnGroup == MobCategory.WATER_AMBIENT && holder.is(BiomeTags.REDUCED_WATER_AMBIENT_SPAWNS) && random.nextFloat() < 0.98F ? Optional.empty() : mobsAt(world, structureAccessor, chunkGenerator, spawnGroup, pos, holder).getRandom(random);
 +
-+        return spawnGroup == MobCategory.WATER_AMBIENT && Biome.getBiomeCategory(holder) == Biome.BiomeCategory.RIVER && random.nextFloat() < 0.98F ? Optional.empty() : NaturalSpawner.mobsAt(world, structureAccessor, chunkGenerator, spawnGroup, pos, holder).getRandom(random);
++        return spawnGroup == MobCategory.WATER_AMBIENT && holder.is(BiomeTags.REDUCED_WATER_AMBIENT_SPAWNS) && random.nextFloat() < 0.98F ? Optional.empty() : NaturalSpawner.mobsAt(world, structureAccessor, chunkGenerator, spawnGroup, pos, holder).getRandom(random);
      }
  
-     private static boolean canSpawnMobAt(ServerLevel world, StructureFeatureManager structureAccessor, ChunkGenerator chunkGenerator, MobCategory spawnGroup, MobSpawnSettings.SpawnerData spawnEntry, BlockPos pos) {
+     private static boolean canSpawnMobAt(ServerLevel world, StructureManager structureAccessor, ChunkGenerator chunkGenerator, MobCategory spawnGroup, MobSpawnSettings.SpawnerData spawnEntry, BlockPos pos) {
 -        return mobsAt(world, structureAccessor, chunkGenerator, spawnGroup, pos, (Holder<Biome>)null).unwrap().contains(spawnEntry);
 +        return NaturalSpawner.mobsAt(world, structureAccessor, chunkGenerator, spawnGroup, pos, (Holder) null).unwrap().contains(spawnEntry);
      }
  
-     private static WeightedRandomList<MobSpawnSettings.SpawnerData> mobsAt(ServerLevel world, StructureFeatureManager structureAccessor, ChunkGenerator chunkGenerator, MobCategory spawnGroup, BlockPos pos, @Nullable Holder<Biome> biomeEntry) {
--        return isInNetherFortressBounds(pos, world, spawnGroup, structureAccessor) ? NetherFortressFeature.FORTRESS_ENEMIES : chunkGenerator.getMobsAt(biomeEntry != null ? biomeEntry : world.getBiome(pos), structureAccessor, spawnGroup, pos);
-+        return NaturalSpawner.isInNetherFortressBounds(pos, world, spawnGroup, structureAccessor) ? NetherFortressFeature.FORTRESS_ENEMIES : chunkGenerator.getMobsAt(biomeEntry != null ? biomeEntry : world.getBiome(pos), structureAccessor, spawnGroup, pos);
+     private static WeightedRandomList<MobSpawnSettings.SpawnerData> mobsAt(ServerLevel world, StructureManager structureAccessor, ChunkGenerator chunkGenerator, MobCategory spawnGroup, BlockPos pos, @Nullable Holder<Biome> biomeEntry) {
+-        return isInNetherFortressBounds(pos, world, spawnGroup, structureAccessor) ? NetherFortressStructure.FORTRESS_ENEMIES : chunkGenerator.getMobsAt(biomeEntry != null ? biomeEntry : world.getBiome(pos), structureAccessor, spawnGroup, pos);
++        return NaturalSpawner.isInNetherFortressBounds(pos, world, spawnGroup, structureAccessor) ? NetherFortressStructure.FORTRESS_ENEMIES : chunkGenerator.getMobsAt(biomeEntry != null ? biomeEntry : world.getBiome(pos), structureAccessor, spawnGroup, pos);
      }
  
-     public static boolean isInNetherFortressBounds(BlockPos pos, ServerLevel world, MobCategory spawnGroup, StructureFeatureManager structureAccessor) {
+     public static boolean isInNetherFortressBounds(BlockPos pos, ServerLevel world, MobCategory spawnGroup, StructureManager structureAccessor) {
          if (spawnGroup == MobCategory.MONSTER && world.getBlockState(pos.below()).is(Blocks.NETHER_BRICKS)) {
--            ConfiguredStructureFeature<?, ?> configuredStructureFeature = structureAccessor.registryAccess().registryOrThrow(Registry.CONFIGURED_STRUCTURE_FEATURE_REGISTRY).get(BuiltinStructures.FORTRESS);
--            return configuredStructureFeature == null ? false : structureAccessor.getStructureAt(pos, configuredStructureFeature).isValid();
-+            ConfiguredStructureFeature<?, ?> structurefeature = (ConfiguredStructureFeature) structureAccessor.registryAccess().registryOrThrow(Registry.CONFIGURED_STRUCTURE_FEATURE_REGISTRY).get(BuiltinStructures.FORTRESS);
+-            Structure structure = structureAccessor.registryAccess().registryOrThrow(Registry.STRUCTURE_REGISTRY).get(BuiltinStructures.FORTRESS);
++            Structure structure = (Structure) structureAccessor.registryAccess().registryOrThrow(Registry.STRUCTURE_REGISTRY).get(BuiltinStructures.FORTRESS);
 +
-+            return structurefeature == null ? false : structureAccessor.getStructureAt(pos, structurefeature).isValid();
+             return structure == null ? false : structureAccessor.getStructureAt(pos, structure).isValid();
          } else {
              return false;
-         }
+@@ -278,49 +415,38 @@
      }
  
      private static BlockPos getRandomPosWithin(Level world, LevelChunk chunk) {
@@ -551,10 +550,10 @@
              }
          } else {
              return false;
-@@ -327,59 +453,66 @@
+@@ -328,59 +454,66 @@
      }
  
-     public static void spawnMobsForChunkGeneration(ServerLevelAccessor world, Holder<Biome> holder, ChunkPos chunkPos, Random random) {
+     public static void spawnMobsForChunkGeneration(ServerLevelAccessor world, Holder<Biome> holder, ChunkPos chunkPos, RandomSource random) {
 -        MobSpawnSettings mobSpawnSettings = holder.value().getMobSettings();
 -        WeightedRandomList<MobSpawnSettings.SpawnerData> weightedRandomList = mobSpawnSettings.getMobs(MobCategory.CREATURE);
 -        if (!weightedRandomList.isEmpty()) {
@@ -649,7 +648,7 @@
                              }
                          }
                      }
-@@ -390,44 +523,38 @@
+@@ -391,44 +524,38 @@
      }
  
      private static BlockPos getTopNonCollidingPos(LevelReader world, EntityType<?> entityType, int x, int z) {
@@ -708,7 +707,7 @@
          private final int spawnableChunkCount;
          private final Object2IntOpenHashMap<MobCategory> mobCategoryCounts;
          private final PotentialCalculator spawnPotential;
-@@ -450,37 +577,43 @@
+@@ -451,37 +578,43 @@
          private boolean canSpawn(EntityType<?> type, BlockPos pos, ChunkAccess chunk) {
              this.lastCheckedPos = pos;
              this.lastCheckedType = type;
@@ -771,7 +770,7 @@
          }
  
          public int getSpawnableChunkCount() {
-@@ -491,13 +624,25 @@
+@@ -492,13 +625,25 @@
              return this.unmodifiableMobCategoryCounts;
          }
  

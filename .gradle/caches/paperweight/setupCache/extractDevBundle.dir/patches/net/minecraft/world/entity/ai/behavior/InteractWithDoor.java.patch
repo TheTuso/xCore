@@ -62,7 +62,7 @@
 +
 +            if (!blockdoor.isOpen(iblockdata)) {
 +                // CraftBukkit start - entities opening doors
-+                org.bukkit.event.entity.EntityInteractEvent event = new org.bukkit.event.entity.EntityInteractEvent(entity.getBukkitEntity(), org.bukkit.craftbukkit.v1_18_R2.block.CraftBlock.at(entity.level, blockposition));
++                org.bukkit.event.entity.EntityInteractEvent event = new org.bukkit.event.entity.EntityInteractEvent(entity.getBukkitEntity(), org.bukkit.craftbukkit.v1_19_R1.block.CraftBlock.at(entity.level, blockposition));
 +                entity.level.getCraftServer().getPluginManager().callEvent(event);
 +                if (event.isCancelled()) {
 +                    return;
@@ -93,7 +93,7 @@
 +
 +            if (!blockdoor1.isOpen(iblockdata1)) {
 +                // CraftBukkit start - entities opening doors
-+                org.bukkit.event.entity.EntityInteractEvent event = new org.bukkit.event.entity.EntityInteractEvent(entity.getBukkitEntity(), org.bukkit.craftbukkit.v1_18_R2.block.CraftBlock.at(entity.level, blockposition1));
++                org.bukkit.event.entity.EntityInteractEvent event = new org.bukkit.event.entity.EntityInteractEvent(entity.getBukkitEntity(), org.bukkit.craftbukkit.v1_19_R1.block.CraftBlock.at(entity.level, blockposition1));
 +                entity.level.getCraftServer().getPluginManager().callEvent(event);
 +                if (event.isCancelled()) {
 +                    return;

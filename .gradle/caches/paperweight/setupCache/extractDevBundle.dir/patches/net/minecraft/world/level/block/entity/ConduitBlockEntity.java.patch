@@ -6,15 +6,15 @@
  import com.google.common.collect.Lists;
 +import java.util.Iterator;
  import java.util.List;
- import java.util.Random;
  import java.util.UUID;
+ import javax.annotation.Nullable;
 @@ -26,8 +27,13 @@
  import net.minecraft.world.level.block.state.BlockState;
  import net.minecraft.world.phys.AABB;
  import net.minecraft.world.phys.Vec3;
 +// CraftBukkit start
-+import org.bukkit.craftbukkit.v1_18_R2.block.CraftBlock;
-+import org.bukkit.craftbukkit.v1_18_R2.event.CraftEventFactory;
++import org.bukkit.craftbukkit.v1_19_R1.block.CraftBlock;
++import org.bukkit.craftbukkit.v1_19_R1.event.CraftEventFactory;
 +// CraftBukkit end
  
  public class ConduitBlockEntity extends BlockEntity {
@@ -258,12 +258,20 @@
      }
  
      private static void animationTick(Level world, BlockPos pos, List<BlockPos> activatingBlocks, @Nullable Entity entity, int ticks) {
-         Random random = world.random;
+-        RandomSource randomSource = world.random;
 -        double d = (double)(Mth.sin((float)(ticks + 35) * 0.1F) / 2.0F + 0.5F);
 -        d = (d * d + d) * (double)0.3F;
 -        Vec3 vec3 = new Vec3((double)pos.getX() + 0.5D, (double)pos.getY() + 1.5D + d, (double)pos.getZ() + 0.5D);
++        RandomSource randomsource = world.random;
 +        double d0 = (double) (Mth.sin((float) (ticks + 35) * 0.1F) / 2.0F + 0.5F);
-+
+ 
+-        for(BlockPos blockPos : activatingBlocks) {
+-            if (randomSource.nextInt(50) == 0) {
+-                BlockPos blockPos2 = blockPos.subtract(pos);
+-                float f = -0.5F + randomSource.nextFloat() + (float)blockPos2.getX();
+-                float g = -2.0F + randomSource.nextFloat() + (float)blockPos2.getY();
+-                float h = -0.5F + randomSource.nextFloat() + (float)blockPos2.getZ();
+-                world.addParticle(ParticleTypes.NAUTILUS, vec3.x, vec3.y, vec3.z, (double)f, (double)g, (double)h);
 +        d0 = (d0 * d0 + d0) * 0.30000001192092896D;
 +        Vec3 vec3d = new Vec3((double) pos.getX() + 0.5D, (double) pos.getY() + 1.5D + d0, (double) pos.getZ() + 0.5D);
 +        Iterator iterator = activatingBlocks.iterator();
@@ -272,19 +280,13 @@
 +
 +        while (iterator.hasNext()) {
 +            BlockPos blockposition1 = (BlockPos) iterator.next();
- 
--        for(BlockPos blockPos : activatingBlocks) {
-             if (random.nextInt(50) == 0) {
--                BlockPos blockPos2 = blockPos.subtract(pos);
--                float f = -0.5F + random.nextFloat() + (float)blockPos2.getX();
--                float g = -2.0F + random.nextFloat() + (float)blockPos2.getY();
--                float h = -0.5F + random.nextFloat() + (float)blockPos2.getZ();
--                world.addParticle(ParticleTypes.NAUTILUS, vec3.x, vec3.y, vec3.z, (double)f, (double)g, (double)h);
++
++            if (randomsource.nextInt(50) == 0) {
 +                BlockPos blockposition2 = blockposition1.subtract(pos);
 +
-+                f = -0.5F + random.nextFloat() + (float) blockposition2.getX();
-+                float f1 = -2.0F + random.nextFloat() + (float) blockposition2.getY();
-+                float f2 = -0.5F + random.nextFloat() + (float) blockposition2.getZ();
++                f = -0.5F + randomsource.nextFloat() + (float) blockposition2.getX();
++                float f1 = -2.0F + randomsource.nextFloat() + (float) blockposition2.getY();
++                float f2 = -0.5F + randomsource.nextFloat() + (float) blockposition2.getZ();
 +
 +                world.addParticle(ParticleTypes.NAUTILUS, vec3d.x, vec3d.y, vec3d.z, (double) f, (double) f1, (double) f2);
              }
@@ -292,16 +294,16 @@
  
          if (entity != null) {
 -            Vec3 vec32 = new Vec3(entity.getX(), entity.getEyeY(), entity.getZ());
--            float i = (-0.5F + random.nextFloat()) * (3.0F + entity.getBbWidth());
--            float j = -1.0F + random.nextFloat() * entity.getBbHeight();
--            float k = (-0.5F + random.nextFloat()) * (3.0F + entity.getBbWidth());
+-            float i = (-0.5F + randomSource.nextFloat()) * (3.0F + entity.getBbWidth());
+-            float j = -1.0F + randomSource.nextFloat() * entity.getBbHeight();
+-            float k = (-0.5F + randomSource.nextFloat()) * (3.0F + entity.getBbWidth());
 -            Vec3 vec33 = new Vec3((double)i, (double)j, (double)k);
 -            world.addParticle(ParticleTypes.NAUTILUS, vec32.x, vec32.y, vec32.z, vec33.x, vec33.y, vec33.z);
 +            Vec3 vec3d1 = new Vec3(entity.getX(), entity.getEyeY(), entity.getZ());
-+            float f3 = (-0.5F + random.nextFloat()) * (3.0F + entity.getBbWidth());
-+            float f4 = -1.0F + random.nextFloat() * entity.getBbHeight();
++            float f3 = (-0.5F + randomsource.nextFloat()) * (3.0F + entity.getBbWidth());
++            float f4 = -1.0F + randomsource.nextFloat() * entity.getBbHeight();
 +
-+            f = (-0.5F + random.nextFloat()) * (3.0F + entity.getBbWidth());
++            f = (-0.5F + randomsource.nextFloat()) * (3.0F + entity.getBbWidth());
 +            Vec3 vec3d2 = new Vec3((double) f3, (double) f4, (double) f);
 +
 +            world.addParticle(ParticleTypes.NAUTILUS, vec3d1.x, vec3d1.y, vec3d1.z, vec3d2.x, vec3d2.y, vec3d2.z);

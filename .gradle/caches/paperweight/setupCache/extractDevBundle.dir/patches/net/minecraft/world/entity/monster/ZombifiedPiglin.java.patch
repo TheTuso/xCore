@@ -143,4 +143,4 @@
 +        // CraftBukkit end
      }
  
-     public static boolean checkZombifiedPiglinSpawnRules(EntityType<ZombifiedPiglin> type, LevelAccessor world, MobSpawnType spawnReason, BlockPos pos, Random random) {
+     public static boolean checkZombifiedPiglinSpawnRules(EntityType<ZombifiedPiglin> type, LevelAccessor world, MobSpawnType spawnReason, BlockPos pos, RandomSource random) {

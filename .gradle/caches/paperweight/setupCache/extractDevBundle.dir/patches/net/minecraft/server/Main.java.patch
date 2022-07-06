@@ -1,29 +1,30 @@
 --- a/net/minecraft/server/Main.java
 +++ b/net/minecraft/server/Main.java
-@@ -15,6 +15,8 @@
- import java.nio.file.Paths;
+@@ -16,6 +16,8 @@
  import java.util.Optional;
+ import java.util.UUID;
  import java.util.function.BooleanSupplier;
 +import io.papermc.paper.world.ThreadedWorldUpgrader;
 +import joptsimple.NonOptionArgumentSpec;
  import joptsimple.OptionParser;
  import joptsimple.OptionSet;
  import joptsimple.OptionSpec;
-@@ -37,6 +39,7 @@
+@@ -38,6 +40,7 @@
  import net.minecraft.server.packs.repository.FolderRepositorySource;
  import net.minecraft.server.packs.repository.PackRepository;
  import net.minecraft.server.packs.repository.PackSource;
 +import net.minecraft.server.packs.repository.RepositorySource;
  import net.minecraft.server.packs.repository.ServerPacksSource;
- import net.minecraft.server.players.GameProfileCache;
  import net.minecraft.util.Mth;
-@@ -46,47 +49,57 @@
+ import net.minecraft.util.datafix.DataFixers;
+@@ -46,48 +49,58 @@
  import net.minecraft.util.worldupdate.WorldUpgrader;
  import net.minecraft.world.level.DataPackConfig;
  import net.minecraft.world.level.GameRules;
 -import net.minecraft.world.level.LevelSettings;
 +import net.minecraft.world.level.dimension.LevelStem;
  import net.minecraft.world.level.levelgen.WorldGenSettings;
+ import net.minecraft.world.level.levelgen.presets.WorldPresets;
  import net.minecraft.world.level.storage.LevelResource;
  import net.minecraft.world.level.storage.LevelStorageSource;
  import net.minecraft.world.level.storage.LevelSummary;
@@ -99,7 +100,7 @@
                  JvmProfiler.INSTANCE.start(Environment.SERVER);
              }
  
-@@ -94,144 +107,253 @@
+@@ -95,140 +108,233 @@
              Bootstrap.validate();
              Util.startTimerHackThread();
              Path path = Paths.get("server.properties");
@@ -113,9 +114,8 @@
 +
 +            dedicatedserversettings.forceSave();
 +            // Paper start - load config files for access below if needed
-+            org.bukkit.configuration.file.YamlConfiguration bukkitConfiguration = loadConfigFile((File) optionset.valueOf("bukkit-settings"));
-+            org.bukkit.configuration.file.YamlConfiguration spigotConfiguration = loadConfigFile((File) optionset.valueOf("spigot-settings"));
-+            org.bukkit.configuration.file.YamlConfiguration paperConfiguration = loadConfigFile((File) optionset.valueOf("paper-settings"));
++            org.bukkit.configuration.file.YamlConfiguration bukkitConfiguration = io.papermc.paper.configuration.PaperConfigurations.loadLegacyConfigFile((File) optionset.valueOf("bukkit-settings"));
++            org.bukkit.configuration.file.YamlConfiguration spigotConfiguration = io.papermc.paper.configuration.PaperConfigurations.loadLegacyConfigFile((File) optionset.valueOf("spigot-settings"));
 +            // Paper end
 +
 +            Path path1 = Paths.get("eula.txt");
@@ -143,10 +143,7 @@
              }
  
 -            File file = new File(optionSet.valueOf(optionSpec10));
--            YggdrasilAuthenticationService yggdrasilAuthenticationService = new YggdrasilAuthenticationService(Proxy.NO_PROXY);
--            MinecraftSessionService minecraftSessionService = yggdrasilAuthenticationService.createMinecraftSessionService();
--            GameProfileRepository gameProfileRepository = yggdrasilAuthenticationService.createProfileRepository();
--            GameProfileCache gameProfileCache = new GameProfileCache(gameProfileRepository, new File(file, MinecraftServer.USERID_CACHE_FILE.getName()));
+-            Services services = Services.create(new YggdrasilAuthenticationService(Proxy.NO_PROXY), file);
 -            String string = Optional.ofNullable(optionSet.valueOf(optionSpec11)).orElse(dedicatedServerSettings.getProperties().levelName);
 -            LevelStorageSource levelStorageSource = LevelStorageSource.createDefault(file.toPath());
 -            LevelStorageSource.LevelStorageAccess levelStorageAccess = levelStorageSource.createAccess(string);
@@ -157,18 +154,15 @@
 +            org.spigotmc.SpigotConfig.disabledAdvancements = spigotConfiguration.getStringList("advancements.disabled"); // Paper - fix SPIGOT-5885, must be set early in init
 +            // Paper start - fix SPIGOT-5824
 +            File file;
-+            File userCacheFile = new File("usercache.json");
++            File userCacheFile = new File(Services.USERID_CACHE_FILE);
 +            if (optionset.has("universe")) {
 +                file = (File) optionset.valueOf("universe"); // CraftBukkit
-+                userCacheFile = new File(file, "usercache.json");
++                userCacheFile = new File(file, Services.USERID_CACHE_FILE);
 +            } else {
 +                file = new File(bukkitConfiguration.getString("settings.world-container", "."));
 +            }
 +            // Paper end - fix SPIGOT-5824
-+            YggdrasilAuthenticationService yggdrasilauthenticationservice = new com.destroystokyo.paper.profile.PaperAuthenticationService(Proxy.NO_PROXY); // Paper
-+            MinecraftSessionService minecraftsessionservice = yggdrasilauthenticationservice.createMinecraftSessionService();
-+            GameProfileRepository gameprofilerepository = yggdrasilauthenticationservice.createProfileRepository();
-+            GameProfileCache usercache = new GameProfileCache(gameprofilerepository, userCacheFile); // Paper - only move usercache.json into folder if --universe is used, not world-container
++            Services services = Services.create(new com.destroystokyo.paper.profile.PaperAuthenticationService(Proxy.NO_PROXY), file, userCacheFile, optionset); // Paper
 +            // CraftBukkit start
 +            String s = (String) Optional.ofNullable((String) optionset.valueOf("world")).orElse(dedicatedserversettings.getProperties().levelName);
 +            LevelStorageSource convertable = LevelStorageSource.createDefault(file.toPath());
@@ -224,81 +218,78 @@
  
 -            WorldStem worldStem;
              try {
--                WorldStem.InitConfig initConfig = new WorldStem.InitConfig(packRepository, Commands.CommandSelection.DEDICATED, dedicatedServerSettings.getProperties().functionPermissionLevel, bl);
--                worldStem = WorldStem.load(initConfig, () -> {
--                    DataPackConfig dataPackConfig = levelStorageAccess.getDataPacks();
--                    return dataPackConfig == null ? DataPackConfig.DEFAULT : dataPackConfig;
--                }, (resourceManager, dataPackSettings) -> {
--                    RegistryAccess.Writable writable = RegistryAccess.builtinCopy();
--                    DynamicOps<Tag> dynamicOps = RegistryOps.createAndLoad(NbtOps.INSTANCE, writable, resourceManager);
--                    WorldData worldData = levelStorageAccess.getDataTag(dynamicOps, dataPackSettings, writable.allElementsLifecycle());
--                    if (worldData != null) {
--                        return Pair.of(worldData, writable.freeze());
-+                WorldStem.InitConfig worldstem_b = new WorldStem.InitConfig(resourcepackrepository, Commands.CommandSelection.DEDICATED, dedicatedserversettings.getProperties().functionPermissionLevel, flag);
+-                DataPackConfig dataPackConfig = Objects.requireNonNullElse(levelStorageAccess.getDataPacks(), DataPackConfig.DEFAULT);
+-                WorldLoader.PackConfig packConfig = new WorldLoader.PackConfig(packRepository, dataPackConfig, bl);
+-                WorldLoader.InitConfig initConfig = new WorldLoader.InitConfig(packConfig, Commands.CommandSelection.DEDICATED, dedicatedServerSettings.getProperties().functionPermissionLevel);
+-                worldStem = Util.blockUntilDone((applyExecutor) -> {
+-                    return WorldStem.load(initConfig, (resourceManager, dataPackSettings) -> {
+-                        RegistryAccess.Writable writable = RegistryAccess.builtinCopy();
+-                        DynamicOps<Tag> dynamicOps = RegistryOps.createAndLoad(NbtOps.INSTANCE, writable, resourceManager);
+-                        WorldData worldData = levelStorageAccess.getDataTag(dynamicOps, dataPackSettings, writable.allElementsLifecycle());
+-                        if (worldData != null) {
+-                            return Pair.of(worldData, writable.freeze());
++                DataPackConfig datapackconfiguration = (DataPackConfig) Objects.requireNonNullElse(convertable_conversionsession.getDataPacks(), DataPackConfig.DEFAULT);
++                WorldLoader.PackConfig worldloader_b = new WorldLoader.PackConfig(resourcepackrepository, datapackconfiguration, flag);
++                WorldLoader.InitConfig worldloader_a = new WorldLoader.InitConfig(worldloader_b, Commands.CommandSelection.DEDICATED, dedicatedserversettings.getProperties().functionPermissionLevel);
 +
-+                worldstem = (WorldStem) WorldStem.load(worldstem_b, () -> {
-+                    DataPackConfig datapackconfiguration = convertable_conversionsession.getDataPacks();
++                worldstem = (WorldStem) Util.blockUntilDone((executor) -> {
++                    return WorldStem.load(worldloader_a, (iresourcemanager, datapackconfiguration1) -> {
++                        RegistryAccess.Writable iregistrycustom_e = RegistryAccess.builtinCopy();
++                        DynamicOps<Tag> dynamicops = RegistryOps.createAndLoad(NbtOps.INSTANCE, iregistrycustom_e, iresourcemanager);
++                        // CraftBukkit start
++                        config.set(datapackconfiguration1);
++                        ops.set(dynamicops);
++                        return Pair.of(null, iregistrycustom_e.freeze());
++                        // CraftBukkit end
++                        /*
++                        SaveData savedata = convertable_conversionsession.getDataTag(dynamicops, datapackconfiguration1, iregistrycustom_e.allElementsLifecycle());
 +
-+                    return datapackconfiguration == null ? DataPackConfig.DEFAULT : datapackconfiguration;
-+                }, (iresourcemanager, datapackconfiguration) -> {
-+                    RegistryAccess.Writable iregistrycustom_e = RegistryAccess.builtinCopy();
-+                    DynamicOps<Tag> dynamicops = RegistryOps.createAndLoad(NbtOps.INSTANCE, iregistrycustom_e, iresourcemanager);
-+                    // CraftBukkit start
-+                    config.set(datapackconfiguration);
-+                    ops.set(dynamicops);
-+                    return Pair.of(null, iregistrycustom_e.freeze());
-+                    // CraftBukkit end
-+                    /*
-+                    SaveData savedata = convertable_conversionsession.getDataTag(dynamicops, datapackconfiguration, iregistrycustom_e.allElementsLifecycle());
-+
-+                    if (savedata != null) {
-+                        return Pair.of(savedata, iregistrycustom_e.freeze());
-                     } else {
--                        LevelSettings levelSettings;
--                        WorldGenSettings worldGenSettings;
--                        if (optionSet.has(optionSpec3)) {
--                            levelSettings = MinecraftServer.DEMO_SETTINGS;
--                            worldGenSettings = WorldGenSettings.demoSettings(writable);
-+                        WorldSettings worldsettings;
-+                        GeneratorSettings generatorsettings;
-+
-+                        if (optionset.has(optionspec2)) {
-+                            worldsettings = MinecraftServer.DEMO_SETTINGS;
-+                            generatorsettings = GeneratorSettings.demoSettings(iregistrycustom_e);
++                        if (savedata != null) {
++                            return Pair.of(savedata, iregistrycustom_e.freeze());
                          } else {
--                            DedicatedServerProperties dedicatedServerProperties = dedicatedServerSettings.getProperties();
--                            levelSettings = new LevelSettings(dedicatedServerProperties.levelName, dedicatedServerProperties.gamemode, dedicatedServerProperties.hardcore, dedicatedServerProperties.difficulty, false, new GameRules(), dataPackSettings);
--                            worldGenSettings = optionSet.has(optionSpec4) ? dedicatedServerProperties.getWorldGenSettings(writable).withBonusChest() : dedicatedServerProperties.getWorldGenSettings(writable);
-+                            DedicatedServerProperties dedicatedserverproperties = dedicatedserversettings.getProperties();
+-                            LevelSettings levelSettings;
+-                            WorldGenSettings worldGenSettings;
+-                            if (optionSet.has(optionSpec3)) {
+-                                levelSettings = MinecraftServer.DEMO_SETTINGS;
+-                                worldGenSettings = WorldPresets.demoSettings(writable);
++                            WorldSettings worldsettings;
++                            GeneratorSettings generatorsettings;
 +
-+                            worldsettings = new WorldSettings(dedicatedserverproperties.levelName, dedicatedserverproperties.gamemode, dedicatedserverproperties.hardcore, dedicatedserverproperties.difficulty, false, new GameRules(), datapackconfiguration);
-+                            generatorsettings = optionset.has(optionspec3) ? dedicatedserverproperties.getWorldGenSettings(iregistrycustom_e).withBonusChest() : dedicatedserverproperties.getWorldGenSettings(iregistrycustom_e);
-                         }
++                            if (optionset.has(optionspec2)) {
++                                worldsettings = MinecraftServer.DEMO_SETTINGS;
++                                generatorsettings = WorldPresets.demoSettings(iregistrycustom_e);
+                             } else {
+-                                DedicatedServerProperties dedicatedServerProperties = dedicatedServerSettings.getProperties();
+-                                levelSettings = new LevelSettings(dedicatedServerProperties.levelName, dedicatedServerProperties.gamemode, dedicatedServerProperties.hardcore, dedicatedServerProperties.difficulty, false, new GameRules(), dataPackSettings);
+-                                worldGenSettings = optionSet.has(optionSpec4) ? dedicatedServerProperties.getWorldGenSettings(writable).withBonusChest() : dedicatedServerProperties.getWorldGenSettings(writable);
++                                DedicatedServerProperties dedicatedserverproperties = dedicatedserversettings.getProperties();
++
++                                worldsettings = new WorldSettings(dedicatedserverproperties.levelName, dedicatedserverproperties.gamemode, dedicatedserverproperties.hardcore, dedicatedserverproperties.difficulty, false, new GameRules(), datapackconfiguration1);
++                                generatorsettings = optionset.has(optionspec3) ? dedicatedserverproperties.getWorldGenSettings(iregistrycustom_e).withBonusChest() : dedicatedserverproperties.getWorldGenSettings(iregistrycustom_e);
+                             }
  
--                        PrimaryLevelData primaryLevelData = new PrimaryLevelData(levelSettings, worldGenSettings, Lifecycle.stable());
--                        return Pair.of(primaryLevelData, writable.freeze());
-+                        WorldDataServer worlddataserver = new WorldDataServer(worldsettings, generatorsettings, Lifecycle.stable());
+-                            PrimaryLevelData primaryLevelData = new PrimaryLevelData(levelSettings, worldGenSettings, Lifecycle.stable());
+-                            return Pair.of(primaryLevelData, writable.freeze());
++                            WorldDataServer worlddataserver = new WorldDataServer(worldsettings, generatorsettings, Lifecycle.stable());
 +
-+                        return Pair.of(worlddataserver, iregistrycustom_e.freeze());
-                     }
-+                     */
-                 }, Util.backgroundExecutor(), Runnable::run).get();
--            } catch (Exception var38) {
--                LOGGER.warn("Failed to load datapacks, can't proceed with server load. You can either fix your datapacks or reset to vanilla with --safeMode", (Throwable)var38);
--                packRepository.close();
++                            return Pair.of(worlddataserver, iregistrycustom_e.freeze());
+                         }
+-                    }, Util.backgroundExecutor(), applyExecutor);
++                         */
++                    }, Util.backgroundExecutor(), executor);
+                 }).get();
+-            } catch (Exception var35) {
+-                LOGGER.warn("Failed to load datapacks, can't proceed with server load. You can either fix your datapacks or reset to vanilla with --safeMode", (Throwable)var35);
 +            } catch (Exception exception) {
 +                Main.LOGGER.warn("Failed to load datapacks, can't proceed with server load. You can either fix your datapacks or reset to vanilla with --safeMode", exception);
-+                resourcepackrepository.close();
                  return;
              }
  
--            worldStem.updateGlobals();
 -            RegistryAccess.Frozen frozen = worldStem.registryAccess();
 -            dedicatedServerSettings.getProperties().getWorldGenSettings(frozen);
 -            WorldData worldData = worldStem.worldData();
 -            if (optionSet.has(optionSpec5)) {
 -                forceUpgrade(levelStorageAccess, DataFixers.getDataFixer(), optionSet.has(optionSpec6), () -> {
-+            worldstem.updateGlobals();
 +            /*
 +            IRegistryCustom.Dimension iregistrycustom_dimension = worldstem.registryAccess();
 +
@@ -314,8 +305,8 @@
  
 -            levelStorageAccess.saveDataTag(frozen, worldData);
 -            final DedicatedServer dedicatedServer = MinecraftServer.spin((threadx) -> {
--                DedicatedServer dedicatedServer = new DedicatedServer(threadx, levelStorageAccess, packRepository, worldStem, dedicatedServerSettings, DataFixers.getDataFixer(), minecraftSessionService, gameProfileRepository, gameProfileCache, LoggerChunkProgressListener::new);
--                dedicatedServer.setSingleplayerName(optionSet.valueOf(optionSpec9));
+-                DedicatedServer dedicatedServer = new DedicatedServer(threadx, levelStorageAccess, packRepository, worldStem, dedicatedServerSettings, DataFixers.getDataFixer(), services, LoggerChunkProgressListener::new);
+-                dedicatedServer.setSingleplayerProfile(optionSet.has(optionSpec9) ? new GameProfile((UUID)null, optionSet.valueOf(optionSpec9)) : null);
 -                dedicatedServer.setPort(optionSet.valueOf(optionSpec12));
 -                dedicatedServer.setDemo(optionSet.has(optionSpec3));
 -                dedicatedServer.setId(optionSet.valueOf(optionSpec13));
@@ -326,10 +317,10 @@
 +            */
 +            Class.forName(net.minecraft.world.entity.npc.VillagerTrades.class.getName());// Paper - load this sync so it won't fail later async
 +            final DedicatedServer dedicatedserver = (DedicatedServer) MinecraftServer.spin((thread) -> {
-+                DedicatedServer dedicatedserver1 = new DedicatedServer(optionset, config.get(), ops.get(), thread, convertable_conversionsession, resourcepackrepository, worldstem, dedicatedserversettings, DataFixers.getDataFixer(), minecraftsessionservice, gameprofilerepository, usercache, LoggerChunkProgressListener::new);
++                DedicatedServer dedicatedserver1 = new DedicatedServer(optionset, config.get(), ops.get(), thread, convertable_conversionsession, resourcepackrepository, worldstem, dedicatedserversettings, DataFixers.getDataFixer(), services, LoggerChunkProgressListener::new);
 +
 +                /*
-+                dedicatedserver1.setSingleplayerName((String) optionset.valueOf(optionspec8));
++                dedicatedserver1.setSingleplayerProfile(optionset.has(optionspec8) ? new GameProfile((UUID) null, (String) optionset.valueOf(optionspec8)) : null);
 +                dedicatedserver1.setPort((Integer) optionset.valueOf(optionspec11));
 +                dedicatedserver1.setDemo(optionset.has(optionspec2));
 +                dedicatedserver1.setId((String) optionset.valueOf(optionspec12));
@@ -363,8 +354,8 @@
 +
 +            thread.setUncaughtExceptionHandler(new DefaultUncaughtExceptionHandler(Main.LOGGER));
              Runtime.getRuntime().addShutdownHook(thread);
--        } catch (Exception var39) {
--            LOGGER.error(LogUtils.FATAL_MARKER, "Failed to start the minecraft server", (Throwable)var39);
+-        } catch (Exception var36) {
+-            LOGGER.error(LogUtils.FATAL_MARKER, "Failed to start the minecraft server", (Throwable)var36);
 +            */ // CraftBukkit end
 +        } catch (Exception exception1) {
 +            Main.LOGGER.error(LogUtils.FATAL_MARKER, "Failed to start the minecraft server", exception1);
@@ -372,25 +363,11 @@
  
      }
  
-+    // Paper start - load config files
-+    private static org.bukkit.configuration.file.YamlConfiguration loadConfigFile(File configFile) throws Exception {
-+        org.bukkit.configuration.file.YamlConfiguration config = new org.bukkit.configuration.file.YamlConfiguration();
-+        if (configFile.exists()) {
-+            try {
-+                config.load(configFile);
-+            } catch (Exception ex) {
-+                throw new Exception("Failed to load configuration file: " + configFile.getName(), ex);
-+            }
-+        }
-+        return config;
-+    }
-+    // Paper end
-+
 +    // Paper start - fix and optimise world upgrading
 +    public static void convertWorldButItWorks(net.minecraft.resources.ResourceKey<net.minecraft.world.level.dimension.LevelStem> dimensionType, net.minecraft.world.level.storage.LevelStorageSource.LevelStorageAccess worldSession,
 +                                              DataFixer dataFixer, Optional<net.minecraft.resources.ResourceKey<com.mojang.serialization.Codec<? extends net.minecraft.world.level.chunk.ChunkGenerator>>> generatorKey, boolean removeCaches) {
 +        int threads = Runtime.getRuntime().availableProcessors() * 3 / 8;
-+        final ThreadedWorldUpgrader worldUpgrader = new ThreadedWorldUpgrader(dimensionType, worldSession.getLevelId(), worldSession.levelPath.toFile(), threads, dataFixer, generatorKey, removeCaches);
++        final ThreadedWorldUpgrader worldUpgrader = new ThreadedWorldUpgrader(dimensionType, worldSession.getLevelId(), worldSession.levelDirectory.path().toFile(), threads, dataFixer, generatorKey, removeCaches);
 +        worldUpgrader.convert();
 +    }
 +    // Paper end - fix and optimise world upgrading

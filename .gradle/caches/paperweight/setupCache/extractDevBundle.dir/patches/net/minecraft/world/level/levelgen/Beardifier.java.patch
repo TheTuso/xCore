@@ -1,32 +1,24 @@
 --- a/net/minecraft/world/level/levelgen/Beardifier.java
 +++ b/net/minecraft/world/level/levelgen/Beardifier.java
-@@ -13,6 +13,7 @@
- import net.minecraft.world.level.levelgen.structure.BoundingBox;
- import net.minecraft.world.level.levelgen.structure.PoolElementStructurePiece;
- import net.minecraft.world.level.levelgen.structure.StructurePiece;
-+import net.minecraft.world.level.levelgen.structure.StructureStart;
- import net.minecraft.world.level.levelgen.structure.pools.JigsawJunction;
- import net.minecraft.world.level.levelgen.structure.pools.StructureTemplatePool;
- 
-@@ -40,9 +41,10 @@
+@@ -36,9 +36,10 @@
          int j = chunkPos.getMinBlockZ();
-         this.junctions = new ObjectArrayList<>(32);
-         this.rigids = new ObjectArrayList<>(10);
--        structureAccessor.startsForFeature(SectionPos.bottomOf(chunk), (configuredStructureFeature) -> {
+         ObjectList<Beardifier.Rigid> objectList = new ObjectArrayList<>(10);
+         ObjectList<JigsawJunction> objectList2 = new ObjectArrayList<>(32);
+-        structureManager.startsForStructure(chunkPos, (structure) -> {
 +        // Paper start - replace for each
-+        for (StructureStart start : structureAccessor.startsForFeature(SectionPos.bottomOf(chunk), (configuredStructureFeature) -> {
-             return configuredStructureFeature.adaptNoise;
--        }).forEach((start) -> {
-+        })) { // Paper end
-             for(StructurePiece structurePiece : start.getPieces()) {
-                 if (structurePiece.isCloseToChunk(chunkPos, 12)) {
-                     if (structurePiece instanceof PoolElementStructurePiece) {
-@@ -65,7 +67,7 @@
++        for (net.minecraft.world.level.levelgen.structure.StructureStart structureStart : structureManager.startsForStructure(chunkPos, (structure) -> {
+             return structure.terrainAdaptation() != TerrainAdjustment.NONE;
+-        }).forEach((structureStart) -> {
++        })) {
+             TerrainAdjustment terrainAdjustment = structureStart.getStructure().terrainAdaptation();
+ 
+             for(StructurePiece structurePiece : structureStart.getPieces()) {
+@@ -63,7 +64,7 @@
                  }
              }
  
 -        });
 +        } // Paper
-         this.pieceIterator = this.rigids.iterator();
-         this.junctionIterator = this.junctions.iterator();
+         return new Beardifier(objectList.iterator(), objectList2.iterator());
      }
+ 

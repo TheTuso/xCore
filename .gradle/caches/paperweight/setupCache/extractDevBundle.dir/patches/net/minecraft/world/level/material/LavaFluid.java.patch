@@ -15,7 +15,7 @@
 @@ -44,18 +47,20 @@
  
      @Override
-     public void animateTick(Level world, BlockPos pos, FluidState state, Random random) {
+     public void animateTick(Level world, BlockPos pos, FluidState state, RandomSource random) {
 -        BlockPos blockPos = pos.above();
 -        if (world.getBlockState(blockPos).isAir() && !world.getBlockState(blockPos).isSolidRender(world, blockPos)) {
 +        BlockPos blockposition1 = pos.above();
@@ -42,7 +42,7 @@
          }
  
 @@ -65,34 +70,52 @@
-     public void randomTick(Level world, BlockPos pos, FluidState state, Random random) {
+     public void randomTick(Level world, BlockPos pos, FluidState state, RandomSource random) {
          if (world.getGameRules().getBoolean(GameRules.RULE_DOFIRETICK)) {
              int i = random.nextInt(3);
 +
@@ -69,7 +69,7 @@
 +                        if (this.hasFlammableNeighbours(world, blockposition1)) {
 +                            // CraftBukkit start - Prevent lava putting something on fire
 +                            if (world.getBlockState(blockposition1).getBlock() != Blocks.FIRE) {
-+                                if (org.bukkit.craftbukkit.v1_18_R2.event.CraftEventFactory.callBlockIgniteEvent(world, blockposition1, pos).isCancelled()) {
++                                if (org.bukkit.craftbukkit.v1_19_R1.event.CraftEventFactory.callBlockIgniteEvent(world, blockposition1, pos).isCancelled()) {
 +                                    continue;
 +                                }
 +                            }
@@ -99,7 +99,7 @@
 +                        // CraftBukkit start - Prevent lava putting something on fire
 +                        BlockPos up = blockposition2.above();
 +                        if (world.getBlockState(up).getBlock() != Blocks.FIRE) {
-+                            if (org.bukkit.craftbukkit.v1_18_R2.event.CraftEventFactory.callBlockIgniteEvent(world, up, pos).isCancelled()) {
++                            if (org.bukkit.craftbukkit.v1_19_R1.event.CraftEventFactory.callBlockIgniteEvent(world, up, pos).isCancelled()) {
 +                                continue;
 +                            }
 +                        }
@@ -155,7 +155,7 @@
                  if (state.getBlock() instanceof LiquidBlock) {
 -                    world.setBlock(pos, Blocks.STONE.defaultBlockState(), 3);
 +                    // CraftBukkit start
-+                    if (!org.bukkit.craftbukkit.v1_18_R2.event.CraftEventFactory.handleBlockFormEvent(world.getMinecraftWorld(), pos, Blocks.STONE.defaultBlockState(), 3)) {
++                    if (!org.bukkit.craftbukkit.v1_19_R1.event.CraftEventFactory.handleBlockFormEvent(world.getMinecraftWorld(), pos, Blocks.STONE.defaultBlockState(), 3)) {
 +                        return;
 +                    }
 +                    // CraftBukkit end

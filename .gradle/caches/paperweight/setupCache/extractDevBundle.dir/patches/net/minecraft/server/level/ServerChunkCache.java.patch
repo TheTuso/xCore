@@ -10,7 +10,7 @@
  import java.util.Optional;
  import java.util.concurrent.CompletableFuture;
  import java.util.concurrent.Executor;
-@@ -44,8 +46,11 @@
+@@ -45,8 +47,11 @@
  import net.minecraft.world.level.storage.DimensionDataStorage;
  import net.minecraft.world.level.storage.LevelData;
  import net.minecraft.world.level.storage.LevelStorageSource;
@@ -22,7 +22,7 @@
      public static final List<ChunkStatus> CHUNK_STATUSES = ChunkStatus.getStatusList();
      private final DistanceManager distanceManager;
      final ServerLevel level;
-@@ -64,12 +69,341 @@
+@@ -65,12 +70,341 @@
      @Nullable
      @VisibleForDebug
      private NaturalSpawner.SpawnState lastSpawnState;
@@ -355,7 +355,7 @@
 +    final io.papermc.paper.util.maplist.IteratorSafeOrderedReferenceSet<LevelChunk> entityTickingChunks = new io.papermc.paper.util.maplist.IteratorSafeOrderedReferenceSet<>(4096, 0.75f, 4096, 0.15, true);
 +    // Paper end
  
-     public ServerChunkCache(ServerLevel world, LevelStorageSource.LevelStorageAccess session, DataFixer dataFixer, StructureManager structureManager, Executor workerExecutor, ChunkGenerator chunkGenerator, int viewDistance, int simulationDistance, boolean dsync, ChunkProgressListener worldGenerationProgressListener, ChunkStatusUpdateListener chunkStatusChangeListener, Supplier<DimensionDataStorage> persistentStateManagerFactory) {
+     public ServerChunkCache(ServerLevel world, LevelStorageSource.LevelStorageAccess session, DataFixer dataFixer, StructureTemplateManager structureTemplateManager, Executor workerExecutor, ChunkGenerator chunkGenerator, int viewDistance, int simulationDistance, boolean dsync, ChunkProgressListener worldGenerationProgressListener, ChunkStatusUpdateListener chunkStatusChangeListener, Supplier<DimensionDataStorage> persistentStateManagerFactory) {
          this.level = world;
          this.mainThreadProcessor = new ServerChunkCache.MainThreadExecutor(world);
          this.mainThread = Thread.currentThread();
@@ -363,8 +363,8 @@
 +
          file.mkdirs();
          this.dataStorage = new DimensionDataStorage(file, dataFixer);
-         this.chunkMap = new ChunkMap(world, session, dataFixer, structureManager, workerExecutor, this.mainThreadProcessor, this, chunkGenerator, worldGenerationProgressListener, chunkStatusChangeListener, persistentStateManagerFactory, viewDistance, dsync);
-@@ -79,6 +413,16 @@
+         this.chunkMap = new ChunkMap(world, session, dataFixer, structureTemplateManager, workerExecutor, this.mainThreadProcessor, this, chunkGenerator, worldGenerationProgressListener, chunkStatusChangeListener, persistentStateManagerFactory, viewDistance, dsync);
+@@ -80,6 +414,16 @@
          this.clearCache();
      }
  
@@ -381,7 +381,7 @@
      @Override
      public ThreadedLevelLightEngine getLightEngine() {
          return this.lightEngine;
-@@ -94,10 +438,10 @@
+@@ -95,10 +439,10 @@
      }
  
      private void storeInCache(long pos, ChunkAccess chunk, ChunkStatus status) {
@@ -396,7 +396,7 @@
          }
  
          this.lastChunkPos[0] = pos;
-@@ -105,41 +449,231 @@
+@@ -106,41 +450,231 @@
          this.lastChunk[0] = chunk;
      }
  
@@ -646,7 +646,7 @@
          }
      }
  
-@@ -149,115 +683,130 @@
+@@ -150,115 +684,130 @@
          if (Thread.currentThread() != this.mainThread) {
              return null;
          } else {
@@ -846,7 +846,7 @@
              }
          }
      }
-@@ -272,121 +821,274 @@
+@@ -273,121 +822,274 @@
      }
  
      public boolean runDistanceManagerUpdates() {
@@ -868,7 +868,7 @@
 +        } finally { co.aikar.timings.MinecraftTimings.distanceManagerTick.stopTiming(); } // Paper - add timings for distance manager
 +    }
 +
-+    // Paper start - helper
++    // Paper start
 +    public boolean isPositionTicking(Entity entity) {
 +        return this.isPositionTicking(ChunkPos.asLong(net.minecraft.util.Mth.floor(entity.getX()) >> 4, net.minecraft.util.Mth.floor(entity.getZ()) >> 4));
      }
@@ -1008,7 +1008,7 @@
 +                if (event.isCancelled() || event.getSpawnRadius() < 0 || playerChunkMap.playerChunkTickRangeMap.getLastViewDistance(player) == -1) {
 +                    playerChunkMap.playerMobSpawnMap.remove(player);
 +                    continue;
-+                }
+                 }
 +
 +                int range = Math.min(event.getSpawnRadius(), 32); // limit to max view distance
 +                int chunkX = net.minecraft.server.MCUtil.getChunkCoordinate(player.getX());
@@ -1017,15 +1017,25 @@
 +                playerChunkMap.playerMobSpawnMap.addOrUpdate(player, chunkX, chunkZ, range);
 +                player.lastEntitySpawnRadiusSquared = (double)((range << 4) * (range << 4)); // used in anyPlayerCloseEnoughForSpawning
 +                player.playerNaturallySpawnedEvent = event;
-+            }
+             }
 +            // Paper end - optimize isOutisdeRange
 +            LevelData worlddata = this.level.getLevelData();
 +            ProfilerFiller gameprofilerfiller = this.level.getProfiler();
-+
+ 
+-            profilerFiller.popPush("spawnAndTick");
+-            boolean bl3 = this.level.getGameRules().getBoolean(GameRules.RULE_DOMOBSPAWNING);
+-            Collections.shuffle(list);
 +            gameprofilerfiller.push("pollingChunks");
 +            int k = this.level.getGameRules().getInt(GameRules.RULE_RANDOMTICKING);
 +            boolean flag1 = level.ticksPerSpawnCategory.getLong(org.bukkit.entity.SpawnCategory.ANIMAL) != 0L && worlddata.getGameTime() % level.ticksPerSpawnCategory.getLong(org.bukkit.entity.SpawnCategory.ANIMAL) == 0L; // CraftBukkit
-+
+ 
+-            for(ServerChunkCache.ChunkAndHolder chunkAndHolder : list) {
+-                LevelChunk levelChunk2 = chunkAndHolder.chunk;
+-                ChunkPos chunkPos = levelChunk2.getPos();
+-                if (this.level.isNaturalSpawningAllowed(chunkPos) && this.chunkMap.anyPlayerCloseEnoughForSpawning(chunkPos)) {
+-                    levelChunk2.incrementInhabitedTime(m);
+-                    if (bl3 && (this.spawnEnemies || this.spawnFriendlies) && this.level.getWorldBorder().isWithinBounds(chunkPos)) {
+-                        NaturalSpawner.spawnForChunk(this.level, levelChunk2, spawnState, this.spawnFriendlies, this.spawnEnemies, bl2);
 +            gameprofilerfiller.push("naturalSpawnCount");
 +            this.level.timings.countNaturalMobs.startTiming(); // Paper - timings
 +            int l = this.distanceManager.getNaturalSpawnChunkCount();
@@ -1035,29 +1045,19 @@
 +                // re-set mob counts
 +                for (ServerPlayer player : this.level.players) {
 +                    Arrays.fill(player.mobCounts, 0);
-                 }
++                }
 +                spawnercreature_d = NaturalSpawner.createState(l, this.level.getAllEntities(), this::getFullChunk, null, true);
 +            } else {
 +                spawnercreature_d = NaturalSpawner.createState(l, this.level.getAllEntities(), this::getFullChunk, this.chunkMap.playerMobDistanceMap == null ? new LocalMobCapCalculator(this.chunkMap) : null, false);
-             }
++            }
 +            // Paper end
 +            this.level.timings.countNaturalMobs.stopTiming(); // Paper - timings
- 
--            profilerFiller.popPush("spawnAndTick");
--            boolean bl3 = this.level.getGameRules().getBoolean(GameRules.RULE_DOMOBSPAWNING);
--            Collections.shuffle(list);
++
 +            this.lastSpawnState = spawnercreature_d;
 +            gameprofilerfiller.popPush("filteringLoadedChunks");
 +            // Paper - moved down
 +            this.level.timings.chunkTicks.startTiming(); // Paper
- 
--            for(ServerChunkCache.ChunkAndHolder chunkAndHolder : list) {
--                LevelChunk levelChunk2 = chunkAndHolder.chunk;
--                ChunkPos chunkPos = levelChunk2.getPos();
--                if (this.level.isNaturalSpawningAllowed(chunkPos) && this.chunkMap.anyPlayerCloseEnoughForSpawning(chunkPos)) {
--                    levelChunk2.incrementInhabitedTime(m);
--                    if (bl3 && (this.spawnEnemies || this.spawnFriendlies) && this.level.getWorldBorder().isWithinBounds(chunkPos)) {
--                        NaturalSpawner.spawnForChunk(this.level, levelChunk2, spawnState, this.spawnFriendlies, this.spawnEnemies, bl2);
++
 +            // Paper - moved down
 +
 +            gameprofilerfiller.popPush("spawnAndTick");
@@ -1067,7 +1067,7 @@
 +            // Paper - moved natural spawn event up
 +            // Paper start - optimise chunk tick iteration
 +            Iterator<LevelChunk> iterator1;
-+            if (this.level.paperConfig.perPlayerMobSpawns) {
++            if (this.level.paperConfig().entities.spawning.perPlayerMobSpawns) {
 +                iterator1 = this.entityTickingChunks.iterator();
 +            } else {
 +                iterator1 = this.entityTickingChunks.unsafeIterator();
@@ -1178,7 +1178,7 @@
          }
  
      }
-@@ -413,9 +1115,10 @@
+@@ -418,9 +1120,10 @@
      public void blockChanged(BlockPos pos) {
          int i = SectionPos.blockToSectionCoord(pos.getX());
          int j = SectionPos.blockToSectionCoord(pos.getZ());
@@ -1192,7 +1192,7 @@
          }
  
      }
-@@ -423,9 +1126,10 @@
+@@ -428,9 +1131,10 @@
      @Override
      public void onLightUpdate(LightLayer type, SectionPos pos) {
          this.mainThreadProcessor.execute(() -> {
@@ -1206,7 +1206,7 @@
              }
  
          });
-@@ -507,10 +1211,8 @@
+@@ -512,10 +1216,8 @@
          this.distanceManager.removeTicketsOnClosing();
      }
  
@@ -1218,7 +1218,7 @@
          MainThreadExecutor(Level world) {
              super("Chunk source main thread executor for " + world.dimension().location());
          }
-@@ -542,13 +1244,45 @@
+@@ -547,13 +1249,26 @@
          }
  
          @Override
@@ -1240,29 +1240,10 @@
 +            chunkMap.callbackExecutor.run();
 +        }
 +        // CraftBukkit end
-+        }
-+    }
+         }
+     }
 +
-+    // CraftBukkit start - decompile error
 +    private static record ChunkAndHolder(LevelChunk chunk, ChunkHolder holder) {
 +
-+        /*
-+        final Chunk chunk;
-+        final PlayerChunk holder;
-+
-+        a(Chunk chunk, PlayerChunk playerchunk) {
-+            this.chunk = chunk;
-+            this.holder = playerchunk;
-+        }
-+
-+        public Chunk chunk() {
-+            return this.chunk;
-+        }
-+
-+        public PlayerChunk holder() {
-+            return this.holder;
-         }
-+         */
-+        // CraftBukkit end
-     }
++    }
  }

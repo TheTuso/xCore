@@ -10,15 +10,15 @@
  import java.util.stream.IntStream;
  import javax.annotation.Nullable;
  import net.minecraft.core.BlockPos;
-@@ -11,6 +11,7 @@
+@@ -10,6 +10,7 @@
+ import net.minecraft.core.NonNullList;
  import net.minecraft.nbt.CompoundTag;
  import net.minecraft.network.chat.Component;
- import net.minecraft.network.chat.TranslatableComponent;
 +import net.minecraft.world.CompoundContainer;
  import net.minecraft.world.Container;
  import net.minecraft.world.ContainerHelper;
  import net.minecraft.world.WorldlyContainer;
-@@ -18,8 +19,8 @@
+@@ -17,8 +18,8 @@
  import net.minecraft.world.entity.Entity;
  import net.minecraft.world.entity.EntitySelector;
  import net.minecraft.world.entity.item.ItemEntity;
@@ -28,12 +28,12 @@
  import net.minecraft.world.inventory.AbstractContainerMenu;
  import net.minecraft.world.inventory.HopperMenu;
  import net.minecraft.world.item.ItemStack;
-@@ -31,16 +32,56 @@
+@@ -30,16 +31,56 @@
  import net.minecraft.world.phys.AABB;
  import net.minecraft.world.phys.shapes.BooleanOp;
  import net.minecraft.world.phys.shapes.Shapes;
-+import org.bukkit.craftbukkit.v1_18_R2.entity.CraftHumanEntity;
-+import org.bukkit.craftbukkit.v1_18_R2.inventory.CraftItemStack;
++import org.bukkit.craftbukkit.v1_19_R1.entity.CraftHumanEntity;
++import org.bukkit.craftbukkit.v1_19_R1.inventory.CraftItemStack;
 +import org.bukkit.entity.HumanEntity;
 +import org.bukkit.event.inventory.InventoryMoveItemEvent;
 +import org.bukkit.event.inventory.InventoryPickupItemEvent;
@@ -87,7 +87,7 @@
      }
  
      @Override
-@@ -71,13 +112,13 @@
+@@ -70,13 +111,13 @@
  
      @Override
      public ItemStack removeItem(int slot, int amount) {
@@ -103,7 +103,7 @@
          this.getItems().set(slot, stack);
          if (stack.getCount() > this.getMaxStackSize()) {
              stack.setCount(this.getMaxStackSize());
-@@ -95,29 +136,35 @@
+@@ -94,29 +135,35 @@
          blockEntity.tickedGameTime = world.getGameTime();
          if (!blockEntity.isOnCooldown()) {
              blockEntity.setCooldown(0);
@@ -148,7 +148,7 @@
                      setChanged(world, pos, state);
                      return true;
                  }
-@@ -128,119 +175,395 @@
+@@ -127,119 +174,395 @@
      }
  
      private boolean inventoryFull() {
@@ -212,7 +212,7 @@
 +                origItemStack.setCount(origCount);
              }
          }
-+        if (foundItem && level.paperConfig.cooldownHopperWhenFull) { // Inventory was full - cooldown
++        if (foundItem && level.paperConfig().hopper.cooldownWhenFull) { // Inventory was full - cooldown
 +            hopper.setCooldown(level.spigotConfig.hopperTransfer);
 +        }
 +        return false;
@@ -252,7 +252,7 @@
 +        }
 +        origItemStack.setCount(origCount);
 +
-+        if (level.paperConfig.cooldownHopperWhenFull) {
++        if (level.paperConfig().hopper.cooldownWhenFull) {
 +            cooldownHopper(ihopper);
 +        }
 +
@@ -308,7 +308,7 @@
 +    private static Inventory getInventory(Container iinventory) {
 +        Inventory sourceInventory;// Have to special case large chests as they work oddly
 +        if (iinventory instanceof CompoundContainer) {
-+            sourceInventory = new org.bukkit.craftbukkit.v1_18_R2.inventory.CraftInventoryDoubleChest((CompoundContainer) iinventory);
++            sourceInventory = new org.bukkit.craftbukkit.v1_19_R1.inventory.CraftInventoryDoubleChest((CompoundContainer) iinventory);
 +        } else if (iinventory instanceof BlockEntity) {
 +            sourceInventory = ((BlockEntity) iinventory).getOwner(false).getInventory();
 +        } else {
@@ -357,7 +357,7 @@
 +                        Inventory destinationInventory;
 +                        // Have to special case large chests as they work oddly
 +                        if (iinventory1 instanceof CompoundContainer) {
-+                            destinationInventory = new org.bukkit.craftbukkit.v1_18_R2.inventory.CraftInventoryDoubleChest((CompoundContainer) iinventory1);
++                            destinationInventory = new org.bukkit.craftbukkit.v1_19_R1.inventory.CraftInventoryDoubleChest((CompoundContainer) iinventory1);
 +                        } else {
 +                            destinationInventory = iinventory1.getOwner().getInventory();
 +                        }
@@ -514,7 +514,7 @@
 +            Inventory sourceInventory;
 +            // Have to special case large chests as they work oddly
 +            if (iinventory instanceof CompoundContainer) {
-+                sourceInventory = new org.bukkit.craftbukkit.v1_18_R2.inventory.CraftInventoryDoubleChest((CompoundContainer) iinventory);
++                sourceInventory = new org.bukkit.craftbukkit.v1_19_R1.inventory.CraftInventoryDoubleChest((CompoundContainer) iinventory);
 +            } else {
 +                sourceInventory = iinventory.getOwner().getInventory();
 +            }
@@ -600,7 +600,7 @@
              }
          }
  
-@@ -248,47 +571,58 @@
+@@ -247,47 +570,58 @@
      }
  
      private static boolean canPlaceItemInContainer(Container inventory, ItemStack stack, int slot, @Nullable Direction side) {
@@ -687,7 +687,7 @@
                      }
                  }
  
-@@ -301,79 +635,81 @@
+@@ -300,79 +634,81 @@
  
      @Nullable
      private static Container getAttachedContainer(Level world, BlockPos pos, BlockState state) {
@@ -733,7 +733,7 @@
 +    private static Container getContainerAt(Level world, double x, double y, double z, boolean optimizeEntities) {
 +        Object object = null;
 +        BlockPos blockposition = new BlockPos(x, y, z);
-+        if ( !world.hasChunkAt( blockposition ) ) return null; // Spigot
++        if ( !world.spigotConfig.hopperCanLoadChunks && !world.hasChunkAt( blockposition ) ) return null; // Spigot
 +        BlockState iblockdata = world.getBlockState(blockposition);
 +        Block block = iblockdata.getBlock();
 +
@@ -759,7 +759,7 @@
  
 -        if (container == null) {
 -            List<Entity> list = world.getEntities((Entity)null, new AABB(x - 0.5D, y - 0.5D, z - 0.5D, x + 0.5D, y + 0.5D, z + 0.5D), EntitySelector.CONTAINER_ENTITY_SELECTOR);
-+        if (object == null && (!optimizeEntities || !world.paperConfig.hoppersIgnoreOccludingBlocks || !org.bukkit.craftbukkit.v1_18_R2.util.CraftMagicNumbers.getMaterial(block).isOccluding())) { // Paper
++        if (object == null && (!optimizeEntities || !world.paperConfig().hopper.ignoreOccludingBlocks || !org.bukkit.craftbukkit.v1_19_R1.util.CraftMagicNumbers.getMaterial(block).isOccluding())) { // Paper
 +            List<Entity> list = world.getEntities((Entity) null, new AABB(x - 0.5D, y - 0.5D, z - 0.5D, x + 0.5D, y + 0.5D, z + 0.5D), EntitySelector.CONTAINER_ENTITY_SELECTOR);
 +
              if (!list.isEmpty()) {
@@ -804,7 +804,7 @@
      }
  
      private void setCooldown(int transferCooldown) {
-@@ -399,16 +735,16 @@
+@@ -398,16 +734,16 @@
      }
  
      public static void entityInside(Level world, BlockPos pos, BlockState state, Entity entity, HopperBlockEntity blockEntity) {

@@ -31,7 +31,7 @@
      }
  
      @Override
-     public void randomTick(BlockState state, ServerLevel world, BlockPos pos, Random random) {
+     public void randomTick(BlockState state, ServerLevel world, BlockPos pos, RandomSource random) {
 -        int i = state.getValue(AGE);
 -        if (i < 3 && random.nextInt(10) == 0) {
 -            state = state.setValue(AGE, Integer.valueOf(i + 1));
@@ -40,7 +40,7 @@
 +
 +        if (i < 3 && random.nextInt(Math.max(1, (int) (100.0F / world.spigotConfig.wartModifier) * 10)) == 0) { // Spigot
 +            state = (BlockState) state.setValue(NetherWartBlock.AGE, i + 1);
-+            org.bukkit.craftbukkit.v1_18_R2.event.CraftEventFactory.handleBlockGrowEvent(world, pos, state, 2); // CraftBukkit
++            org.bukkit.craftbukkit.v1_19_R1.event.CraftEventFactory.handleBlockGrowEvent(world, pos, state, 2); // CraftBukkit
          }
  
      }

@@ -30,10 +30,10 @@
 +        this.entityData.set(Llama.DATA_STRENGTH_ID, Math.max(1, Math.min(5, strength)));
      }
  
-     private void setRandomStrength() {
-         int i = this.random.nextFloat() < 0.04F ? 5 : 3;
+     private void setRandomStrength(RandomSource random) {
+         int i = random.nextFloat() < 0.04F ? 5 : 3;
 +
-         this.setStrength(1 + this.random.nextInt(i));
+         this.setStrength(1 + random.nextInt(i));
      }
  
      public int getStrength() {
@@ -96,8 +96,8 @@
 +        return (double) this.getBbHeight() * 0.6D;
      }
  
-     @Override
-@@ -175,61 +185,63 @@
+     @Nullable
+@@ -176,58 +186,60 @@
  
      @Override
      public boolean isFood(ItemStack stack) {
@@ -162,18 +162,15 @@
              }
          }
  
--        if (bl) {
-+        if (flag) {
-             this.gameEvent(GameEvent.MOB_INTERACT, this.eyeBlockPosition());
-             if (!this.isSilent()) {
--                SoundEvent soundEvent = this.getEatingSound();
--                if (soundEvent != null) {
--                    this.level.playSound((Player)null, this.getX(), this.getY(), this.getZ(), this.getEatingSound(), this.getSoundSource(), 1.0F, 1.0F + (this.random.nextFloat() - this.random.nextFloat()) * 0.2F);
-+                SoundEvent soundeffect = this.getEatingSound();
+-        if (bl && !this.isSilent()) {
+-            SoundEvent soundEvent = this.getEatingSound();
+-            if (soundEvent != null) {
+-                this.level.playSound((Player)null, this.getX(), this.getY(), this.getZ(), this.getEatingSound(), this.getSoundSource(), 1.0F, 1.0F + (this.random.nextFloat() - this.random.nextFloat()) * 0.2F);
++        if (flag && !this.isSilent()) {
++            SoundEvent soundeffect = this.getEatingSound();
 +
-+                if (soundeffect != null) {
-+                    this.level.playSound((Player) null, this.getX(), this.getY(), this.getZ(), this.getEatingSound(), this.getSoundSource(), 1.0F, 1.0F + (this.random.nextFloat() - this.random.nextFloat()) * 0.2F);
-                 }
++            if (soundeffect != null) {
++                this.level.playSound((Player) null, this.getX(), this.getY(), this.getZ(), this.getEatingSound(), this.getSoundSource(), 1.0F, 1.0F + (this.random.nextFloat() - this.random.nextFloat()) * 0.2F);
              }
          }
  
@@ -182,16 +179,23 @@
      }
  
      @Override
-@@ -242,15 +254,16 @@
+@@ -238,18 +250,20 @@
+     @Nullable
+     @Override
      public SpawnGroupData finalizeSpawn(ServerLevelAccessor world, DifficultyInstance difficulty, MobSpawnType spawnReason, @Nullable SpawnGroupData entityData, @Nullable CompoundTag entityNbt) {
-         this.setRandomStrength();
+-        RandomSource randomSource = world.getRandom();
+-        this.setRandomStrength(randomSource);
++        RandomSource randomsource = world.getRandom();
++
++        this.setRandomStrength(randomsource);
          int i;
 +
          if (entityData instanceof Llama.LlamaGroupData) {
 -            i = ((Llama.LlamaGroupData)entityData).variant;
 +            i = ((Llama.LlamaGroupData) entityData).variant;
          } else {
-             i = this.random.nextInt(4);
+-            i = randomSource.nextInt(4);
++            i = randomsource.nextInt(4);
              entityData = new Llama.LlamaGroupData(i);
          }
  
@@ -201,7 +205,7 @@
      }
  
      @Override
-@@ -291,9 +304,10 @@
+@@ -290,9 +304,10 @@
  
      @Override
      public void makeMad() {
@@ -215,7 +219,7 @@
          }
  
      }
-@@ -325,10 +339,12 @@
+@@ -324,10 +339,12 @@
  
      @Override
      public void containerChanged(Container sender) {
@@ -231,7 +235,7 @@
              this.playSound(SoundEvents.LLAMA_SWAG, 0.5F, 1.0F);
          }
  
-@@ -338,23 +354,25 @@
+@@ -337,23 +354,25 @@
      protected void updateContainerEquipment() {
          if (!this.level.isClientSide) {
              super.updateContainerEquipment();
@@ -261,7 +265,7 @@
          return i == -1 ? null : DyeColor.byId(i);
      }
  
-@@ -365,40 +383,43 @@
+@@ -364,40 +383,43 @@
  
      @Override
      public boolean canMate(Animal other) {
@@ -323,7 +327,7 @@
          this.didSpit = true;
      }
  
-@@ -409,14 +430,19 @@
+@@ -408,14 +430,19 @@
      @Override
      public boolean causeFallDamage(float fallDistance, float damageMultiplier, DamageSource damageSource) {
          int i = this.calculateFallDamage(fallDistance, damageMultiplier);
@@ -346,7 +350,7 @@
                      }
                  }
              }
-@@ -477,13 +503,35 @@
+@@ -476,13 +503,35 @@
  
      @Override
      public Vec3 getLeashOffset() {
@@ -386,7 +390,7 @@
              });
          }
  
-@@ -493,7 +541,8 @@
+@@ -492,7 +541,8 @@
          }
      }
  
@@ -396,7 +400,7 @@
          public final int variant;
  
          LlamaGroupData(int variant) {
-@@ -501,23 +550,4 @@
+@@ -500,23 +550,4 @@
              this.variant = variant;
          }
      }

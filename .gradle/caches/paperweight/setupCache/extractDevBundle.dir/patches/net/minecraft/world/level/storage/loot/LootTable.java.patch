@@ -1,21 +1,25 @@
 --- a/net/minecraft/world/level/storage/loot/LootTable.java
 +++ b/net/minecraft/world/level/storage/loot/LootTable.java
-@@ -13,6 +13,7 @@
- import java.util.Collections;
+@@ -10,9 +10,11 @@
+ import com.google.gson.JsonSerializer;
+ import com.mojang.logging.LogUtils;
+ import it.unimi.dsi.fastutil.objects.ObjectArrayList;
++import it.unimi.dsi.fastutil.objects.ObjectListIterator;
+ import java.lang.reflect.Type;
  import java.util.Iterator;
  import java.util.List;
 +import java.util.Objects;
- import java.util.Random;
  import java.util.function.BiFunction;
  import java.util.function.Consumer;
-@@ -29,7 +30,15 @@
+ import net.minecraft.Util;
+@@ -30,7 +32,15 @@
  import org.apache.commons.lang3.ArrayUtils;
  import org.slf4j.Logger;
  
 +// CraftBukkit start
 +import java.util.stream.Collectors;
-+import org.bukkit.craftbukkit.v1_18_R2.event.CraftEventFactory;
-+import org.bukkit.craftbukkit.v1_18_R2.inventory.CraftItemStack;
++import org.bukkit.craftbukkit.v1_19_R1.event.CraftEventFactory;
++import org.bukkit.craftbukkit.v1_19_R1.inventory.CraftItemStack;
 +import org.bukkit.event.world.LootGenerateEvent;
 +// CraftBukkit end
 +
@@ -24,7 +28,7 @@
      static final Logger LOGGER = LogUtils.getLogger();
      public static final LootTable EMPTY = new LootTable(LootContextParamSets.EMPTY, new LootPool[0], new LootItemFunction[0]);
      public static final LootContextParamSet DEFAULT_PARAM_SET = LootContextParamSets.ALL_PARAMS;
-@@ -45,18 +54,27 @@
+@@ -46,18 +56,27 @@
          this.compositeFunction = LootItemFunctions.compose(functions);
      }
  
@@ -38,7 +42,7 @@
 +    }
 +
 +    public static Consumer<ItemStack> createStackSplitter(Consumer<ItemStack> lootConsumer, @org.jetbrains.annotations.Nullable net.minecraft.server.level.ServerLevel world) {
-+        boolean skipSplitter = world != null && !world.paperConfig.splitOverstackedLoot;
++        boolean skipSplitter = world != null && !world.paperConfig().fixes.splitOverstackedLoot;
 +    // Paper end
 +        return (itemstack) -> {
 +            if (skipSplitter || itemstack.getCount() < itemstack.getMaxStackSize()) { // Paper - preserve overstacked items
@@ -61,7 +65,7 @@
                  }
              }
  
-@@ -65,25 +83,31 @@
+@@ -66,27 +85,33 @@
  
      public void getRandomItemsRaw(LootContext context, Consumer<ItemStack> lootConsumer) {
          if (context.addVisitedTable(this)) {
@@ -91,14 +95,19 @@
 +        this.getRandomItemsRaw(context, LootTable.createStackSplitter(lootConsumer, context.getLevel())); // Paper - preserve overstacked items
      }
  
-     public List<ItemStack> getRandomItems(LootContext context) {
-         List<ItemStack> list = Lists.newArrayList();
+     public ObjectArrayList<ItemStack> getRandomItems(LootContext context) {
+-        ObjectArrayList<ItemStack> objectArrayList = new ObjectArrayList<>();
+-        this.getRandomItems(context, objectArrayList::add);
+-        return objectArrayList;
++        ObjectArrayList<ItemStack> objectarraylist = new ObjectArrayList();
 +
-+        Objects.requireNonNull(list);
-         this.getRandomItems(context, list::add);
-         return list;
++        Objects.requireNonNull(objectarraylist);
++        this.getRandomItems(context, objectarraylist::add);
++        return objectarraylist;
      }
-@@ -93,76 +117,97 @@
+ 
+     public LootContextParamSet getParamSet() {
+@@ -94,32 +119,51 @@
      }
  
      public void validate(ValidationContext reporter) {
@@ -118,72 +127,72 @@
      }
  
      public void fill(Container inventory, LootContext context) {
--        List<ItemStack> list = this.getRandomItems(context);
--        Random random = context.getRandom();
--        List<Integer> list2 = this.getAvailableSlots(inventory, random);
--        this.shuffleAndSplitItems(list, list2.size(), random);
+-        ObjectArrayList<ItemStack> objectArrayList = this.getRandomItems(context);
+-        RandomSource randomSource = context.getRandom();
+-        List<Integer> list = this.getAvailableSlots(inventory, randomSource);
+-        this.shuffleAndSplitItems(objectArrayList, list.size(), randomSource);
 +        // CraftBukkit start
 +        this.fillInventory(inventory, context, false);
 +    }
- 
--        for(ItemStack itemStack : list) {
--            if (list2.isEmpty()) {
--                LOGGER.warn("Tried to over-fill a container");
++
 +    public void fillInventory(Container iinventory, LootContext loottableinfo, boolean plugin) {
 +        // CraftBukkit end
-+        List<ItemStack> list = this.getRandomItems(loottableinfo);
-+        Random random = loottableinfo.getRandom();
++        ObjectArrayList<ItemStack> objectarraylist = this.getRandomItems(loottableinfo);
++        RandomSource randomsource = loottableinfo.getRandom();
 +        // CraftBukkit start
-+        LootGenerateEvent event = CraftEventFactory.callLootGenerateEvent(iinventory, this, loottableinfo, list, plugin);
++        LootGenerateEvent event = CraftEventFactory.callLootGenerateEvent(iinventory, this, loottableinfo, objectarraylist, plugin);
 +        if (event.isCancelled()) {
 +            return;
 +        }
-+        list = event.getLoot().stream().map(CraftItemStack::asNMSCopy).collect(Collectors.toList());
++        objectarraylist = event.getLoot().stream().map(CraftItemStack::asNMSCopy).collect(ObjectArrayList.toList());
 +        // CraftBukkit end
-+        List<Integer> list1 = this.getAvailableSlots(iinventory, random);
++        List<Integer> list = this.getAvailableSlots(iinventory, randomsource);
 +
-+        this.shuffleAndSplitItems(list, list1.size(), random);
-+        Iterator iterator = list.iterator();
++        this.shuffleAndSplitItems(objectarraylist, list.size(), randomsource);
++        ObjectListIterator objectlistiterator = objectarraylist.iterator();
 +
-+        while (iterator.hasNext()) {
-+            ItemStack itemstack = (ItemStack) iterator.next();
-+
-+            if (list1.isEmpty()) {
++        while (objectlistiterator.hasNext()) {
++            ItemStack itemstack = (ItemStack) objectlistiterator.next();
+ 
+-        for(ItemStack itemStack : objectArrayList) {
+             if (list.isEmpty()) {
+-                LOGGER.warn("Tried to over-fill a container");
 +                LootTable.LOGGER.warn("Tried to over-fill a container");
                  return;
              }
  
 -            if (itemStack.isEmpty()) {
--                inventory.setItem(list2.remove(list2.size() - 1), ItemStack.EMPTY);
+-                inventory.setItem(list.remove(list.size() - 1), ItemStack.EMPTY);
 +            if (itemstack.isEmpty()) {
-+                iinventory.setItem((Integer) list1.remove(list1.size() - 1), ItemStack.EMPTY);
++                iinventory.setItem((Integer) list.remove(list.size() - 1), ItemStack.EMPTY);
              } else {
--                inventory.setItem(list2.remove(list2.size() - 1), itemStack);
-+                iinventory.setItem((Integer) list1.remove(list1.size() - 1), itemstack);
+-                inventory.setItem(list.remove(list.size() - 1), itemStack);
++                iinventory.setItem((Integer) list.remove(list.size() - 1), itemstack);
              }
          }
  
-     }
+@@ -127,32 +171,34 @@
  
-     private void shuffleAndSplitItems(List<ItemStack> drops, int freeSlots, Random random) {
--        List<ItemStack> list = Lists.newArrayList();
+     private void shuffleAndSplitItems(ObjectArrayList<ItemStack> drops, int freeSlots, RandomSource random) {
+         List<ItemStack> list = Lists.newArrayList();
 -        Iterator<ItemStack> iterator = drops.iterator();
-+        List<ItemStack> list1 = Lists.newArrayList();
-+        Iterator iterator = drops.iterator();
++        ObjectListIterator objectlistiterator = drops.iterator();
  
 -        while(iterator.hasNext()) {
 -            ItemStack itemStack = iterator.next();
 -            if (itemStack.isEmpty()) {
-+        while (iterator.hasNext()) {
-+            ItemStack itemstack = (ItemStack) iterator.next();
-+
-+            if (itemstack.isEmpty()) {
-                 iterator.remove();
+-                iterator.remove();
 -            } else if (itemStack.getCount() > 1) {
 -                list.add(itemStack);
+-                iterator.remove();
++        while (objectlistiterator.hasNext()) {
++            ItemStack itemstack = (ItemStack) objectlistiterator.next();
++
++            if (itemstack.isEmpty()) {
++                objectlistiterator.remove();
 +            } else if (itemstack.getCount() > 1) {
-+                list1.add(itemstack);
-                 iterator.remove();
++                list.add(itemstack);
++                objectlistiterator.remove();
              }
          }
  
@@ -193,13 +202,13 @@
 -            ItemStack itemStack3 = itemStack2.split(i);
 -            if (itemStack2.getCount() > 1 && random.nextBoolean()) {
 -                list.add(itemStack2);
-+        while (freeSlots - drops.size() - list1.size() > 0 && !list1.isEmpty()) {
-+            ItemStack itemstack1 = (ItemStack) list1.remove(Mth.nextInt(random, 0, list1.size() - 1));
++        while (freeSlots - drops.size() - list.size() > 0 && !list.isEmpty()) {
++            ItemStack itemstack1 = (ItemStack) list.remove(Mth.nextInt(random, 0, list.size() - 1));
 +            int j = Mth.nextInt(random, 1, itemstack1.getCount() / 2);
 +            ItemStack itemstack2 = itemstack1.split(j);
 +
 +            if (itemstack1.getCount() > 1 && random.nextBoolean()) {
-+                list1.add(itemstack1);
++                list.add(itemstack1);
              } else {
 -                drops.add(itemStack2);
 +                drops.add(itemstack1);
@@ -208,27 +217,36 @@
 -            if (itemStack3.getCount() > 1 && random.nextBoolean()) {
 -                list.add(itemStack3);
 +            if (itemstack2.getCount() > 1 && random.nextBoolean()) {
-+                list1.add(itemstack2);
++                list.add(itemstack2);
              } else {
 -                drops.add(itemStack3);
 +                drops.add(itemstack2);
              }
          }
  
--        drops.addAll(list);
-+        drops.addAll(list1);
-         Collections.shuffle(drops, random);
+@@ -161,16 +207,16 @@
      }
  
-     private List<Integer> getAvailableSlots(Container inventory, Random random) {
-         List<Integer> list = Lists.newArrayList();
+     private List<Integer> getAvailableSlots(Container inventory, RandomSource random) {
+-        ObjectArrayList<Integer> objectArrayList = new ObjectArrayList<>();
++        ObjectArrayList<Integer> objectarraylist = new ObjectArrayList();
  
 -        for(int i = 0; i < inventory.getContainerSize(); ++i) {
 +        for (int i = 0; i < inventory.getContainerSize(); ++i) {
              if (inventory.getItem(i).isEmpty()) {
-                 list.add(i);
+-                objectArrayList.add(i);
++                objectarraylist.add(i);
              }
-@@ -177,9 +222,14 @@
+         }
+ 
+-        Util.shuffle(objectArrayList, random);
+-        return objectArrayList;
++        Util.shuffle(objectarraylist, random);
++        return objectarraylist;
+     }
+ 
+     public static LootTable.Builder lootTable() {
+@@ -178,9 +224,14 @@
      }
  
      public static class Builder implements FunctionUserBuilder<LootTable.Builder> {
@@ -244,7 +262,7 @@
  
          public LootTable.Builder withPool(LootPool.Builder poolBuilder) {
              this.pools.add(poolBuilder.build());
-@@ -192,8 +242,8 @@
+@@ -193,8 +244,8 @@
          }
  
          @Override
@@ -255,7 +273,7 @@
              return this;
          }
  
-@@ -203,46 +253,52 @@
+@@ -204,46 +255,52 @@
          }
  
          public LootTable build() {

@@ -1,14 +1,14 @@
 --- a/net/minecraft/commands/arguments/EntityArgument.java
 +++ b/net/minecraft/commands/arguments/EntityArgument.java
-@@ -24,6 +24,7 @@
+@@ -25,6 +25,7 @@
  import net.minecraft.world.entity.Entity;
  
  public class EntityArgument implements ArgumentType<EntitySelector> {
 +
      private static final Collection<String> EXAMPLES = Arrays.asList("Player", "0123", "@e", "@e[type=foo]", "dd12be42-52a9-4a91-a8a1-11c01849e498");
-     public static final SimpleCommandExceptionType ERROR_NOT_SINGLE_ENTITY = new SimpleCommandExceptionType(new TranslatableComponent("argument.entity.toomany"));
-     public static final SimpleCommandExceptionType ERROR_NOT_SINGLE_PLAYER = new SimpleCommandExceptionType(new TranslatableComponent("argument.player.toomany"));
-@@ -46,7 +47,7 @@
+     public static final SimpleCommandExceptionType ERROR_NOT_SINGLE_ENTITY = new SimpleCommandExceptionType(Component.translatable("argument.entity.toomany"));
+     public static final SimpleCommandExceptionType ERROR_NOT_SINGLE_PLAYER = new SimpleCommandExceptionType(Component.translatable("argument.player.toomany"));
+@@ -45,7 +46,7 @@
      }
  
      public static Entity getEntity(CommandContext<CommandSourceStack> context, String name) throws CommandSyntaxException {
@@ -17,7 +17,7 @@
      }
  
      public static EntityArgument entities() {
-@@ -54,20 +55,21 @@
+@@ -53,20 +54,21 @@
      }
  
      public static Collection<? extends Entity> getEntities(CommandContext<CommandSourceStack> context, String name) throws CommandSyntaxException {
@@ -43,7 +43,7 @@
      }
  
      public static EntityArgument player() {
-@@ -75,7 +77,7 @@
+@@ -74,7 +76,7 @@
      }
  
      public static ServerPlayer getPlayer(CommandContext<CommandSourceStack> context, String name) throws CommandSyntaxException {
@@ -52,7 +52,7 @@
      }
  
      public static EntityArgument players() {
-@@ -83,50 +85,61 @@
+@@ -82,50 +84,63 @@
      }
  
      public static Collection<ServerPlayer> getPlayers(CommandContext<CommandSourceStack> context, String name) throws CommandSyntaxException {
@@ -108,17 +108,19 @@
      }
  
 -    public <S> CompletableFuture<Suggestions> listSuggestions(CommandContext<S> commandContext, SuggestionsBuilder suggestionsBuilder) {
--        if (commandContext.getSource() instanceof SharedSuggestionProvider) {
--            StringReader stringReader = new StringReader(suggestionsBuilder.getInput());
+-        StringReader stringReader = commandContext.getSource();
+-        if (stringReader instanceof SharedSuggestionProvider sharedSuggestionProvider) {
+-            stringReader = new StringReader(suggestionsBuilder.getInput());
 -            stringReader.setCursor(suggestionsBuilder.getStart());
--            SharedSuggestionProvider sharedSuggestionProvider = (SharedSuggestionProvider)commandContext.getSource();
 -            EntitySelectorParser entitySelectorParser = new EntitySelectorParser(stringReader, sharedSuggestionProvider.hasPermission(2));
 +    public <S> CompletableFuture<Suggestions> listSuggestions(CommandContext<S> commandcontext, SuggestionsBuilder suggestionsbuilder) {
-+        if (commandcontext.getSource() instanceof SharedSuggestionProvider) {
++        Object object = commandcontext.getSource();
++
++        if (object instanceof SharedSuggestionProvider) {
++            SharedSuggestionProvider icompletionprovider = (SharedSuggestionProvider) object;
 +            StringReader stringreader = new StringReader(suggestionsbuilder.getInput());
 +
 +            stringreader.setCursor(suggestionsbuilder.getStart());
-+            SharedSuggestionProvider icompletionprovider = (SharedSuggestionProvider) commandcontext.getSource();
 +            EntitySelectorParser argumentparserselector = new EntitySelectorParser(stringreader, icompletionprovider.hasPermission(2), true); // Paper
  
              try {
@@ -141,7 +143,7 @@
              });
          } else {
              return Suggestions.empty();
-@@ -134,31 +147,34 @@
+@@ -133,16 +148,19 @@
      }
  
      public Collection<String> getExamples() {
@@ -149,40 +151,60 @@
 +        return EntityArgument.EXAMPLES;
      }
  
-     public static class Serializer implements ArgumentSerializer<EntityArgument> {
+     public static class Info implements ArgumentTypeInfo<EntityArgument, EntityArgument.Info.Template> {
++
+         private static final byte FLAG_SINGLE = 1;
+         private static final byte FLAG_PLAYERS_ONLY = 2;
+ 
 -        @Override
++        public Info() {}
 +
-+        public Serializer() {}
+         public void serializeToNetwork(EntityArgument.Info.Template properties, FriendlyByteBuf buf) {
+             int i = 0;
 +
-         public void serializeToNetwork(EntityArgument type, FriendlyByteBuf buf) {
--            byte b = 0;
-+            byte b0 = 0;
-+
-             if (type.single) {
--                b = (byte)(b | 1);
-+                b0 = (byte) (b0 | 1);
+             if (properties.single) {
+                 i |= 1;
              }
- 
-             if (type.playersOnly) {
--                b = (byte)(b | 2);
-+                b0 = (byte) (b0 | 2);
-             }
- 
--            buf.writeByte(b);
-+            buf.writeByte(b0);
+@@ -155,33 +173,33 @@
          }
  
          @Override
--        public EntityArgument deserializeFromNetwork(FriendlyByteBuf friendlyByteBuf) {
+-        public EntityArgument.Info.Template deserializeFromNetwork(FriendlyByteBuf friendlyByteBuf) {
 -            byte b = friendlyByteBuf.readByte();
--            return new EntityArgument((b & 1) != 0, (b & 2) != 0);
-+        public EntityArgument deserializeFromNetwork(FriendlyByteBuf buf) {
+-            return new EntityArgument.Info.Template((b & 1) != 0, (b & 2) != 0);
++        public EntityArgument.Info.Template deserializeFromNetwork(FriendlyByteBuf buf) {
 +            byte b0 = buf.readByte();
 +
-+            return new EntityArgument((b0 & 1) != 0, (b0 & 2) != 0);
++            return new EntityArgument.Info.Template((b0 & 1) != 0, (b0 & 2) != 0);
          }
  
 -        @Override
-         public void serializeToJson(EntityArgument type, JsonObject json) {
-             json.addProperty("amount", type.single ? "single" : "multiple");
-             json.addProperty("type", type.playersOnly ? "players" : "entities");
+         public void serializeToJson(EntityArgument.Info.Template properties, JsonObject json) {
+             json.addProperty("amount", properties.single ? "single" : "multiple");
+             json.addProperty("type", properties.playersOnly ? "players" : "entities");
+         }
+ 
+-        @Override
+         public EntityArgument.Info.Template unpack(EntityArgument argumentType) {
+             return new EntityArgument.Info.Template(argumentType.single, argumentType.playersOnly);
+         }
+ 
+         public final class Template implements ArgumentTypeInfo.Template<EntityArgument> {
++
+             final boolean single;
+             final boolean playersOnly;
+ 
+-            Template(boolean single, boolean playersOnly) {
+-                this.single = single;
+-                this.playersOnly = playersOnly;
++            Template(boolean flag, boolean flag1) {
++                this.single = flag;
++                this.playersOnly = flag1;
+             }
+ 
+             @Override
+-            public EntityArgument instantiate(CommandBuildContext commandBuildContext) {
++            public EntityArgument instantiate(CommandBuildContext commandRegistryAccess) {
+                 return new EntityArgument(this.single, this.playersOnly);
+             }
+ 

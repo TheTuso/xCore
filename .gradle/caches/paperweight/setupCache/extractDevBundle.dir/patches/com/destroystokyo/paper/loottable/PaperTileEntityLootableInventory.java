@@ -4,7 +4,7 @@ import net.minecraft.server.MCUtil;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.RandomizableContainerBlockEntity;
 import org.bukkit.Bukkit;
-import org.bukkit.craftbukkit.v1_18_R2.util.CraftNamespacedKey;
+import org.bukkit.craftbukkit.v1_19_R1.util.CraftNamespacedKey;
 
 public class PaperTileEntityLootableInventory implements PaperLootableBlockInventory {
     private RandomizableContainerBlockEntity tileEntityLootable;

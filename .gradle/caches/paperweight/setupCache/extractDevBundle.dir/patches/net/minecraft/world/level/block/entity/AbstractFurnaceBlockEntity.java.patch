@@ -20,14 +20,14 @@
  import net.minecraft.world.entity.player.StackedContents;
  import net.minecraft.world.inventory.ContainerData;
  import net.minecraft.world.inventory.RecipeHolder;
-@@ -42,8 +43,22 @@
+@@ -43,8 +44,22 @@
  import net.minecraft.world.level.block.Blocks;
  import net.minecraft.world.level.block.state.BlockState;
  import net.minecraft.world.phys.Vec3;
 +// CraftBukkit start
-+import org.bukkit.craftbukkit.v1_18_R2.block.CraftBlock;
-+import org.bukkit.craftbukkit.v1_18_R2.entity.CraftHumanEntity;
-+import org.bukkit.craftbukkit.v1_18_R2.inventory.CraftItemStack;
++import org.bukkit.craftbukkit.v1_19_R1.block.CraftBlock;
++import org.bukkit.craftbukkit.v1_19_R1.entity.CraftHumanEntity;
++import org.bukkit.craftbukkit.v1_19_R1.inventory.CraftItemStack;
 +import org.bukkit.entity.HumanEntity;
 +import org.bukkit.entity.Player;
 +import org.bukkit.event.block.BlockExpEvent;
@@ -43,7 +43,7 @@
      protected static final int SLOT_INPUT = 0;
      protected static final int SLOT_FUEL = 1;
      protected static final int SLOT_RESULT = 2;
-@@ -57,147 +72,200 @@
+@@ -58,150 +73,205 @@
      public static final int NUM_DATA_VALUES = 4;
      public static final int BURN_TIME_STANDARD = 200;
      public static final int BURN_COOL_SPEED = 2;
@@ -71,8 +71,9 @@
 -            }
 -        }
 +    protected final ContainerData dataAccess;
-+    private final Object2IntOpenHashMap<ResourceLocation> recipesUsed;
-+    public final RecipeType<? extends AbstractCookingRecipe> recipeType;
++    public final Object2IntOpenHashMap<ResourceLocation> recipesUsed;
++    private final RecipeManager.CachedCheck<Container, ? extends AbstractCookingRecipe> quickCheck;
++    public final RecipeType<? extends AbstractCookingRecipe> recipeType; // Paper
  
 -        @Override
 -        public void set(int index, int value) {
@@ -130,19 +131,21 @@
 -            return 4;
 -        }
 -    };
--    private final Object2IntOpenHashMap<ResourceLocation> recipesUsed = new Object2IntOpenHashMap<>();
--    public final RecipeType<? extends AbstractCookingRecipe> recipeType;
+-    public final Object2IntOpenHashMap<ResourceLocation> recipesUsed = new Object2IntOpenHashMap<>();
+-    private final RecipeManager.CachedCheck<Container, ? extends AbstractCookingRecipe> quickCheck;
 +            }
  
 -    protected AbstractFurnaceBlockEntity(BlockEntityType<?> blockEntityType, BlockPos pos, BlockState state, RecipeType<? extends AbstractCookingRecipe> recipeType) {
 -        super(blockEntityType, pos, state);
+-        this.quickCheck = RecipeManager.createCheck(recipeType);
 +            @Override
 +            public int getCount() {
 +                return 4;
 +            }
 +        };
 +        this.recipesUsed = new Object2IntOpenHashMap();
-         this.recipeType = recipeType;
++        this.quickCheck = RecipeManager.createCheck((RecipeType<AbstractCookingRecipe>) recipeType); // CraftBukkit - decompile error // Eclipse fail
++        this.recipeType = recipeType; // Paper
      }
  
 +    private static Map<Item, Integer> cachedBurnDurations = null; // Paper - cache burn durations
@@ -170,12 +173,14 @@
 -        add(map, Blocks.JUNGLE_FENCE, 300);
 -        add(map, Blocks.DARK_OAK_FENCE, 300);
 -        add(map, Blocks.ACACIA_FENCE, 300);
+-        add(map, Blocks.MANGROVE_FENCE, 300);
 -        add(map, Blocks.OAK_FENCE_GATE, 300);
 -        add(map, Blocks.BIRCH_FENCE_GATE, 300);
 -        add(map, Blocks.SPRUCE_FENCE_GATE, 300);
 -        add(map, Blocks.JUNGLE_FENCE_GATE, 300);
 -        add(map, Blocks.DARK_OAK_FENCE_GATE, 300);
 -        add(map, Blocks.ACACIA_FENCE_GATE, 300);
+-        add(map, Blocks.MANGROVE_FENCE_GATE, 300);
 -        add(map, Blocks.NOTE_BLOCK, 300);
 -        add(map, Blocks.BOOKSHELF, 300);
 -        add(map, Blocks.LECTERN, 300);
@@ -201,12 +206,12 @@
 -        add(map, Items.STICK, 100);
 -        add(map, ItemTags.SAPLINGS, 100);
 -        add(map, Items.BOWL, 100);
--        add(map, ItemTags.CARPETS, 67);
+-        add(map, ItemTags.WOOL_CARPETS, 67);
 -        add(map, Blocks.DRIED_KELP_BLOCK, 4001);
 -        add(map, Items.CROSSBOW, 300);
 -        add(map, Blocks.BAMBOO, 50);
 -        add(map, Blocks.DEAD_BUSH, 100);
--        add(map, Blocks.SCAFFOLDING, 400);
+-        add(map, Blocks.SCAFFOLDING, 50);
 -        add(map, Blocks.LOOM, 300);
 -        add(map, Blocks.BARREL, 300);
 -        add(map, Blocks.CARTOGRAPHY_TABLE, 300);
@@ -215,6 +220,7 @@
 -        add(map, Blocks.COMPOSTER, 300);
 -        add(map, Blocks.AZALEA, 100);
 -        add(map, Blocks.FLOWERING_AZALEA, 100);
+-        add(map, Blocks.MANGROVE_ROOTS, 300);
 -        return map;
 +
 +        AbstractFurnaceBlockEntity.add(map, (ItemLike) Items.LAVA_BUCKET, 20000);
@@ -234,12 +240,14 @@
 +        AbstractFurnaceBlockEntity.add(map, (ItemLike) Blocks.JUNGLE_FENCE, 300);
 +        AbstractFurnaceBlockEntity.add(map, (ItemLike) Blocks.DARK_OAK_FENCE, 300);
 +        AbstractFurnaceBlockEntity.add(map, (ItemLike) Blocks.ACACIA_FENCE, 300);
++        AbstractFurnaceBlockEntity.add(map, (ItemLike) Blocks.MANGROVE_FENCE, 300);
 +        AbstractFurnaceBlockEntity.add(map, (ItemLike) Blocks.OAK_FENCE_GATE, 300);
 +        AbstractFurnaceBlockEntity.add(map, (ItemLike) Blocks.BIRCH_FENCE_GATE, 300);
 +        AbstractFurnaceBlockEntity.add(map, (ItemLike) Blocks.SPRUCE_FENCE_GATE, 300);
 +        AbstractFurnaceBlockEntity.add(map, (ItemLike) Blocks.JUNGLE_FENCE_GATE, 300);
 +        AbstractFurnaceBlockEntity.add(map, (ItemLike) Blocks.DARK_OAK_FENCE_GATE, 300);
 +        AbstractFurnaceBlockEntity.add(map, (ItemLike) Blocks.ACACIA_FENCE_GATE, 300);
++        AbstractFurnaceBlockEntity.add(map, (ItemLike) Blocks.MANGROVE_FENCE_GATE, 300);
 +        AbstractFurnaceBlockEntity.add(map, (ItemLike) Blocks.NOTE_BLOCK, 300);
 +        AbstractFurnaceBlockEntity.add(map, (ItemLike) Blocks.BOOKSHELF, 300);
 +        AbstractFurnaceBlockEntity.add(map, (ItemLike) Blocks.LECTERN, 300);
@@ -265,12 +273,12 @@
 +        AbstractFurnaceBlockEntity.add(map, (ItemLike) Items.STICK, 100);
 +        AbstractFurnaceBlockEntity.add(map, ItemTags.SAPLINGS, 100);
 +        AbstractFurnaceBlockEntity.add(map, (ItemLike) Items.BOWL, 100);
-+        AbstractFurnaceBlockEntity.add(map, ItemTags.CARPETS, 67);
++        AbstractFurnaceBlockEntity.add(map, ItemTags.WOOL_CARPETS, 67);
 +        AbstractFurnaceBlockEntity.add(map, (ItemLike) Blocks.DRIED_KELP_BLOCK, 4001);
 +        AbstractFurnaceBlockEntity.add(map, (ItemLike) Items.CROSSBOW, 300);
 +        AbstractFurnaceBlockEntity.add(map, (ItemLike) Blocks.BAMBOO, 50);
 +        AbstractFurnaceBlockEntity.add(map, (ItemLike) Blocks.DEAD_BUSH, 100);
-+        AbstractFurnaceBlockEntity.add(map, (ItemLike) Blocks.SCAFFOLDING, 400);
++        AbstractFurnaceBlockEntity.add(map, (ItemLike) Blocks.SCAFFOLDING, 50);
 +        AbstractFurnaceBlockEntity.add(map, (ItemLike) Blocks.LOOM, 300);
 +        AbstractFurnaceBlockEntity.add(map, (ItemLike) Blocks.BARREL, 300);
 +        AbstractFurnaceBlockEntity.add(map, (ItemLike) Blocks.CARTOGRAPHY_TABLE, 300);
@@ -279,6 +287,7 @@
 +        AbstractFurnaceBlockEntity.add(map, (ItemLike) Blocks.COMPOSTER, 300);
 +        AbstractFurnaceBlockEntity.add(map, (ItemLike) Blocks.AZALEA, 100);
 +        AbstractFurnaceBlockEntity.add(map, (ItemLike) Blocks.FLOWERING_AZALEA, 100);
++        AbstractFurnaceBlockEntity.add(map, (ItemLike) Blocks.MANGROVE_ROOTS, 300);
 +        // Paper start - cache burn durations
 +        cachedBurnDurations = com.google.common.collect.ImmutableMap.copyOf(map);
 +        return cachedBurnDurations;
@@ -299,8 +308,8 @@
 +
 +    public void onClose(CraftHumanEntity who) {
 +        this.transaction.remove(who);
-+    }
-+
+     }
+ 
 +    public List<HumanEntity> getViewers() {
 +        return this.transaction;
 +    }
@@ -316,9 +325,9 @@
 +
 +    public Object2IntOpenHashMap<ResourceLocation> getRecipesUsed() {
 +        return this.recipesUsed; // PAIL private -> public
-     }
++    }
 +    // CraftBukkit end
- 
++
      private static boolean isNeverAFurnaceFuel(Item item) {
          return item.builtInRegistryHolder().is(ItemTags.NON_FLAMMABLE_WOOD);
      }
@@ -355,7 +364,7 @@
          }
      }
  
-@@ -213,124 +281,186 @@
+@@ -217,132 +287,195 @@
          this.litTime = nbt.getShort("BurnTime");
          this.cookingProgress = nbt.getShort("CookTime");
          this.cookingTotalTime = nbt.getShort("CookTimeTotal");
@@ -414,16 +423,30 @@
          }
  
 -        ItemStack itemStack = blockEntity.items.get(1);
--        if (blockEntity.isLit() || !itemStack.isEmpty() && !blockEntity.items.get(0).isEmpty()) {
--            Recipe<?> recipe = world.getRecipeManager().getRecipeFor(blockEntity.recipeType, blockEntity, world).orElse((AbstractCookingRecipe)null);
+-        boolean bl3 = !blockEntity.items.get(0).isEmpty();
+-        boolean bl4 = !itemStack.isEmpty();
+-        if (blockEntity.isLit() || bl4 && bl3) {
+-            Recipe<?> recipe;
+-            if (bl3) {
+-                recipe = blockEntity.quickCheck.getRecipeFor(blockEntity, world).orElse((AbstractCookingRecipe)null);
 +        ItemStack itemstack = (ItemStack) blockEntity.items.get(1);
++        boolean flag2 = !((ItemStack) blockEntity.items.get(0)).isEmpty();
++        boolean flag3 = !itemstack.isEmpty();
 +
-+        if (!blockEntity.isLit() && (itemstack.isEmpty() || ((ItemStack) blockEntity.items.get(0)).isEmpty())) {
++        if (!blockEntity.isLit() && (!flag3 || !flag2)) {
 +            if (!blockEntity.isLit() && blockEntity.cookingProgress > 0) {
 +                blockEntity.cookingProgress = Mth.clamp(blockEntity.cookingProgress - 2, (int) 0, blockEntity.cookingTotalTime);
 +            }
 +        } else {
-+            Recipe<?> irecipe = (Recipe) world.getRecipeManager().getRecipeFor((RecipeType<AbstractCookingRecipe>) blockEntity.recipeType, blockEntity, world).orElse(null); // CraftBukkit - decompile error // Eclipse fail
++            Recipe irecipe;
++
++            if (flag2) {
++                irecipe = (Recipe) blockEntity.quickCheck.getRecipeFor(blockEntity, world).orElse(null); // CraftBukkit - decompile error
+             } else {
+-                recipe = null;
++                irecipe = null;
+             }
+ 
              int i = blockEntity.getMaxStackSize();
 -            if (!blockEntity.isLit() && canBurn(recipe, blockEntity.items, i)) {
 -                blockEntity.litTime = blockEntity.getBurnDuration(itemStack);
@@ -443,7 +466,7 @@
                  blockEntity.litDuration = blockEntity.litTime;
 -                if (blockEntity.isLit()) {
 -                    bl2 = true;
--                    if (!itemStack.isEmpty()) {
+-                    if (bl4) {
 -                        Item item = itemStack.getItem();
 -                        itemStack.shrink(1);
 -                        if (itemStack.isEmpty()) {
@@ -452,7 +475,7 @@
 +                if (blockEntity.isLit() && furnaceBurnEvent.isBurning()) {
 +                    // CraftBukkit end
 +                    flag1 = true;
-+                    if (!itemstack.isEmpty() && furnaceBurnEvent.willConsumeFuel()) { // Paper
++                    if (flag3 && furnaceBurnEvent.willConsumeFuel()) { // Paper
 +                        Item item = itemstack.getItem();
 +
 +                        itemstack.shrink(1);
@@ -483,10 +506,10 @@
 -                if (blockEntity.cookingProgress == blockEntity.cookingTotalTime) {
 +                if (blockEntity.cookingProgress >= blockEntity.cookingTotalTime) { // Paper - cook speed multiplier API
                      blockEntity.cookingProgress = 0;
--                    blockEntity.cookingTotalTime = getTotalCookTime(world, blockEntity.recipeType, blockEntity);
+-                    blockEntity.cookingTotalTime = getTotalCookTime(world, blockEntity);
 -                    if (burn(recipe, blockEntity.items, i)) {
 -                        blockEntity.setRecipeUsed(recipe);
-+                    blockEntity.cookingTotalTime = AbstractFurnaceBlockEntity.getTotalCookTime(world, blockEntity.recipeType, blockEntity, blockEntity.cookSpeedMultiplier);
++                    blockEntity.cookingTotalTime = AbstractFurnaceBlockEntity.getTotalCookTime(world, blockEntity.recipeType, blockEntity, blockEntity.cookSpeedMultiplier); // Paper
 +                    if (AbstractFurnaceBlockEntity.burn(blockEntity.level, blockEntity.worldPosition, irecipe, blockEntity.items, i)) { // CraftBukkit
 +                        blockEntity.setRecipeUsed(irecipe);
                      }
@@ -605,7 +628,7 @@
              return true;
          } else {
              return false;
-@@ -342,25 +472,26 @@
+@@ -354,25 +487,26 @@
              return 0;
          } else {
              Item item = fuel.getItem();
@@ -615,12 +638,12 @@
          }
      }
  
--    private static int getTotalCookTime(Level world, RecipeType<? extends AbstractCookingRecipe> recipeType, Container inventory) {
--        return world.getRecipeManager().getRecipeFor(recipeType, inventory, world).map(AbstractCookingRecipe::getCookingTime).orElse(200);
-+    // Paper begin - Expose this function so CraftFurnace can correctly scale the total cooking time to a new multiplier
-+    public static int getTotalCookTime(@Nullable Level world, RecipeType<? extends AbstractCookingRecipe> recipeType, Container inventory, final double cookSpeedMultiplier) {
+-    private static int getTotalCookTime(Level world, AbstractFurnaceBlockEntity furnace) {
+-        return furnace.quickCheck.getRecipeFor(furnace, world).map(AbstractCookingRecipe::getCookingTime).orElse(200);
++    // Paper start
++    public static int getTotalCookTime(@Nullable Level world, RecipeType<? extends AbstractCookingRecipe> recipeType, AbstractFurnaceBlockEntity furnace, double cookSpeedMultiplier) {
 +        /* Scale the recipe's cooking time to the current cookSpeedMultiplier */
-+        int cookTime = (world != null ? world.getRecipeManager() : net.minecraft.server.MinecraftServer.getServer().getRecipeManager()).getRecipeFor(recipeType, inventory, world /* passing a null level here is safe. world is only used for map extending recipes which won't happen here */).map(AbstractCookingRecipe::getCookingTime).orElse(200); // CraftBukkit - SPIGOT-4302 // Eclipse fail
++        int cookTime = world != null ? furnace.quickCheck.getRecipeFor(furnace, world).map(AbstractCookingRecipe::getCookingTime).orElse(200) : (net.minecraft.server.MinecraftServer.getServer().getRecipeManager().getRecipeFor(recipeType, furnace, world /* passing a null level here is safe. world is only used for map extending recipes which won't happen here */).map(AbstractCookingRecipe::getCookingTime).orElse(200));
 +        return (int) Math.ceil (cookTime / cookSpeedMultiplier);
      }
 +    // Paper end
@@ -641,7 +664,7 @@
      }
  
      @Override
-@@ -370,11 +501,7 @@
+@@ -382,11 +516,7 @@
  
      @Override
      public boolean canTakeItemThroughFace(int slot, ItemStack stack, Direction dir) {
@@ -654,7 +677,7 @@
      }
  
      @Override
-@@ -384,18 +511,24 @@
+@@ -396,18 +526,24 @@
  
      @Override
      public boolean isEmpty() {
@@ -685,7 +708,7 @@
      }
  
      @Override
-@@ -410,15 +543,16 @@
+@@ -422,15 +558,16 @@
  
      @Override
      public void setItem(int slot, ItemStack stack) {
@@ -700,13 +723,13 @@
          }
  
 -        if (slot == 0 && !bl) {
--            this.cookingTotalTime = getTotalCookTime(this.level, this.recipeType, this);
+-            this.cookingTotalTime = getTotalCookTime(this.level, this);
 +        if (slot == 0 && !flag) {
-+            this.cookingTotalTime = AbstractFurnaceBlockEntity.getTotalCookTime(this.level, this.recipeType, this, this.cookSpeedMultiplier);
++            this.cookingTotalTime = AbstractFurnaceBlockEntity.getTotalCookTime(this.level, this.recipeType, this, this.cookSpeedMultiplier); // Paper
              this.cookingProgress = 0;
              this.setChanged();
          }
-@@ -426,12 +560,8 @@
+@@ -438,12 +575,8 @@
      }
  
      @Override
@@ -721,7 +744,7 @@
      }
  
      @Override
-@@ -441,8 +571,9 @@
+@@ -453,8 +586,9 @@
          } else if (slot != 1) {
              return true;
          } else {
@@ -733,7 +756,7 @@
          }
      }
  
-@@ -454,8 +585,9 @@
+@@ -466,8 +600,9 @@
      @Override
      public void setRecipeUsed(@Nullable Recipe<?> recipe) {
          if (recipe != null) {
@@ -745,7 +768,7 @@
          }
  
      }
-@@ -467,42 +599,67 @@
+@@ -479,42 +614,67 @@
      }
  
      @Override
@@ -806,7 +829,7 @@
 +        // CraftBukkit start - fire FurnaceExtractEvent / BlockExpEvent
 +        BlockExpEvent event;
 +        if (amount != 0) {
-+            event = new FurnaceExtractEvent((Player) entityhuman.getBukkitEntity(), CraftBlock.at(worldserver, blockposition), org.bukkit.craftbukkit.v1_18_R2.util.CraftMagicNumbers.getMaterial(itemstack.getItem()), amount, j);
++            event = new FurnaceExtractEvent((Player) entityhuman.getBukkitEntity(), CraftBlock.at(worldserver, blockposition), org.bukkit.craftbukkit.v1_19_R1.util.CraftMagicNumbers.getMaterial(itemstack.getItem()), amount, j);
 +        } else {
 +            event = new BlockExpEvent(CraftBlock.at(worldserver, blockposition), j);
 +        }

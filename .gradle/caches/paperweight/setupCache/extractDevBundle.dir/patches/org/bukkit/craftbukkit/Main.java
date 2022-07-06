@@ -1,4 +1,4 @@
-package org.bukkit.craftbukkit.v1_18_R2;
+package org.bukkit.craftbukkit.v1_19_R1;
 
 import java.io.File;
 import java.io.IOException;
@@ -140,7 +140,12 @@ public class Main {
                 // Spigot End
 
                 // Paper Start
-                acceptsAll(asList("paper", "paper-settings"), "File for paper settings")
+                acceptsAll(asList("paper-dir", "paper-settings-directory"), "Directory for Paper settings")
+                    .withRequiredArg()
+                    .ofType(File.class)
+                    .defaultsTo(new File(io.papermc.paper.configuration.PaperConfigurations.CONFIG_DIR))
+                    .describedAs("Config directory");
+                acceptsAll(asList("paper", "paper-settings"), "File for Paper settings")
                         .withRequiredArg()
                         .ofType(File.class)
                         .defaultsTo(new File("paper.yml"))
@@ -257,11 +262,11 @@ public class Main {
                     System.setProperty(TerminalConsoleAppender.JLINE_OVERRIDE_PROPERTY, "false"); // Paper
                 }
 
-                if (Main.class.getPackage().getImplementationVendor() != null && System.getProperty("IReallyKnowWhatIAmDoingISwear") == null) {
+                if (false && Main.class.getPackage().getImplementationVendor() != null && System.getProperty("IReallyKnowWhatIAmDoingISwear") == null) {
                     Date buildDate = new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss Z").parse(Main.class.getPackage().getImplementationVendor()); // Paper
 
                     Calendar deadline = Calendar.getInstance();
-                    deadline.add(Calendar.DAY_OF_YEAR, -21);
+                    deadline.add(Calendar.DAY_OF_YEAR, -14);
                     if (buildDate.before(deadline.getTime())) {
                         // Paper start - This is some stupid bullshit
                         System.err.println("*** Warning, you've not updated in a while! ***");
@@ -317,11 +322,11 @@ public class Main {
             tryPreloadClass("io.netty.util.concurrent.DefaultPromise$1");
             tryPreloadClass("io.netty.util.internal.PromiseNotificationUtil");
             tryPreloadClass("io.netty.util.internal.SystemPropertyUtil");
-            tryPreloadClass("org.bukkit.craftbukkit.v1_18_R2.scheduler.CraftScheduler");
-            tryPreloadClass("org.bukkit.craftbukkit.v1_18_R2.scheduler.CraftScheduler$1");
-            tryPreloadClass("org.bukkit.craftbukkit.v1_18_R2.scheduler.CraftScheduler$2");
-            tryPreloadClass("org.bukkit.craftbukkit.v1_18_R2.scheduler.CraftScheduler$3");
-            tryPreloadClass("org.bukkit.craftbukkit.v1_18_R2.scheduler.CraftScheduler$4");
+            tryPreloadClass("org.bukkit.craftbukkit.v1_19_R1.scheduler.CraftScheduler");
+            tryPreloadClass("org.bukkit.craftbukkit.v1_19_R1.scheduler.CraftScheduler$1");
+            tryPreloadClass("org.bukkit.craftbukkit.v1_19_R1.scheduler.CraftScheduler$2");
+            tryPreloadClass("org.bukkit.craftbukkit.v1_19_R1.scheduler.CraftScheduler$3");
+            tryPreloadClass("org.bukkit.craftbukkit.v1_19_R1.scheduler.CraftScheduler$4");
             tryPreloadClass("org.slf4j.helpers.MessageFormatter");
             tryPreloadClass("org.slf4j.helpers.FormattingTuple");
             tryPreloadClass("org.slf4j.helpers.BasicMarker");

@@ -1,6 +1,6 @@
 --- a/net/minecraft/world/item/HangingEntityItem.java
 +++ b/net/minecraft/world/item/HangingEntityItem.java
-@@ -4,17 +4,23 @@
+@@ -5,17 +5,23 @@
  import net.minecraft.core.Direction;
  import net.minecraft.nbt.CompoundTag;
  import net.minecraft.world.InteractionResult;
@@ -25,7 +25,7 @@
      private final EntityType<? extends HangingEntity> type;
  
      public HangingEntityItem(EntityType<? extends HangingEntity> type, Item.Properties settings) {
-@@ -24,49 +30,64 @@
+@@ -25,54 +31,70 @@
  
      @Override
      public InteractionResult useOn(UseOnContext context) {
@@ -50,8 +50,15 @@
 +            Object object;
 +
              if (this.type == EntityType.PAINTING) {
--                hangingEntity = new Painting(level, blockPos2, direction);
-+                object = new Painting(world, blockposition1, enumdirection);
+-                Optional<Painting> optional = Painting.create(level, blockPos2, direction);
++                Optional<Painting> optional = Painting.create(world, blockposition1, enumdirection);
++
+                 if (optional.isEmpty()) {
+                     return InteractionResult.CONSUME;
+                 }
+ 
+-                hangingEntity = optional.get();
++                object = (HangingEntity) optional.get();
              } else if (this.type == EntityType.ITEM_FRAME) {
 -                hangingEntity = new ItemFrame(level, blockPos2, direction);
 +                object = new ItemFrame(world, blockposition1, enumdirection);
@@ -77,16 +84,16 @@
 -            if (hangingEntity.survives()) {
 -                if (!level.isClientSide) {
 -                    hangingEntity.playPlacementSound();
--                    level.gameEvent(player, GameEvent.ENTITY_PLACE, blockPos);
+-                    level.gameEvent(player, GameEvent.ENTITY_PLACE, hangingEntity.position());
 -                    level.addFreshEntity(hangingEntity);
 +            if (((HangingEntity) object).survives()) {
 +                if (!world.isClientSide) {
 +                    // CraftBukkit start - fire HangingPlaceEvent
 +                    Player who = (context.getPlayer() == null) ? null : (Player) context.getPlayer().getBukkitEntity();
 +                    org.bukkit.block.Block blockClicked = world.getWorld().getBlockAt(blockposition.getX(), blockposition.getY(), blockposition.getZ());
-+                    org.bukkit.block.BlockFace blockFace = org.bukkit.craftbukkit.v1_18_R2.block.CraftBlock.notchToBlockFace(enumdirection);
++                    org.bukkit.block.BlockFace blockFace = org.bukkit.craftbukkit.v1_19_R1.block.CraftBlock.notchToBlockFace(enumdirection);
 +
-+                    HangingPlaceEvent event = new HangingPlaceEvent((org.bukkit.entity.Hanging) ((HangingEntity) object).getBukkitEntity(), who, blockClicked, blockFace, org.bukkit.craftbukkit.v1_18_R2.inventory.CraftItemStack.asBukkitCopy(itemstack));
++                    HangingPlaceEvent event = new HangingPlaceEvent((org.bukkit.entity.Hanging) ((HangingEntity) object).getBukkitEntity(), who, blockClicked, blockFace, org.bukkit.craftbukkit.v1_19_R1.inventory.CraftItemStack.asBukkitCopy(itemstack));
 +                    world.getCraftServer().getPluginManager().callEvent(event);
 +
 +                    if (event.isCancelled()) {
@@ -94,7 +101,7 @@
 +                    }
 +                    // CraftBukkit end
 +                    ((HangingEntity) object).playPlacementSound();
-+                    world.gameEvent(entityhuman, GameEvent.ENTITY_PLACE, blockposition);
++                    world.gameEvent((Entity) entityhuman, GameEvent.ENTITY_PLACE, ((HangingEntity) object).position());
 +                    world.addFreshEntity((Entity) object);
                  }
  

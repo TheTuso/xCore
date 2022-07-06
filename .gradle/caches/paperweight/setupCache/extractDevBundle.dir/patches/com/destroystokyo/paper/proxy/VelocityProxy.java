@@ -1,6 +1,6 @@
 package com.destroystokyo.paper.proxy;
 
-import com.destroystokyo.paper.PaperConfig;
+import io.papermc.paper.configuration.GlobalConfiguration;
 import com.google.common.net.InetAddresses;
 import com.mojang.authlib.GameProfile;
 import com.mojang.authlib.properties.Property;
@@ -13,9 +13,12 @@ import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.entity.player.ProfilePublicKey;
 
 public class VelocityProxy {
     private static final int SUPPORTED_FORWARDING_VERSION = 1;
+    public static final int MODERN_FORWARDING_WITH_KEY = 2;
+    public static final byte MAX_SUPPORTED_FORWARDING_VERSION = 2;
     public static final ResourceLocation PLAYER_INFO_CHANNEL = new ResourceLocation("velocity", "player_info");
 
     public static boolean checkIntegrity(final FriendlyByteBuf buf) {
@@ -27,18 +30,13 @@ public class VelocityProxy {
 
         try {
             final Mac mac = Mac.getInstance("HmacSHA256");
-            mac.init(new SecretKeySpec(PaperConfig.velocitySecretKey, "HmacSHA256"));
+            mac.init(new SecretKeySpec(GlobalConfiguration.get().proxies.velocity.secret.getBytes(java.nio.charset.StandardCharsets.UTF_8), "HmacSHA256"));
             final byte[] mySignature = mac.doFinal(data);
             if (!MessageDigest.isEqual(signature, mySignature)) {
                 return false;
             }
         } catch (final InvalidKeyException | NoSuchAlgorithmException e) {
             throw new AssertionError(e);
-        }
-
-        int version = buf.readVarInt();
-        if (version != SUPPORTED_FORWARDING_VERSION) {
-            throw new IllegalStateException("Unsupported forwarding version " + version + ", wanted " + SUPPORTED_FORWARDING_VERSION);
         }
 
         return true;
@@ -62,5 +60,9 @@ public class VelocityProxy {
             final String signature = buf.readBoolean() ? buf.readUtf(Short.MAX_VALUE) : null;
             profile.getProperties().put(name, new Property(name, value, signature));
         }
+    }
+
+    public static ProfilePublicKey.Data readForwardedKey(FriendlyByteBuf buf) {
+        return new ProfilePublicKey.Data(buf);
     }
 }

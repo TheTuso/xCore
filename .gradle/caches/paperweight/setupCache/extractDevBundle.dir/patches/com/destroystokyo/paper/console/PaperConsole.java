@@ -2,7 +2,7 @@ package com.destroystokyo.paper.console;
 
 import net.minecraft.server.dedicated.DedicatedServer;
 import net.minecrell.terminalconsole.SimpleTerminalConsole;
-import org.bukkit.craftbukkit.v1_18_R2.command.ConsoleCommandCompleter;
+import org.bukkit.craftbukkit.v1_19_R1.command.ConsoleCommandCompleter;
 import org.jline.reader.LineReader;
 import org.jline.reader.LineReaderBuilder;
 
@@ -21,7 +21,7 @@ public final class PaperConsole extends SimpleTerminalConsole {
                 .variable(LineReader.HISTORY_FILE, java.nio.file.Paths.get(".console_history"))
                 .completer(new ConsoleCommandCompleter(this.server))
                 .option(LineReader.Option.COMPLETE_IN_WORD, true);
-        if (com.destroystokyo.paper.PaperConfig.enableBrigadierConsoleHighlighting) {
+        if (io.papermc.paper.configuration.GlobalConfiguration.get().console.enableBrigadierHighlighting) {
             builder.highlighter(new io.papermc.paper.console.BrigadierCommandHighlighter(this.server, this.server.createCommandSourceStack()));
         }
         return super.buildReader(builder);

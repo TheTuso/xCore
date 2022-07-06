@@ -30,7 +30,7 @@ public final class BrigadierCommandCompleter {
     }
 
     public void complete(final @NonNull LineReader reader, final @NonNull ParsedLine line, final @NonNull List<Candidate> candidates, final @NonNull List<Completion> existing) {
-        if (!com.destroystokyo.paper.PaperConfig.enableBrigadierConsoleCompletions) {
+        if (!io.papermc.paper.configuration.GlobalConfiguration.get().console.enableBrigadierCompletions) {
             this.addCandidates(candidates, Collections.emptyList(), existing);
             return;
         }

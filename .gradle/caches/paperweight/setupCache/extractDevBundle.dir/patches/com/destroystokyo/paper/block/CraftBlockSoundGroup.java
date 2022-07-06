@@ -2,7 +2,7 @@ package com.destroystokyo.paper.block;
 
 import net.minecraft.world.level.block.SoundType;
 import org.bukkit.Sound;
-import org.bukkit.craftbukkit.v1_18_R2.CraftSound;
+import org.bukkit.craftbukkit.v1_19_R1.CraftSound;
 
 @Deprecated(forRemoval = true)
 public class CraftBlockSoundGroup implements BlockSoundGroup {

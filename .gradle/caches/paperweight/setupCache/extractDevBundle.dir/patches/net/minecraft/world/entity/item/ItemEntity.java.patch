@@ -73,7 +73,20 @@
          this.setItem(entity.getItem().copy());
          this.copyPosition(entity);
          this.age = entity.age;
-@@ -81,7 +95,7 @@
+@@ -77,7 +91,11 @@
+     @Nullable
+     @Override
+     public Entity getResponsibleEntity() {
+-        return Util.mapNullable(this.getThrower(), this.level::getPlayerByUUID);
++        UUID uuid = this.getThrower();
++        Level world = this.level;
++
++        Objects.requireNonNull(this.level);
++        return (Entity) Util.mapNullable(uuid, world::getPlayerByUUID);
+     }
+ 
+     @Override
+@@ -87,7 +105,7 @@
  
      @Override
      protected void defineSynchedData() {
@@ -82,7 +95,7 @@
      }
  
      @Override
-@@ -90,18 +104,23 @@
+@@ -96,18 +114,23 @@
              this.discard();
          } else {
              super.tick();
@@ -112,7 +125,7 @@
                  this.setUnderLavaMovement();
              } else if (!this.isNoGravity()) {
                  this.setDeltaMovement(this.getDeltaMovement().add(0.0D, -0.04D, 0.0D));
-@@ -116,64 +135,121 @@
+@@ -122,64 +145,117 @@
                  }
              }
  
@@ -170,7 +183,7 @@
 -            if (!this.level.isClientSide && this.age >= 6000) {
 +            if (!this.level.isClientSide && this.age >= this.despawnRate) { // Spigot // Paper
 +                // CraftBukkit start - fire ItemDespawnEvent
-+                if (org.bukkit.craftbukkit.v1_18_R2.event.CraftEventFactory.callItemDespawnEvent(this).isCancelled()) {
++                if (org.bukkit.craftbukkit.v1_19_R1.event.CraftEventFactory.callItemDespawnEvent(this).isCancelled()) {
 +                    this.age = 0;
 +                    return;
 +                }
@@ -194,7 +207,7 @@
 +
 +        if (!this.level.isClientSide && this.age >= this.despawnRate) { // Spigot // Paper
 +            // CraftBukkit start - fire ItemDespawnEvent
-+            if (org.bukkit.craftbukkit.v1_18_R2.event.CraftEventFactory.callItemDespawnEvent(this).isCancelled()) {
++            if (org.bukkit.craftbukkit.v1_19_R1.event.CraftEventFactory.callItemDespawnEvent(this).isCancelled()) {
 +                this.age = 0;
 +                return;
 +            }
@@ -227,10 +240,6 @@
 -            })) {
 -                if (itemEntity.isMergable()) {
 -                    this.tryToMerge(itemEntity);
-+            // Paper start - avoid item merge if stack size above max stack size
-+            ItemStack stack = getItem();
-+            if (stack.getCount() >= stack.getMaxStackSize()) return;
-+            // Paper end
 +            // Spigot start
 +            double radius = level.spigotConfig.itemMerge;
 +            List<ItemEntity> list = this.level.getEntitiesOfClass(ItemEntity.class, this.getBoundingBox().inflate(radius, radius - 0.5D, radius), (entityitem) -> {
@@ -244,7 +253,7 @@
 +
 +                if (entityitem.isMergable()) {
 +                    // Paper Start - Fix items merging through walls
-+                        if (this.level.paperConfig.fixItemsMergingThroughWalls) {
++                        if (this.level.paperConfig().fixes.fixItemsMergingThroughWalls) {
 +                            net.minecraft.world.level.ClipContext rayTrace = new net.minecraft.world.level.ClipContext(this.position(), entityitem.position(),
 +                                net.minecraft.world.level.ClipContext.Block.COLLIDER, net.minecraft.world.level.ClipContext.Fluid.NONE, this);
 +                            net.minecraft.world.phys.BlockHitResult rayTraceResult = level.clip(rayTrace);
@@ -255,7 +264,7 @@
                      if (this.isRemoved()) {
                          break;
                      }
-@@ -184,50 +260,47 @@
+@@ -190,50 +266,47 @@
      }
  
      private boolean isMergable() {
@@ -323,27 +332,27 @@
  
      private static void merge(ItemEntity targetEntity, ItemStack targetStack, ItemEntity sourceEntity, ItemStack sourceStack) {
 -        merge(targetEntity, targetStack, sourceStack);
-+        if (org.bukkit.craftbukkit.v1_18_R2.event.CraftEventFactory.callItemMergeEvent(sourceEntity, targetEntity).isCancelled()) return; // CraftBukkit
++        if (org.bukkit.craftbukkit.v1_19_R1.event.CraftEventFactory.callItemMergeEvent(sourceEntity, targetEntity).isCancelled()) return; // CraftBukkit
 +        ItemEntity.merge(targetEntity, targetStack, sourceStack);
          targetEntity.pickupDelay = Math.max(targetEntity.pickupDelay, sourceEntity.pickupDelay);
          targetEntity.age = Math.min(targetEntity.age, sourceEntity.age);
          if (sourceStack.isEmpty()) {
-@@ -252,8 +325,13 @@
+@@ -258,8 +331,13 @@
          } else if (this.level.isClientSide) {
              return true;
          } else {
 +            // CraftBukkit start
-+            if (org.bukkit.craftbukkit.v1_18_R2.event.CraftEventFactory.handleNonLivingEntityDamageEvent(this, source, amount)) {
++            if (org.bukkit.craftbukkit.v1_19_R1.event.CraftEventFactory.handleNonLivingEntityDamageEvent(this, source, amount)) {
 +                return false;
 +            }
 +            // CraftBukkit end
              this.markHurt();
 -            this.health = (int)((float)this.health - amount);
 +            this.health = (int) ((float) this.health - amount);
-             this.gameEvent(GameEvent.ENTITY_DAMAGED, source.getEntity());
+             this.gameEvent(GameEvent.ENTITY_DAMAGE, source.getEntity());
              if (this.health <= 0) {
                  this.getItem().onDestroyed(this);
-@@ -266,9 +344,9 @@
+@@ -272,9 +350,9 @@
  
      @Override
      public void addAdditionalSaveData(CompoundTag nbt) {
@@ -356,7 +365,7 @@
          if (this.getThrower() != null) {
              nbt.putUUID("Thrower", this.getThrower());
          }
-@@ -299,8 +377,9 @@
+@@ -305,8 +383,9 @@
              this.thrower = nbt.getUUID("Thrower");
          }
  
@@ -368,7 +377,7 @@
          if (this.getItem().isEmpty()) {
              this.discard();
          }
-@@ -310,14 +389,82 @@
+@@ -316,14 +395,82 @@
      @Override
      public void playerTouch(Player player) {
          if (!this.level.isClientSide) {
@@ -458,19 +467,19 @@
                  }
  
                  player.awardStat(Stats.ITEM_PICKED_UP.get(item), i);
-@@ -329,8 +476,9 @@
+@@ -335,8 +482,9 @@
  
      @Override
      public Component getName() {
 -        Component component = this.getCustomName();
--        return (Component)(component != null ? component : new TranslatableComponent(this.getItem().getDescriptionId()));
+-        return (Component)(component != null ? component : Component.translatable(this.getItem().getDescriptionId()));
 +        Component ichatbasecomponent = this.getCustomName();
 +
-+        return (Component) (ichatbasecomponent != null ? ichatbasecomponent : new TranslatableComponent(this.getItem().getDescriptionId()));
++        return (Component) (ichatbasecomponent != null ? ichatbasecomponent : Component.translatable(this.getItem().getDescriptionId()));
      }
  
      @Override
-@@ -342,25 +490,30 @@
+@@ -348,25 +496,29 @@
      @Override
      public Entity changeDimension(ServerLevel destination) {
          Entity entity = super.changeDimension(destination);
@@ -490,11 +499,10 @@
  
      public void setItem(ItemStack stack) {
 -        this.getEntityData().set(DATA_ITEM, stack);
-+        com.google.common.base.Preconditions.checkArgument(!stack.isEmpty(), "Cannot drop air"); // CraftBukkit
++        // com.google.common.base.Preconditions.checkArgument(!stack.isEmpty(), "Cannot drop air"); // CraftBukkit // Paper - Remove check
 +        this.getEntityData().set(ItemEntity.DATA_ITEM, stack);
 +        this.getEntityData().markDirty(ItemEntity.DATA_ITEM); // CraftBukkit - SPIGOT-4591, must mark dirty
-+        net.minecraft.resources.ResourceLocation location = net.minecraft.core.Registry.ITEM.getKey(stack.getItem()); // Paper
-+        this.despawnRate = level.paperConfig.altItemDespawnRateMap.getOrDefault(location, level.spigotConfig.itemDespawnRate); // Paper
++        this.despawnRate = level.paperConfig().entities.spawning.altItemDespawnRate.enabled ? level.paperConfig().entities.spawning.altItemDespawnRate.items.getOrDefault(stack.getItem(), level.spigotConfig.itemDespawnRate) : level.spigotConfig.itemDespawnRate; // Paper
      }
  
      @Override
@@ -505,7 +513,7 @@
              this.getItem().setEntityRepresentation(this);
          }
  
-@@ -418,11 +571,11 @@
+@@ -424,11 +576,11 @@
  
      public void makeFakeItem() {
          this.setNeverPickUp();
@@ -519,3 +527,11 @@
      }
  
      @Override
+@@ -447,6 +599,6 @@
+ 
+     @Override
+     public float getVisualRotationYInDegrees() {
+-        return 180.0F - this.getSpin(0.5F) / ((float)Math.PI * 2F) * 360.0F;
++        return 180.0F - this.getSpin(0.5F) / 6.2831855F * 360.0F;
+     }
+ }

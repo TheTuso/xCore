@@ -26,8 +26,8 @@
  import net.minecraft.world.level.block.state.properties.Property;
  import net.minecraft.world.level.gameevent.GameEvent;
  import net.minecraft.world.phys.shapes.CollisionContext;
-+import org.bukkit.craftbukkit.v1_18_R2.block.CraftBlock;
-+import org.bukkit.craftbukkit.v1_18_R2.block.data.CraftBlockData;
++import org.bukkit.craftbukkit.v1_19_R1.block.CraftBlock;
++import org.bukkit.craftbukkit.v1_19_R1.block.data.CraftBlockData;
 +import org.bukkit.event.block.BlockCanBuildEvent;
 +// CraftBukkit end
  
@@ -72,10 +72,10 @@
 +                BlockState iblockdata = this.getPlacementState(blockactioncontext1);
 +                // CraftBukkit start - special case for handling block placement with water lilies and snow buckets
 +                org.bukkit.block.BlockState blockstate = null;
-+                if (this instanceof WaterLilyBlockItem || this instanceof SolidBucketItem) {
-+                    blockstate = org.bukkit.craftbukkit.v1_18_R2.block.CraftBlockStates.getBlockState(blockactioncontext1.getLevel(), blockactioncontext1.getClickedPos());
++                if (this instanceof PlaceOnWaterBlockItem || this instanceof SolidBucketItem) {
++                    blockstate = org.bukkit.craftbukkit.v1_19_R1.block.CraftBlockStates.getBlockState(blockactioncontext1.getLevel(), blockactioncontext1.getClickedPos());
 +                }
-+                final org.bukkit.block.BlockState oldBlockstate = blockstate != null ? blockstate : org.bukkit.craftbukkit.v1_18_R2.block.CraftBlockStates.getBlockState(blockactioncontext1.getLevel(), blockactioncontext1.getClickedPos()); // Paper
++                final org.bukkit.block.BlockState oldBlockstate = blockstate != null ? blockstate : org.bukkit.craftbukkit.v1_19_R1.block.CraftBlockStates.getBlockState(blockactioncontext1.getLevel(), blockactioncontext1.getClickedPos()); // Paper
 +                // CraftBukkit end
 +
 +                if (iblockdata == null) {
@@ -119,7 +119,7 @@
 +                        iblockdata1.getBlock().setPlacedBy(world, blockposition, iblockdata1, entityhuman, itemstack);
 +                        // CraftBukkit start
 +                        if (blockstate != null) {
-+                            org.bukkit.event.block.BlockPlaceEvent placeEvent = org.bukkit.craftbukkit.v1_18_R2.event.CraftEventFactory.callBlockPlaceEvent((ServerLevel) world, entityhuman, blockactioncontext1.getHand(), blockstate, blockposition.getX(), blockposition.getY(), blockposition.getZ());
++                            org.bukkit.event.block.BlockPlaceEvent placeEvent = org.bukkit.craftbukkit.v1_19_R1.event.CraftEventFactory.callBlockPlaceEvent((ServerLevel) world, entityhuman, blockactioncontext1.getHand(), blockstate, blockposition.getX(), blockposition.getY(), blockposition.getZ());
 +                            if (placeEvent != null && (placeEvent.isCancelled() || !placeEvent.canBuild())) {
 +                                blockstate.update(true, false);
 +
@@ -138,13 +138,13 @@
  
 -                    SoundType soundType = blockState2.getSoundType();
 -                    level.playSound(player, blockPos, this.getPlaceSound(blockState2), SoundSource.BLOCKS, (soundType.getVolume() + 1.0F) / 2.0F, soundType.getPitch() * 0.8F);
--                    level.gameEvent(player, GameEvent.BLOCK_PLACE, blockPos);
+-                    level.gameEvent(GameEvent.BLOCK_PLACE, blockPos, GameEvent.Context.of(player, blockState2));
 -                    if (player == null || !player.getAbilities().instabuild) {
 -                        itemStack.shrink(1);
 +                    SoundType soundeffecttype = iblockdata1.getSoundType();
 +
 +                    // world.playSound(entityhuman, blockposition, this.getPlaceSound(iblockdata1), SoundCategory.BLOCKS, (soundeffecttype.getVolume() + 1.0F) / 2.0F, soundeffecttype.getPitch() * 0.8F);
-+                    world.gameEvent(entityhuman, GameEvent.BLOCK_PLACE, blockposition);
++                    world.gameEvent(GameEvent.BLOCK_PLACE, blockposition, GameEvent.Context.of(entityhuman, iblockdata1));
 +                    if ((entityhuman == null || !entityhuman.getAbilities().instabuild) && itemstack != ItemStack.EMPTY) { // CraftBukkit
 +                        itemstack.shrink(1);
                      }

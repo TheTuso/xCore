@@ -1,53 +1,6 @@
 --- a/net/minecraft/world/level/block/entity/SkullBlockEntity.java
 +++ b/net/minecraft/world/level/block/entity/SkullBlockEntity.java
-@@ -11,6 +11,7 @@
- import net.minecraft.Util;
- import net.minecraft.core.BlockPos;
- import net.minecraft.nbt.CompoundTag;
-+import net.minecraft.nbt.ListTag;
- import net.minecraft.nbt.NbtUtils;
- import net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket;
- import net.minecraft.server.players.GameProfileCache;
-@@ -93,9 +94,37 @@
- 
-     @Override
-     public ClientboundBlockEntityDataPacket getUpdatePacket() {
--        return ClientboundBlockEntityDataPacket.create(this);
-+        return ClientboundBlockEntityDataPacket.create(this, e -> sanitizeTileEntityUUID(e.getUpdateTag())); // Paper
-+    }
-+
-+    // Paper start
-+    public static CompoundTag sanitizeTileEntityUUID(CompoundTag cmp) {
-+        CompoundTag owner = cmp.getCompound("Owner");
-+        if (!owner.isEmpty()) {
-+            sanitizeUUID(owner);
-+        }
-+        return cmp;
-     }
- 
-+    public static void sanitizeUUID(CompoundTag owner) {
-+        CompoundTag properties = owner.getCompound("Properties");
-+        ListTag list = null;
-+        if (!properties.isEmpty()) {
-+            list = properties.getList("textures", 10);
-+        }
-+
-+        if (list != null && !list.isEmpty()) {
-+            String textures = ((CompoundTag)list.get(0)).getString("Value");
-+            if (textures != null && textures.length() > 3) {
-+                UUID uuid = UUID.nameUUIDFromBytes(textures.getBytes());
-+                owner.putUUID("Id", uuid);
-+                return;
-+            }
-+        }
-+        owner.putUUID("Id", UUID.randomUUID());
-+    }
-+    // Paper end
-+
-     @Override
-     public CompoundTag getUpdateTag() {
-         return this.saveWithoutMetadata();
-@@ -113,13 +142,28 @@
+@@ -114,13 +114,28 @@
          updateGameprofile(this.owner, (owner) -> {
              this.owner = owner;
              this.setChanged();
@@ -77,7 +30,7 @@
                      Util.ifElse(profile, (profilex) -> {
                          Property property = Iterables.getFirst(profilex.getProperties().get("textures"), (Property)null);
                          if (property == null) {
-@@ -136,6 +180,20 @@
+@@ -137,6 +152,20 @@
                              callback.accept(owner);
                          });
                      });

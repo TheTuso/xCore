@@ -19,7 +19,7 @@
  
 @@ -124,8 +125,9 @@
  
-     public static boolean checkSilverfishSpawnRules(EntityType<Silverfish> type, LevelAccessor world, MobSpawnType spawnReason, BlockPos pos, Random random) {
+     public static boolean checkSilverfishSpawnRules(EntityType<Silverfish> type, LevelAccessor world, MobSpawnType spawnReason, BlockPos pos, RandomSource random) {
          if (checkAnyLightMonsterSpawnRules(type, world, spawnReason, pos, random)) {
 -            Player player = world.getNearestPlayer((double)pos.getX() + 0.5D, (double)pos.getY() + 0.5D, (double)pos.getZ() + 0.5D, 5.0D, true);
 -            return player == null;
@@ -60,7 +60,7 @@
 +            --this.lookForFriends;
 +            if (this.lookForFriends <= 0) {
 +                Level world = this.silverfish.level;
-+                Random random = this.silverfish.getRandom();
++                RandomSource randomsource = this.silverfish.getRandom();
 +                BlockPos blockposition = this.silverfish.blockPosition();
 +
 +                for (int i = 0; i <= 5 && i >= -5; i = (i <= 0 ? 1 : 0) - i) {
@@ -72,7 +72,7 @@
 +
 +                            if (block instanceof InfestedBlock) {
 +                                // CraftBukkit start
-+                                if (org.bukkit.craftbukkit.v1_18_R2.event.CraftEventFactory.callEntityChangeBlockEvent(this.silverfish, blockposition1, net.minecraft.world.level.block.Blocks.AIR.defaultBlockState()).isCancelled()) {
++                                if (org.bukkit.craftbukkit.v1_19_R1.event.CraftEventFactory.callEntityChangeBlockEvent(this.silverfish, blockposition1, net.minecraft.world.level.block.Blocks.AIR.defaultBlockState()).isCancelled()) {
 +                                    continue;
 +                                }
 +                                // CraftBukkit end
@@ -82,7 +82,7 @@
 +                                    world.setBlock(blockposition1, ((InfestedBlock) block).hostStateByInfested(world.getBlockState(blockposition1)), 3);
 +                                }
 +
-+                                if (random.nextBoolean()) {
++                                if (randomsource.nextBoolean()) {
 +                                    return;
 +                                }
 +                            }
@@ -99,16 +99,20 @@
          @Nullable
          private Direction selectedDirection;
          private boolean doMerge;
-@@ -154,11 +217,13 @@
+@@ -153,12 +216,14 @@
+             } else if (!this.mob.getNavigation().isDone()) {
                  return false;
              } else {
-                 Random random = this.mob.getRandom();
-+
-                 if (this.mob.level.getGameRules().getBoolean(GameRules.RULE_MOBGRIEFING) && random.nextInt(reducedTickDelay(10)) == 0) {
-                     this.selectedDirection = Direction.getRandom(random);
+-                RandomSource randomSource = this.mob.getRandom();
+-                if (this.mob.level.getGameRules().getBoolean(GameRules.RULE_MOBGRIEFING) && randomSource.nextInt(reducedTickDelay(10)) == 0) {
+-                    this.selectedDirection = Direction.getRandom(randomSource);
 -                    BlockPos blockPos = (new BlockPos(this.mob.getX(), this.mob.getY() + 0.5D, this.mob.getZ())).relative(this.selectedDirection);
 -                    BlockState blockState = this.mob.level.getBlockState(blockPos);
 -                    if (InfestedBlock.isCompatibleHostBlock(blockState)) {
++                RandomSource randomsource = this.mob.getRandom();
++
++                if (this.mob.level.getGameRules().getBoolean(GameRules.RULE_MOBGRIEFING) && randomsource.nextInt(reducedTickDelay(10)) == 0) {
++                    this.selectedDirection = Direction.getRandom(randomsource);
 +                    BlockPos blockposition = (new BlockPos(this.mob.getX(), this.mob.getY() + 0.5D, this.mob.getZ())).relative(this.selectedDirection);
 +                    BlockState iblockdata = this.mob.level.getBlockState(blockposition);
 +
@@ -131,7 +135,7 @@
 +
 +                if (InfestedBlock.isCompatibleHostBlock(iblockdata)) {
 +                    // CraftBukkit start
-+                    if (org.bukkit.craftbukkit.v1_18_R2.event.CraftEventFactory.callEntityChangeBlockEvent(this.mob, blockposition, InfestedBlock.infestedStateByHost(iblockdata)).isCancelled()) {
++                    if (org.bukkit.craftbukkit.v1_19_R1.event.CraftEventFactory.callEntityChangeBlockEvent(this.mob, blockposition, InfestedBlock.infestedStateByHost(iblockdata)).isCancelled()) {
 +                        return;
 +                    }
 +                    // CraftBukkit end
@@ -169,7 +173,7 @@
 -            --this.lookForFriends;
 -            if (this.lookForFriends <= 0) {
 -                Level level = this.silverfish.level;
--                Random random = this.silverfish.getRandom();
+-                RandomSource randomSource = this.silverfish.getRandom();
 -                BlockPos blockPos = this.silverfish.blockPosition();
 -
 -                for(int i = 0; i <= 5 && i >= -5; i = (i <= 0 ? 1 : 0) - i) {
@@ -185,7 +189,7 @@
 -                                    level.setBlock(blockPos2, ((InfestedBlock)block).hostStateByInfested(level.getBlockState(blockPos2)), 3);
 -                                }
 -
--                                if (random.nextBoolean()) {
+-                                if (randomSource.nextBoolean()) {
 -                                    return;
 -                                }
 -                            }

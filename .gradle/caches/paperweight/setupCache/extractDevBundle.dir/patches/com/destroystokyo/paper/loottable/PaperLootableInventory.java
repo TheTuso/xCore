@@ -17,7 +17,7 @@ public interface PaperLootableInventory extends LootableInventory, Lootable {
 
     @Override
     default boolean isRefillEnabled() {
-        return getNMSWorld().paperConfig.autoReplenishLootables;
+        return getNMSWorld().paperConfig().lootables.autoReplenish;
     }
 
     @Override

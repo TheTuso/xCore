@@ -5,7 +5,7 @@
  import net.minecraft.world.item.Items;
  
 +// CraftBukkit start
-+import org.bukkit.craftbukkit.v1_18_R2.inventory.CraftInventoryView;
++import org.bukkit.craftbukkit.v1_19_R1.inventory.CraftInventoryView;
 +import org.bukkit.inventory.InventoryView;
 +// CraftBukkit end
 +
@@ -15,7 +15,7 @@
      private final AbstractHorse horse;
  
 +    // CraftBukkit start
-+    org.bukkit.craftbukkit.v1_18_R2.inventory.CraftInventoryView bukkitEntity;
++    org.bukkit.craftbukkit.v1_19_R1.inventory.CraftInventoryView bukkitEntity;
 +    Inventory player;
 +
 +    @Override

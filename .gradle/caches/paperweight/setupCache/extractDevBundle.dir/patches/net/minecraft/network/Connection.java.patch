@@ -1,14 +1,14 @@
 --- a/net/minecraft/network/Connection.java
 +++ b/net/minecraft/network/Connection.java
-@@ -40,6 +40,7 @@
+@@ -35,6 +35,7 @@
+ import javax.crypto.Cipher;
+ import net.minecraft.Util;
+ import net.minecraft.network.chat.Component;
++import net.minecraft.network.chat.MutableComponent;
+ import net.minecraft.network.protocol.Packet;
  import net.minecraft.network.protocol.PacketFlow;
  import net.minecraft.network.protocol.game.ClientboundDisconnectPacket;
- import net.minecraft.network.protocol.login.ClientboundLoginDisconnectPacket;
-+import net.minecraft.server.MinecraftServer;
- import net.minecraft.server.RunningOnDifferentThreadException;
- import net.minecraft.server.network.ServerGamePacketListenerImpl;
- import net.minecraft.server.network.ServerLoginPacketListenerImpl;
-@@ -50,33 +51,41 @@
+@@ -49,33 +50,41 @@
  import org.slf4j.Marker;
  import org.slf4j.MarkerFactory;
  
@@ -59,7 +59,7 @@
      private PacketListener packetListener;
      private Component disconnectedReason;
      private boolean encrypted;
-@@ -87,73 +96,213 @@
+@@ -86,73 +95,213 @@
      private float averageSentPackets;
      private int tickCount;
      private boolean handlingFault;
@@ -129,15 +129,15 @@
 +    // Paper end - allow controlled flushing
 +    // Paper start - packet limiter
 +    protected final Object PACKET_LIMIT_LOCK = new Object();
-+    protected final io.papermc.paper.util.IntervalledCounter allPacketCounts = com.destroystokyo.paper.PaperConfig.allPacketsLimit != null ? new io.papermc.paper.util.IntervalledCounter(
-+            (long)(com.destroystokyo.paper.PaperConfig.allPacketsLimit.packetLimitInterval * 1.0e9)
++    protected final @Nullable io.papermc.paper.util.IntervalledCounter allPacketCounts = io.papermc.paper.configuration.GlobalConfiguration.get().packetLimiter.allPackets.isEnabled() ? new io.papermc.paper.util.IntervalledCounter(
++            (long)(io.papermc.paper.configuration.GlobalConfiguration.get().packetLimiter.allPackets.interval() * 1.0e9)
 +    ) : null;
 +    protected final java.util.Map<Class<? extends net.minecraft.network.protocol.Packet<?>>, io.papermc.paper.util.IntervalledCounter> packetSpecificLimits = new java.util.HashMap<>();
 +
 +    private boolean stopReadingPackets;
 +    private void killForPacketSpam() {
-+        this.sendPacket(new ClientboundDisconnectPacket(org.bukkit.craftbukkit.v1_18_R2.util.CraftChatMessage.fromString(com.destroystokyo.paper.PaperConfig.kickMessage, true)[0]), (future) -> {
-+            this.disconnect(org.bukkit.craftbukkit.v1_18_R2.util.CraftChatMessage.fromString(com.destroystokyo.paper.PaperConfig.kickMessage, true)[0]);
++        this.sendPacket(new ClientboundDisconnectPacket(io.papermc.paper.adventure.PaperAdventure.asVanilla(io.papermc.paper.configuration.GlobalConfiguration.get().packetLimiter.kickMessage)), (future) -> {
++            this.disconnect(io.papermc.paper.adventure.PaperAdventure.asVanilla(io.papermc.paper.configuration.GlobalConfiguration.get().packetLimiter.kickMessage));
 +        });
 +        this.setReadOnly();
 +        this.stopReadingPackets = true;
@@ -180,7 +180,7 @@
  
 -    public void channelInactive(ChannelHandlerContext channelHandlerContext) {
 +    public void channelInactive(ChannelHandlerContext channelhandlercontext) {
-         this.disconnect(new TranslatableComponent("disconnect.endOfStream"));
+         this.disconnect(Component.translatable("disconnect.endOfStream"));
      }
  
 -    public void exceptionCaught(ChannelHandlerContext channelHandlerContext, Throwable throwable) {
@@ -208,32 +208,32 @@
 -                    LOGGER.debug("Timeout", throwable);
 +                    Connection.LOGGER.debug("Timeout", throwable);
 +                    if (player != null) player.quitReason = org.bukkit.event.player.PlayerQuitEvent.QuitReason.TIMED_OUT; // Paper
-                     this.disconnect(new TranslatableComponent("disconnect.timeout"));
+                     this.disconnect(Component.translatable("disconnect.timeout"));
                  } else {
--                    Component component = new TranslatableComponent("disconnect.genericReason", "Internal Exception: " + throwable);
+-                    Component component = Component.translatable("disconnect.genericReason", "Internal Exception: " + throwable);
 -                    if (bl) {
 -                        LOGGER.debug("Failed to sent packet", throwable);
 -                        ConnectionProtocol connectionProtocol = this.getCurrentProtocol();
 -                        Packet<?> packet = (Packet<?>)(connectionProtocol == ConnectionProtocol.LOGIN ? new ClientboundLoginDisconnectPacket(component) : new ClientboundDisconnectPacket(component));
 -                        this.send(packet, (future) -> {
 -                            this.disconnect(component);
-+                    TranslatableComponent chatmessage = new TranslatableComponent("disconnect.genericReason", new Object[]{"Internal Exception: " + throwable});
++                    MutableComponent ichatmutablecomponent = Component.translatable("disconnect.genericReason", "Internal Exception: " + throwable);
 +
 +                    if (player != null) player.quitReason = org.bukkit.event.player.PlayerQuitEvent.QuitReason.ERRONEOUS_STATE; // Paper
 +                    if (flag) {
 +                        Connection.LOGGER.debug("Failed to sent packet", throwable);
 +                        ConnectionProtocol enumprotocol = this.getCurrentProtocol();
-+                        Packet<?> packet = enumprotocol == ConnectionProtocol.LOGIN ? new ClientboundLoginDisconnectPacket(chatmessage) : new ClientboundDisconnectPacket(chatmessage);
++                        Packet<?> packet = enumprotocol == ConnectionProtocol.LOGIN ? new ClientboundLoginDisconnectPacket(ichatmutablecomponent) : new ClientboundDisconnectPacket(ichatmutablecomponent);
 +
 +                        this.send((Packet) packet, (future) -> {
-+                            this.disconnect(chatmessage);
++                            this.disconnect(ichatmutablecomponent);
                          });
                          this.setReadOnly();
                      } else {
 -                        LOGGER.debug("Double fault", throwable);
 -                        this.disconnect(component);
 +                        Connection.LOGGER.debug("Double fault", throwable);
-+                        this.disconnect(chatmessage);
++                        this.disconnect(ichatmutablecomponent);
                      }
                  }
  
@@ -250,29 +250,29 @@
 +                return;
 +            }
 +            if (this.allPacketCounts != null ||
-+                    com.destroystokyo.paper.PaperConfig.packetSpecificLimits.containsKey(packet.getClass())) {
++                io.papermc.paper.configuration.GlobalConfiguration.get().packetLimiter.overrides.containsKey(packet.getClass())) {
 +                long time = System.nanoTime();
 +                synchronized (PACKET_LIMIT_LOCK) {
 +                    if (this.allPacketCounts != null) {
 +                        this.allPacketCounts.updateAndAdd(1, time);
-+                        if (this.allPacketCounts.getRate() >= com.destroystokyo.paper.PaperConfig.allPacketsLimit.maxPacketRate) {
++                        if (this.allPacketCounts.getRate() >= io.papermc.paper.configuration.GlobalConfiguration.get().packetLimiter.allPackets.maxPacketRate()) {
 +                            this.killForPacketSpam();
 +                            return;
 +                        }
 +                    }
 +
 +                    for (Class<?> check = packet.getClass(); check != Object.class; check = check.getSuperclass()) {
-+                        com.destroystokyo.paper.PaperConfig.PacketLimit packetSpecificLimit =
-+                            com.destroystokyo.paper.PaperConfig.packetSpecificLimits.get(check);
-+                        if (packetSpecificLimit == null) {
++                        io.papermc.paper.configuration.GlobalConfiguration.PacketLimiter.PacketLimit packetSpecificLimit =
++                            io.papermc.paper.configuration.GlobalConfiguration.get().packetLimiter.overrides.get(check);
++                        if (packetSpecificLimit == null || !packetSpecificLimit.isEnabled()) {
 +                            continue;
 +                        }
 +                        io.papermc.paper.util.IntervalledCounter counter = this.packetSpecificLimits.computeIfAbsent((Class)check, (clazz) -> {
-+                            return new io.papermc.paper.util.IntervalledCounter((long)(packetSpecificLimit.packetLimitInterval * 1.0e9));
++                            return new io.papermc.paper.util.IntervalledCounter((long)(packetSpecificLimit.interval() * 1.0e9));
 +                        });
 +                        counter.updateAndAdd(1, time);
-+                        if (counter.getRate() >= packetSpecificLimit.maxPacketRate) {
-+                            switch (packetSpecificLimit.violateAction) {
++                        if (counter.getRate() >= packetSpecificLimit.maxPacketRate()) {
++                            switch (packetSpecificLimit.action()) {
 +                                case DROP:
 +                                    return;
 +                                case KICK:
@@ -292,15 +292,15 @@
 +            } catch (RunningOnDifferentThreadException cancelledpackethandleexception) {
 +                ;
 +            } catch (RejectedExecutionException rejectedexecutionexception) {
-                 this.disconnect(new TranslatableComponent("multiplayer.disconnect.server_shutdown"));
+                 this.disconnect(Component.translatable("multiplayer.disconnect.server_shutdown"));
 -            } catch (ClassCastException var6) {
 -                LOGGER.error("Received {} that couldn't be processed", packet.getClass(), var6);
 +            } catch (ClassCastException classcastexception) {
 +                Connection.LOGGER.error("Received {} that couldn't be processed", packet.getClass(), classcastexception);
-                 this.disconnect(new TranslatableComponent("multiplayer.disconnect.invalid_packet"));
+                 this.disconnect(Component.translatable("multiplayer.disconnect.invalid_packet"));
              }
  
-@@ -163,84 +312,262 @@
+@@ -162,84 +311,264 @@
      }
  
      private static <T extends PacketListener> void genericsFtw(Packet<T> packet, PacketListener listener) {
@@ -345,7 +345,9 @@
 +        private static boolean canSendImmediate(Connection networkManager, Packet<?> packet) {
 +            return networkManager.isPending || networkManager.protocol != ConnectionProtocol.PLAY ||
 +                packet instanceof net.minecraft.network.protocol.game.ClientboundKeepAlivePacket ||
-+                packet instanceof net.minecraft.network.protocol.game.ClientboundChatPacket ||
++                packet instanceof net.minecraft.network.protocol.game.ClientboundPlayerChatPacket ||
++                packet instanceof net.minecraft.network.protocol.game.ClientboundSystemChatPacket ||
++                packet instanceof net.minecraft.network.protocol.game.ClientboundChatPreviewPacket ||
 +                packet instanceof net.minecraft.network.protocol.game.ClientboundCommandSuggestionsPacket ||
 +                packet instanceof net.minecraft.network.protocol.game.ClientboundSetTitleTextPacket ||
 +                packet instanceof net.minecraft.network.protocol.game.ClientboundSetSubtitleTextPacket ||
@@ -483,7 +485,7 @@
 +        // Paper start
 +        } catch (Exception e) {
 +            LOGGER.error("NetworkException: " + player, e);
-+            disconnect(new net.minecraft.network.chat.TranslatableComponent("disconnect.genericReason", "Internal Exception: " + e.getMessage()));
++            disconnect(Component.translatable("disconnect.genericReason", "Internal Exception: " + e.getMessage()));
 +            packet.onPacketDispatchFinish(player, null);
 +        }
 +        // Paper end
@@ -558,14 +560,14 @@
      }
 +    // Paper end
  
-+    private static final int MAX_PER_TICK = com.destroystokyo.paper.PaperConfig.maxJoinsPerTick; // Paper
++    private static final int MAX_PER_TICK = io.papermc.paper.configuration.GlobalConfiguration.get().misc.maxJoinsPerTick; // Paper
 +    private static int joinAttemptsThisTick; // Paper
 +    private static int currTick; // Paper
      public void tick() {
          this.flushQueue();
 +        // Paper start
-+        if (currTick != MinecraftServer.currentTick) {
-+            currTick = MinecraftServer.currentTick;
++        if (currTick != net.minecraft.server.MinecraftServer.currentTick) {
++            currTick = net.minecraft.server.MinecraftServer.currentTick;
 +            joinAttemptsThisTick = 0;
 +        }
 +        // Paper end
@@ -590,7 +592,7 @@
          }
  
          if (!this.isConnected() && !this.disconnectionHandled) {
-@@ -248,7 +575,7 @@
+@@ -247,7 +576,7 @@
          }
  
          if (this.channel != null) {
@@ -599,7 +601,7 @@
          }
  
          if (this.tickCount++ % 20 == 0) {
-@@ -258,8 +585,8 @@
+@@ -257,8 +586,8 @@
      }
  
      protected void tickSecond() {
@@ -610,7 +612,7 @@
          this.sentPackets = 0;
          this.receivedPackets = 0;
      }
-@@ -268,9 +595,25 @@
+@@ -267,9 +596,25 @@
          return this.address;
      }
  
@@ -637,7 +639,7 @@
              this.disconnectedReason = disconnectReason;
          }
  
-@@ -289,45 +632,65 @@
+@@ -288,45 +633,65 @@
      }
  
      public static Connection connectToServer(InetSocketAddress address, boolean useEpoll) {
@@ -724,7 +726,7 @@
  
      public boolean isEncrypted() {
          return this.encrypted;
-@@ -356,16 +719,17 @@
+@@ -355,16 +720,17 @@
  
      public void setupCompression(int compressionThreshold, boolean rejectsBadPackets) {
          if (compressionThreshold >= 0) {
@@ -746,7 +748,7 @@
              }
          } else {
              if (this.channel.pipeline().get("decompress") instanceof CompressionDecoder) {
-@@ -382,7 +746,7 @@
+@@ -381,7 +747,7 @@
      public void handleDisconnection() {
          if (this.channel != null && !this.channel.isOpen()) {
              if (this.disconnectionHandled) {
@@ -755,9 +757,9 @@
              } else {
                  this.disconnectionHandled = true;
                  if (this.getDisconnectedReason() != null) {
-@@ -390,6 +754,27 @@
+@@ -389,6 +755,27 @@
                  } else if (this.getPacketListener() != null) {
-                     this.getPacketListener().onDisconnect(new TranslatableComponent("multiplayer.disconnect.generic"));
+                     this.getPacketListener().onDisconnect(Component.translatable("multiplayer.disconnect.generic"));
                  }
 +                clearPacketQueue(); // Paper
 +                // Paper start - Add PlayerConnectionCloseEvent
@@ -783,7 +785,7 @@
              }
  
          }
-@@ -403,7 +788,8 @@
+@@ -402,7 +789,8 @@
          return this.averageSentPackets;
      }
  
@@ -793,7 +795,7 @@
          final Packet<?> packet;
          @Nullable
          final GenericFutureListener<? extends Future<? super Void>> listener;
-@@ -413,4 +799,16 @@
+@@ -412,4 +800,16 @@
              this.listener = callback;
          }
      }

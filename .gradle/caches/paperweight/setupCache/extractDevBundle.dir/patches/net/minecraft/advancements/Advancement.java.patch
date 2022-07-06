@@ -16,9 +16,9 @@
  import net.minecraft.network.chat.HoverEvent;
 +import net.minecraft.network.chat.MutableComponent;
  import net.minecraft.network.chat.Style;
- import net.minecraft.network.chat.TextComponent;
  import net.minecraft.resources.ResourceLocation;
-@@ -27,6 +30,7 @@
+ import net.minecraft.util.GsonHelper;
+@@ -26,6 +29,7 @@
  import org.apache.commons.lang3.ArrayUtils;
  
  public class Advancement {
@@ -26,17 +26,17 @@
      @Nullable
      private final Advancement parent;
      @Nullable
-@@ -37,6 +41,7 @@
+@@ -36,6 +40,7 @@
      private final String[][] requirements;
      private final Set<Advancement> children = Sets.newLinkedHashSet();
      private final Component chatComponent;
-+    public final org.bukkit.advancement.Advancement bukkit = new org.bukkit.craftbukkit.v1_18_R2.advancement.CraftAdvancement(this); // CraftBukkit
++    public final org.bukkit.advancement.Advancement bukkit = new org.bukkit.craftbukkit.v1_19_R1.advancement.CraftAdvancement(this); // CraftBukkit
  
      public Advancement(ResourceLocation id, @Nullable Advancement parent, @Nullable DisplayInfo display, AdvancementRewards rewards, Map<String, Criterion> criteria, String[][] requirements) {
          this.id = id;
-@@ -52,13 +57,14 @@
+@@ -51,13 +56,14 @@
          if (display == null) {
-             this.chatComponent = new TextComponent(id.toString());
+             this.chatComponent = Component.literal(id.toString());
          } else {
 -            Component component = display.getTitle();
 -            ChatFormatting chatFormatting = display.getFrame().getChatColor();
@@ -55,7 +55,7 @@
          }
  
      }
-@@ -81,9 +87,10 @@
+@@ -80,9 +86,10 @@
          return this.rewards;
      }
  
@@ -68,7 +68,7 @@
      }
  
      public Iterable<Advancement> getChildren() {
-@@ -106,19 +113,18 @@
+@@ -105,19 +112,18 @@
          return this.id;
      }
  
@@ -90,7 +90,7 @@
      public int hashCode() {
          return this.id.hashCode();
      }
-@@ -132,19 +138,23 @@
+@@ -131,19 +137,23 @@
      }
  
      public static class Builder {
@@ -117,7 +117,7 @@
              this.parentId = parentId;
              this.display = display;
              this.rewards = rewards;
-@@ -153,6 +163,9 @@
+@@ -152,6 +162,9 @@
          }
  
          private Builder() {
@@ -127,7 +127,7 @@
          }
  
          public static Advancement.Builder advancement() {
-@@ -219,7 +232,7 @@
+@@ -218,7 +231,7 @@
                  return true;
              } else {
                  if (this.parent == null) {
@@ -136,7 +136,7 @@
                  }
  
                  return this.parent != null;
-@@ -227,7 +240,7 @@
+@@ -226,7 +239,7 @@
          }
  
          public Advancement build(ResourceLocation id) {
@@ -145,15 +145,15 @@
                  return null;
              })) {
                  throw new IllegalStateException("Tried to build incomplete advancement!");
-@@ -242,6 +255,7 @@
+@@ -241,6 +254,7 @@
  
-         public Advancement save(Consumer<Advancement> consumer, String id) {
+         public Advancement save(Consumer<Advancement> exporter, String id) {
              Advancement advancement = this.build(new ResourceLocation(id));
 +
-             consumer.accept(advancement);
+             exporter.accept(advancement);
              return advancement;
          }
-@@ -251,39 +265,50 @@
+@@ -250,39 +264,50 @@
                  this.requirements = this.requirementsStrategy.createRequirements(this.criteria.keySet());
              }
  
@@ -221,8 +221,15 @@
          }
  
          public void serializeToNetwork(FriendlyByteBuf buf) {
-@@ -307,97 +332,138 @@
+@@ -291,102 +316,143 @@
+             }
  
+             buf.writeNullable(this.parentId, FriendlyByteBuf::writeResourceLocation);
+-            buf.writeNullable(this.display, (buf2, display) -> {
+-                display.serializeToNetwork(buf2);
++            buf.writeNullable(this.display, (packetdataserializer1, advancementdisplay) -> {
++                advancementdisplay.serializeToNetwork(packetdataserializer1);
+             });
              Criterion.serializeToNetwork(this.criteria, buf);
              buf.writeVarInt(this.requirements.length);
 +            String[][] astring = this.requirements;
@@ -378,10 +385,10 @@
          }
  
          public static Advancement.Builder fromNetwork(FriendlyByteBuf buf) {
--            ResourceLocation resourceLocation = buf.readBoolean() ? buf.readResourceLocation() : null;
--            DisplayInfo displayInfo = buf.readBoolean() ? DisplayInfo.fromNetwork(buf) : null;
-+            ResourceLocation minecraftkey = buf.readBoolean() ? buf.readResourceLocation() : null;
-+            DisplayInfo advancementdisplay = buf.readBoolean() ? DisplayInfo.fromNetwork(buf) : null;
+-            ResourceLocation resourceLocation = buf.readNullable(FriendlyByteBuf::readResourceLocation);
+-            DisplayInfo displayInfo = buf.readNullable(DisplayInfo::fromNetwork);
++            ResourceLocation minecraftkey = (ResourceLocation) buf.readNullable(FriendlyByteBuf::readResourceLocation);
++            DisplayInfo advancementdisplay = (DisplayInfo) buf.readNullable(DisplayInfo::fromNetwork);
              Map<String, Criterion> map = Criterion.criteriaFromNetwork(buf);
 -            String[][] strings = new String[buf.readVarInt()][];
 +            String[][] astring = new String[buf.readVarInt()][];

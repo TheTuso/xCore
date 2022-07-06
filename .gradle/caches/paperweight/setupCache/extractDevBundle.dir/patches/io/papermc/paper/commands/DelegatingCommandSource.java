@@ -16,8 +16,8 @@ public class DelegatingCommandSource implements CommandSource {
     }
 
     @Override
-    public void sendMessage(Component message, UUID sender) {
-        delegate.sendMessage(message, sender);
+    public void sendSystemMessage(Component message) {
+        delegate.sendSystemMessage(message);
     }
 
     @Override

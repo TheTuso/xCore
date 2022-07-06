@@ -1,6 +1,6 @@
 --- a/net/minecraft/server/commands/SpreadPlayersCommand.java
 +++ b/net/minecraft/server/commands/SpreadPlayersCommand.java
-@@ -6,16 +6,18 @@
+@@ -6,15 +6,17 @@
  import com.mojang.brigadier.arguments.BoolArgumentType;
  import com.mojang.brigadier.arguments.FloatArgumentType;
  import com.mojang.brigadier.arguments.IntegerArgumentType;
@@ -13,7 +13,6 @@
 +import java.util.Iterator;
  import java.util.Locale;
  import java.util.Map;
- import java.util.Random;
  import java.util.Set;
  import net.minecraft.commands.CommandSourceStack;
 -import net.minecraft.commands.Commands;
@@ -27,19 +26,19 @@
 +
      private static final int MAX_ITERATION_COUNT = 10000;
 -    private static final Dynamic4CommandExceptionType ERROR_FAILED_TO_SPREAD_TEAMS = new Dynamic4CommandExceptionType((pilesCount, x, z, maxSpreadDistance) -> {
--        return new TranslatableComponent("commands.spreadplayers.failed.teams", pilesCount, x, z, maxSpreadDistance);
+-        return Component.translatable("commands.spreadplayers.failed.teams", pilesCount, x, z, maxSpreadDistance);
 +    private static final Dynamic4CommandExceptionType ERROR_FAILED_TO_SPREAD_TEAMS = new Dynamic4CommandExceptionType((object, object1, object2, object3) -> {
-+        return new TranslatableComponent("commands.spreadplayers.failed.teams", new Object[]{object, object1, object2, object3});
++        return Component.translatable("commands.spreadplayers.failed.teams", object, object1, object2, object3);
      });
 -    private static final Dynamic4CommandExceptionType ERROR_FAILED_TO_SPREAD_ENTITIES = new Dynamic4CommandExceptionType((pilesCount, x, z, maxSpreadDistance) -> {
--        return new TranslatableComponent("commands.spreadplayers.failed.entities", pilesCount, x, z, maxSpreadDistance);
+-        return Component.translatable("commands.spreadplayers.failed.entities", pilesCount, x, z, maxSpreadDistance);
 +    private static final Dynamic4CommandExceptionType ERROR_FAILED_TO_SPREAD_ENTITIES = new Dynamic4CommandExceptionType((object, object1, object2, object3) -> {
-+        return new TranslatableComponent("commands.spreadplayers.failed.entities", new Object[]{object, object1, object2, object3});
++        return Component.translatable("commands.spreadplayers.failed.entities", object, object1, object2, object3);
      });
 -    private static final Dynamic2CommandExceptionType ERROR_INVALID_MAX_HEIGHT = new Dynamic2CommandExceptionType((maxY, worldBottomY) -> {
--        return new TranslatableComponent("commands.spreadplayers.failed.invalid.height", maxY, worldBottomY);
+-        return Component.translatable("commands.spreadplayers.failed.invalid.height", maxY, worldBottomY);
 +    private static final Dynamic2CommandExceptionType ERROR_INVALID_MAX_HEIGHT = new Dynamic2CommandExceptionType((object, object1) -> {
-+        return new TranslatableComponent("commands.spreadplayers.failed.invalid.height", new Object[]{object, object1});
++        return Component.translatable("commands.spreadplayers.failed.invalid.height", object, object1);
      });
  
 +    public SpreadPlayersCommand() {}
@@ -71,26 +70,27 @@
 +        if (maxY < j) {
 +            throw SpreadPlayersCommand.ERROR_INVALID_MAX_HEIGHT.create(maxY, j);
          } else {
-             Random random = new Random();
+-            RandomSource randomSource = RandomSource.create();
 -            double d = (double)(center.x - maxRange);
 -            double e = (double)(center.y - maxRange);
 -            double f = (double)(center.x + maxRange);
 -            double g = (double)(center.y + maxRange);
--            SpreadPlayersCommand.Position[] positions = createInitialPositions(random, respectTeams ? getNumberOfTeams(players) : players.size(), d, e, f, g);
--            spreadPositions(center, (double)spreadDistance, serverLevel, random, d, e, f, g, maxY, positions, respectTeams);
+-            SpreadPlayersCommand.Position[] positions = createInitialPositions(randomSource, respectTeams ? getNumberOfTeams(players) : players.size(), d, e, f, g);
+-            spreadPositions(center, (double)spreadDistance, serverLevel, randomSource, d, e, f, g, maxY, positions, respectTeams);
 -            double h = setPlayerPositions(players, serverLevel, positions, maxY, respectTeams);
--            source.sendSuccess(new TranslatableComponent("commands.spreadplayers.success." + (respectTeams ? "teams" : "entities"), positions.length, center.x, center.y, String.format(Locale.ROOT, "%.2f", h)), true);
+-            source.sendSuccess(Component.translatable("commands.spreadplayers.success." + (respectTeams ? "teams" : "entities"), positions.length, center.x, center.y, String.format(Locale.ROOT, "%.2f", h)), true);
 -            return positions.length;
++            RandomSource randomsource = RandomSource.create();
 +            double d0 = (double) (center.x - maxRange);
 +            double d1 = (double) (center.y - maxRange);
 +            double d2 = (double) (center.x + maxRange);
 +            double d3 = (double) (center.y + maxRange);
-+            SpreadPlayersCommand.Position[] acommandspreadplayers_a = SpreadPlayersCommand.createInitialPositions(random, respectTeams ? SpreadPlayersCommand.getNumberOfTeams(players) : players.size(), d0, d1, d2, d3);
++            SpreadPlayersCommand.Position[] acommandspreadplayers_a = SpreadPlayersCommand.createInitialPositions(randomsource, respectTeams ? SpreadPlayersCommand.getNumberOfTeams(players) : players.size(), d0, d1, d2, d3);
 +
-+            SpreadPlayersCommand.spreadPositions(center, (double) spreadDistance, worldserver, random, d0, d1, d2, d3, maxY, acommandspreadplayers_a, respectTeams);
++            SpreadPlayersCommand.spreadPositions(center, (double) spreadDistance, worldserver, randomsource, d0, d1, d2, d3, maxY, acommandspreadplayers_a, respectTeams);
 +            double d4 = SpreadPlayersCommand.setPlayerPositions(players, worldserver, acommandspreadplayers_a, maxY, respectTeams);
 +
-+            source.sendSuccess(new TranslatableComponent("commands.spreadplayers.success." + (respectTeams ? "teams" : "entities"), new Object[]{acommandspreadplayers_a.length, center.x, center.y, String.format(Locale.ROOT, "%.2f", d4)}), true);
++            source.sendSuccess(Component.translatable("commands.spreadplayers.success." + (respectTeams ? "teams" : "entities"), acommandspreadplayers_a.length, center.x, center.y, String.format(Locale.ROOT, "%.2f", d4)), true);
 +            return acommandspreadplayers_a.length;
          }
      }
@@ -114,7 +114,7 @@
 @@ -87,134 +98,164 @@
      }
  
-     private static void spreadPositions(Vec2 center, double spreadDistance, ServerLevel world, Random random, double minX, double minZ, double maxX, double maxZ, int maxY, SpreadPlayersCommand.Position[] piles, boolean respectTeams) throws CommandSyntaxException {
+     private static void spreadPositions(Vec2 center, double spreadDistance, ServerLevel world, RandomSource random, double minX, double minZ, double maxX, double maxZ, int maxY, SpreadPlayersCommand.Position[] piles, boolean respectTeams) throws CommandSyntaxException {
 -        boolean bl = true;
 -        double d = (double)Float.MAX_VALUE;
 +        boolean flag1 = true;
@@ -297,7 +297,7 @@
 +        }
      }
  
-     private static SpreadPlayersCommand.Position[] createInitialPositions(Random random, int count, double minX, double minZ, double maxX, double maxZ) {
+     private static SpreadPlayersCommand.Position[] createInitialPositions(RandomSource random, int count, double minX, double minZ, double maxX, double maxZ) {
 -        SpreadPlayersCommand.Position[] positions = new SpreadPlayersCommand.Position[count];
 +        SpreadPlayersCommand.Position[] acommandspreadplayers_a = new SpreadPlayersCommand.Position[count];
  
@@ -419,7 +419,7 @@
 +            return blockposition.getY() < maxY && !material.isLiquid() && material != Material.FIRE;
          }
  
-         public void randomize(Random random, double minX, double minZ, double maxX, double maxZ) {
+         public void randomize(RandomSource random, double minX, double minZ, double maxX, double maxZ) {
              this.x = Mth.nextDouble(random, minX, maxX);
              this.z = Mth.nextDouble(random, minZ, maxZ);
          }

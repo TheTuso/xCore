@@ -33,48 +33,52 @@
 +        if (CauldronBlock.shouldHandlePrecipitation(world, precipitation)) {
              if (precipitation == Biome.Precipitation.RAIN) {
 -                world.setBlockAndUpdate(pos, Blocks.WATER_CAULDRON.defaultBlockState());
--                world.gameEvent((Entity)null, GameEvent.FLUID_PLACE, pos);
+-                world.gameEvent((Entity)null, GameEvent.BLOCK_CHANGE, pos);
 +                // Paper start - call event for initial fill
 +                if (!LayeredCauldronBlock.changeLevel(state, world, pos, Blocks.WATER_CAULDRON.defaultBlockState(), null, CauldronLevelChangeEvent.ChangeReason.NATURAL_FILL)) {
 +                    return;
 +                }
 +                // Paper end
-+                world.gameEvent((Entity) null, GameEvent.FLUID_PLACE, pos);
++                world.gameEvent((Entity) null, GameEvent.BLOCK_CHANGE, pos);
              } else if (precipitation == Biome.Precipitation.SNOW) {
 -                world.setBlockAndUpdate(pos, Blocks.POWDER_SNOW_CAULDRON.defaultBlockState());
--                world.gameEvent((Entity)null, GameEvent.FLUID_PLACE, pos);
+-                world.gameEvent((Entity)null, GameEvent.BLOCK_CHANGE, pos);
 +                // Paper start - call event for initial fill
 +                if (!LayeredCauldronBlock.changeLevel(state, world, pos, Blocks.POWDER_SNOW_CAULDRON.defaultBlockState(), null, CauldronLevelChangeEvent.ChangeReason.NATURAL_FILL)) {
 +                    return;
 +                }
 +                // Paper end
-+                world.gameEvent((Entity) null, GameEvent.FLUID_PLACE, pos);
++                world.gameEvent((Entity) null, GameEvent.BLOCK_CHANGE, pos);
              }
  
          }
-@@ -56,13 +62,21 @@
+@@ -55,15 +61,23 @@
+ 
      @Override
      protected void receiveStalactiteDrip(BlockState state, Level world, BlockPos pos, Fluid fluid) {
++        BlockState iblockdata1;
++
          if (fluid == Fluids.WATER) {
--            world.setBlockAndUpdate(pos, Blocks.WATER_CAULDRON.defaultBlockState());
+-            BlockState blockState = Blocks.WATER_CAULDRON.defaultBlockState();
+-            world.setBlockAndUpdate(pos, blockState);
+-            world.gameEvent(GameEvent.BLOCK_CHANGE, pos, GameEvent.Context.of(blockState));
++            iblockdata1 = Blocks.WATER_CAULDRON.defaultBlockState();
 +            // Paper start - don't send level event or game event if cancelled
-+            if (!LayeredCauldronBlock.changeLevel(state, world, pos, Blocks.WATER_CAULDRON.defaultBlockState(), null, CauldronLevelChangeEvent.ChangeReason.NATURAL_FILL)) { // CraftBukkit
++            if (!LayeredCauldronBlock.changeLevel(state, world, pos, iblockdata1, null, CauldronLevelChangeEvent.ChangeReason.NATURAL_FILL)) { // CraftBukkit
 +                return;
 +            }
 +            // Paper end
              world.levelEvent(1047, pos, 0);
--            world.gameEvent((Entity)null, GameEvent.FLUID_PLACE, pos);
-+            world.gameEvent((Entity) null, GameEvent.FLUID_PLACE, pos);
          } else if (fluid == Fluids.LAVA) {
--            world.setBlockAndUpdate(pos, Blocks.LAVA_CAULDRON.defaultBlockState());
+-            BlockState blockState2 = Blocks.LAVA_CAULDRON.defaultBlockState();
+-            world.setBlockAndUpdate(pos, blockState2);
+-            world.gameEvent(GameEvent.BLOCK_CHANGE, pos, GameEvent.Context.of(blockState2));
++            iblockdata1 = Blocks.LAVA_CAULDRON.defaultBlockState();
 +            // Paper start - don't send level event or game event if cancelled
-+            if (!LayeredCauldronBlock.changeLevel(state, world, pos, Blocks.LAVA_CAULDRON.defaultBlockState(), null, CauldronLevelChangeEvent.ChangeReason.NATURAL_FILL)) { // CraftBukkit
++            if (!LayeredCauldronBlock.changeLevel(state, world, pos, iblockdata1, null, CauldronLevelChangeEvent.ChangeReason.NATURAL_FILL)) { // CraftBukkit
 +                return;
 +            }
 +            // Paper end
              world.levelEvent(1046, pos, 0);
--            world.gameEvent((Entity)null, GameEvent.FLUID_PLACE, pos);
-+            world.gameEvent((Entity) null, GameEvent.FLUID_PLACE, pos);
          }
  
-     }

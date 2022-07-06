@@ -1,6 +1,6 @@
 --- a/net/minecraft/world/item/RecordItem.java
 +++ b/net/minecraft/world/item/RecordItem.java
-@@ -20,6 +20,7 @@
+@@ -19,6 +19,7 @@
  import net.minecraft.world.level.block.state.BlockState;
  
  public class RecordItem extends Item {
@@ -8,7 +8,7 @@
      private static final Map<SoundEvent, RecordItem> BY_NAME = Maps.newHashMap();
      private final int analogOutput;
      private final SoundEvent sound;
-@@ -28,27 +29,31 @@
+@@ -27,27 +28,31 @@
          super(settings);
          this.analogOutput = comparatorOutput;
          this.sound = sound;
@@ -24,7 +24,7 @@
 -        if (blockState.is(Blocks.JUKEBOX) && !blockState.getValue(JukeboxBlock.HAS_RECORD)) {
 -            ItemStack itemStack = context.getItemInHand();
 -            if (!level.isClientSide) {
--                ((JukeboxBlock)Blocks.JUKEBOX).setRecord(level, blockPos, blockState, itemStack);
+-                ((JukeboxBlock)Blocks.JUKEBOX).setRecord(context.getPlayer(), level, blockPos, blockState, itemStack);
 -                level.levelEvent((Player)null, 1010, blockPos, Item.getId(this));
 -                itemStack.shrink(1);
 -                Player player = context.getPlayer();
@@ -39,7 +39,7 @@
 +
 +            if (!world.isClientSide) {
 +                if (true) return InteractionResult.SUCCESS; // CraftBukkit - handled in ItemStack
-+                ((JukeboxBlock) Blocks.JUKEBOX).setRecord(world, blockposition, iblockdata, itemstack);
++                ((JukeboxBlock) Blocks.JUKEBOX).setRecord(context.getPlayer(), world, blockposition, iblockdata, itemstack);
 +                world.levelEvent((Player) null, 1010, blockposition, Item.getId(this));
 +                itemstack.shrink(1);
 +                Player entityhuman = context.getPlayer();
@@ -54,7 +54,7 @@
          } else {
              return InteractionResult.PASS;
          }
-@@ -69,7 +74,7 @@
+@@ -68,7 +73,7 @@
  
      @Nullable
      public static RecordItem getBySound(SoundEvent sound) {

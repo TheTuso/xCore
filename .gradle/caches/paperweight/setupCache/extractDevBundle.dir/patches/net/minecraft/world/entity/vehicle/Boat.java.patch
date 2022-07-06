@@ -103,7 +103,7 @@
          return true;
      }
  
-@@ -155,15 +176,38 @@
+@@ -155,14 +176,37 @@
          if (this.isInvulnerableTo(source)) {
              return false;
          } else if (!this.level.isClientSide && !this.isRemoved()) {
@@ -124,11 +124,10 @@
              this.setHurtTime(10);
              this.setDamage(this.getDamage() + amount * 10.0F);
              this.markHurt();
-             this.gameEvent(GameEvent.ENTITY_DAMAGED, source.getEntity());
+             this.gameEvent(GameEvent.ENTITY_DAMAGE, source.getEntity());
 -            boolean bl = source.getEntity() instanceof Player && ((Player)source.getEntity()).getAbilities().instabuild;
 -            if (bl || this.getDamage() > 40.0F) {
 -                if (!bl && this.level.getGameRules().getBoolean(GameRules.RULE_DOENTITYDROPS)) {
--                    this.spawnAtLocation(this.getDropItem());
 +            boolean flag = source.getEntity() instanceof Player && ((Player) source.getEntity()).getAbilities().instabuild;
 +
 +            if (flag || this.getDamage() > 40.0F) {
@@ -142,11 +141,19 @@
 +                }
 +                // CraftBukkit end
 +                if (!flag && this.level.getGameRules().getBoolean(GameRules.RULE_DOENTITYDROPS)) {
-+                    this.spawnAtLocation((ItemLike) this.getDropItem());
+                     this.destroy(source);
                  }
  
-                 this.discard();
-@@ -185,7 +229,7 @@
+@@ -176,7 +220,7 @@
+     }
+ 
+     protected void destroy(DamageSource source) {
+-        this.spawnAtLocation(this.getDropItem());
++        this.spawnAtLocation((ItemLike) this.getDropItem());
+     }
+ 
+     @Override
+@@ -189,7 +233,7 @@
              }
          }
  
@@ -154,12 +161,12 @@
 +        this.level.addParticle(ParticleTypes.SPLASH, this.getX() + (double) this.random.nextFloat(), this.getY() + 0.7D, this.getZ() + (double) this.random.nextFloat(), 0.0D, 0.0D, 0.0D);
          if (this.random.nextInt(20) == 0) {
              this.level.playLocalSound(this.getX(), this.getY(), this.getZ(), this.getSwimSplashSound(), this.getSoundSource(), 1.0F, 0.8F + 0.4F * this.random.nextFloat(), false);
-         }
-@@ -195,11 +239,32 @@
+             this.gameEvent(GameEvent.SPLASH, this.getControllingPassenger());
+@@ -199,11 +243,32 @@
  
      @Override
      public void push(Entity entity) {
-+        if (!this.level.paperConfig.allowVehicleCollisions && this.level.paperConfig.onlyPlayersCollide && !(entity instanceof Player)) return; // Paper
++        if (!this.level.paperConfig().collisions.allowVehicleCollisions && this.level.paperConfig().collisions.onlyPlayersCollide && !(entity instanceof Player)) return; // Paper
          if (entity instanceof Boat) {
              if (entity.getBoundingBox().minY < this.getBoundingBox().maxY) {
 +                // CraftBukkit start
@@ -188,7 +195,7 @@
              super.push(entity);
          }
  
-@@ -240,8 +305,8 @@
+@@ -246,8 +311,8 @@
          this.lerpX = x;
          this.lerpY = y;
          this.lerpZ = z;
@@ -199,7 +206,7 @@
          this.lerpSteps = 10;
      }
  
-@@ -250,6 +315,7 @@
+@@ -256,6 +321,7 @@
          return this.getDirection().getClockWise();
      }
  
@@ -207,7 +214,7 @@
      @Override
      public void tick() {
          this.oldStatus = this.status;
-@@ -290,36 +356,56 @@
+@@ -296,35 +362,55 @@
              this.setDeltaMovement(Vec3.ZERO);
          }
  
@@ -239,7 +246,6 @@
 -                        double d = i == 1 ? -vec3.z : vec3.z;
 -                        double e = i == 1 ? vec3.x : -vec3.x;
 -                        this.level.playSound((Player)null, this.getX() + d, this.getY(), this.getZ() + e, soundEvent, this.getSoundSource(), 1.0F, 0.8F + 0.4F * this.random.nextFloat());
--                        this.level.gameEvent(this.getControllingPassenger(), GameEvent.SPLASH, new BlockPos(this.getX() + d, this.getY(), this.getZ() + e));
 +                if (!this.isSilent() && (double) (this.paddlePositions[i] % 6.2831855F) <= 0.7853981852531433D && (double) ((this.paddlePositions[i] + 0.3926991F) % 6.2831855F) >= 0.7853981852531433D) {
 +                    SoundEvent soundeffect = this.getPaddleSound();
 +
@@ -249,7 +255,6 @@
 +                        double d1 = i == 1 ? vec3d.x : -vec3d.x;
 +
 +                        this.level.playSound((Player) null, this.getX() + d0, this.getY(), this.getZ() + d1, soundeffect, this.getSoundSource(), 1.0F, 0.8F + 0.4F * this.random.nextFloat());
-+                        this.level.gameEvent(this.getControllingPassenger(), GameEvent.SPLASH, new BlockPos(this.getX() + d0, this.getY(), this.getZ() + d1));
                      }
                  }
  
@@ -271,16 +276,16 @@
 -            for(int j = 0; j < list.size(); ++j) {
 -                Entity entity = list.get(j);
 -                if (!entity.hasPassenger(this)) {
--                    if (bl && this.getPassengers().size() < 2 && !entity.isPassenger() && entity.getBbWidth() < this.getBbWidth() && entity instanceof LivingEntity && !(entity instanceof WaterAnimal) && !(entity instanceof Player)) {
+-                    if (bl && this.getPassengers().size() < this.getMaxPassengers() && !entity.isPassenger() && entity.getBbWidth() < this.getBbWidth() && entity instanceof LivingEntity && !(entity instanceof WaterAnimal) && !(entity instanceof Player)) {
 +            for (int j = 0; j < list.size(); ++j) {
 +                Entity entity = (Entity) list.get(j);
 +
 +                if (!entity.hasPassenger((Entity) this)) {
-+                    if (flag && this.getPassengers().size() < 2 && !entity.isPassenger() && entity.getBbWidth() < this.getBbWidth() && entity instanceof LivingEntity && !(entity instanceof WaterAnimal) && !(entity instanceof Player)) {
++                    if (flag && this.getPassengers().size() < this.getMaxPassengers() && !entity.isPassenger() && entity.getBbWidth() < this.getBbWidth() && entity instanceof LivingEntity && !(entity instanceof WaterAnimal) && !(entity instanceof Player)) {
                          entity.startRiding(this);
                      } else {
                          this.push(entity);
-@@ -331,8 +417,10 @@
+@@ -336,8 +422,10 @@
      }
  
      private void tickBubbleColumn() {
@@ -292,7 +297,7 @@
              if (i > 0) {
                  this.bubbleMultiplier += 0.05F;
              } else {
-@@ -341,27 +429,29 @@
+@@ -346,27 +434,29 @@
  
              this.bubbleMultiplier = Mth.clamp(this.bubbleMultiplier, 0.0F, 1.0F);
              this.bubbleAngleO = this.bubbleAngle;
@@ -333,7 +338,7 @@
                      }
                  }
  
-@@ -393,36 +483,39 @@
+@@ -398,36 +488,39 @@
          }
  
          if (this.lerpSteps > 0) {
@@ -386,7 +391,7 @@
              if (f > 0.0F) {
                  this.landFriction = f;
                  return Boat.Status.ON_LAND;
-@@ -433,66 +526,83 @@
+@@ -438,66 +531,83 @@
      }
  
      public float getWaterLevelAbove() {
@@ -515,7 +520,7 @@
                              }
                          }
                      }
-@@ -500,90 +610,95 @@
+@@ -505,90 +615,95 @@
              }
          }
  
@@ -659,7 +664,7 @@
                  this.invFriction = 0.45F;
              } else if (this.status == Boat.Status.IN_AIR) {
                  this.invFriction = 0.9F;
-@@ -594,12 +709,14 @@
+@@ -599,12 +714,14 @@
                  }
              }
  
@@ -679,7 +684,7 @@
              }
          }
  
-@@ -608,6 +725,7 @@
+@@ -613,6 +730,7 @@
      private void controlBoat() {
          if (this.isVehicle()) {
              float f = 0.0F;
@@ -687,7 +692,7 @@
              if (this.inputLeft) {
                  --this.deltaRotation;
              }
-@@ -629,7 +747,7 @@
+@@ -634,7 +752,7 @@
                  f -= 0.005F;
              }
  
@@ -696,10 +701,10 @@
              this.setPaddleState(this.inputRight && !this.inputLeft || this.inputUp, this.inputLeft && !this.inputRight || this.inputUp);
          }
      }
-@@ -638,9 +756,11 @@
+@@ -647,9 +765,11 @@
      public void positionRider(Entity passenger) {
          if (this.hasPassenger(passenger)) {
-             float f = 0.0F;
+             float f = this.getSinglePassengerXOffset();
 -            float g = (float)((this.isRemoved() ? (double)0.01F : this.getPassengersRidingOffset()) + passenger.getMyRidingOffset());
 +            float f1 = (float) ((this.isRemoved() ? 0.009999999776482582D : this.getPassengersRidingOffset()) + passenger.getMyRidingOffset());
 +
@@ -709,7 +714,7 @@
                  if (i == 0) {
                      f = 0.2F;
                  } else {
-@@ -652,15 +772,17 @@
+@@ -661,15 +781,17 @@
                  }
              }
  
@@ -721,7 +726,7 @@
              passenger.setYRot(passenger.getYRot() + this.deltaRotation);
              passenger.setYHeadRot(passenger.getYHeadRot() + this.deltaRotation);
              this.clampRotation(passenger);
-             if (passenger instanceof Animal && this.getPassengers().size() > 1) {
+             if (passenger instanceof Animal && this.getPassengers().size() == this.getMaxPassengers()) {
                  int j = passenger.getId() % 2 == 0 ? 90 : 270;
 -                passenger.setYBodyRot(((Animal)passenger).yBodyRot + (float)j);
 -                passenger.setYHeadRot(passenger.getYHeadRot() + (float)j);
@@ -731,7 +736,7 @@
              }
  
          }
-@@ -668,28 +790,38 @@
+@@ -677,28 +799,38 @@
  
      @Override
      public Vec3 getDismountLocationForPassenger(LivingEntity passenger) {
@@ -787,7 +792,7 @@
                      }
                  }
              }
-@@ -701,9 +833,10 @@
+@@ -710,9 +842,10 @@
      protected void clampRotation(Entity entity) {
          entity.setYBodyRot(this.getYRot());
          float f = Mth.wrapDegrees(entity.getYRot() - this.getYRot());
@@ -801,7 +806,7 @@
          entity.setYHeadRot(entity.getYRot());
      }
  
-@@ -727,17 +860,7 @@
+@@ -736,17 +869,7 @@
  
      @Override
      public InteractionResult interact(Player player, InteractionHand hand) {
@@ -820,7 +825,7 @@
      }
  
      @Override
-@@ -753,53 +876,61 @@
+@@ -762,53 +885,61 @@
  
                      this.causeFallDamage(this.fallDistance, 1.0F, DamageSource.FALL);
                      if (!this.level.isClientSide && !this.isRemoved()) {
@@ -894,7 +899,7 @@
      }
  
      public float getBubbleAngle(float tickDelta) {
-@@ -807,19 +938,19 @@
+@@ -816,19 +947,19 @@
      }
  
      public void setHurtDir(int side) {
@@ -918,7 +923,7 @@
      }
  
      @Override
-@@ -855,28 +986,16 @@
+@@ -868,29 +999,16 @@
          return new ItemStack(this.getDropItem());
      }
  
@@ -936,9 +941,10 @@
 -        BIRCH(Blocks.BIRCH_PLANKS, "birch"),
 -        JUNGLE(Blocks.JUNGLE_PLANKS, "jungle"),
 -        ACACIA(Blocks.ACACIA_PLANKS, "acacia"),
--        DARK_OAK(Blocks.DARK_OAK_PLANKS, "dark_oak");
+-        DARK_OAK(Blocks.DARK_OAK_PLANKS, "dark_oak"),
+-        MANGROVE(Blocks.MANGROVE_PLANKS, "mangrove");
 +
-+        OAK(Blocks.OAK_PLANKS, "oak"), SPRUCE(Blocks.SPRUCE_PLANKS, "spruce"), BIRCH(Blocks.BIRCH_PLANKS, "birch"), JUNGLE(Blocks.JUNGLE_PLANKS, "jungle"), ACACIA(Blocks.ACACIA_PLANKS, "acacia"), DARK_OAK(Blocks.DARK_OAK_PLANKS, "dark_oak");
++        OAK(Blocks.OAK_PLANKS, "oak"), SPRUCE(Blocks.SPRUCE_PLANKS, "spruce"), BIRCH(Blocks.BIRCH_PLANKS, "birch"), JUNGLE(Blocks.JUNGLE_PLANKS, "jungle"), ACACIA(Blocks.ACACIA_PLANKS, "acacia"), DARK_OAK(Blocks.DARK_OAK_PLANKS, "dark_oak"), MANGROVE(Blocks.MANGROVE_PLANKS, "mangrove");
  
          private final String name;
          private final Block planks;
@@ -952,7 +958,7 @@
          }
  
          public String getName() {
-@@ -887,30 +1006,37 @@
+@@ -901,30 +1019,37 @@
              return this.planks;
          }
  

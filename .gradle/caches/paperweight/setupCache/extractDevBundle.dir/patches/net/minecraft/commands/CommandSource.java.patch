@@ -1,19 +1,19 @@
 --- a/net/minecraft/commands/CommandSource.java
 +++ b/net/minecraft/commands/CommandSource.java
-@@ -4,10 +4,10 @@
+@@ -3,10 +3,10 @@
  import net.minecraft.network.chat.Component;
  
  public interface CommandSource {
 +
      CommandSource NULL = new CommandSource() {
          @Override
--        public void sendMessage(Component message, UUID sender) {
+-        public void sendSystemMessage(Component message) {
 -        }
-+        public void sendMessage(Component message, UUID sender) {}
++        public void sendSystemMessage(Component message) {}
  
          @Override
          public boolean acceptsSuccess() {
-@@ -23,6 +23,13 @@
+@@ -22,6 +22,13 @@
          public boolean shouldInformAdmins() {
              return false;
          }
@@ -26,8 +26,8 @@
 +        // CraftBukkit end
      };
  
-     void sendMessage(Component message, UUID sender);
-@@ -36,4 +43,6 @@
+     void sendSystemMessage(Component message);
+@@ -35,4 +42,6 @@
      default boolean alwaysAccepts() {
          return false;
      }

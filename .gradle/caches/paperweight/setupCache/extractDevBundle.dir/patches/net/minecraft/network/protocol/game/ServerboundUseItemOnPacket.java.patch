@@ -5,18 +5,19 @@
  package net.minecraft.network.protocol.game;
  
  import net.minecraft.network.FriendlyByteBuf;
-@@ -6,8 +7,10 @@
+@@ -6,9 +7,11 @@
  import net.minecraft.world.phys.BlockHitResult;
  
  public class ServerboundUseItemOnPacket implements Packet<ServerGamePacketListener> {
 +
      private final BlockHitResult blockHit;
      private final InteractionHand hand;
+     private final int sequence;
 +    public long timestamp; // Spigot
  
-     public ServerboundUseItemOnPacket(InteractionHand hand, BlockHitResult blockHitResult) {
+     public ServerboundUseItemOnPacket(InteractionHand hand, BlockHitResult blockHitResult, int sequence) {
          this.hand = hand;
-@@ -15,7 +18,8 @@
+@@ -17,7 +20,8 @@
      }
  
      public ServerboundUseItemOnPacket(FriendlyByteBuf buf) {
@@ -24,10 +25,10 @@
 +        this.timestamp = System.currentTimeMillis(); // Spigot
 +        this.hand = (InteractionHand) buf.readEnum(InteractionHand.class);
          this.blockHit = buf.readBlockHitResult();
+         this.sequence = buf.readVarInt();
      }
- 
-@@ -25,7 +29,6 @@
-         buf.writeBlockHitResult(this.blockHit);
+@@ -29,7 +33,6 @@
+         buf.writeVarInt(this.sequence);
      }
  
 -    @Override

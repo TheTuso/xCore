@@ -66,7 +66,7 @@
                  }
 @@ -116,6 +121,7 @@
          if (this.level instanceof ServerLevel) {
-             Entity entity = source.getEntity();
+             Entity entity = damageSource.getEntity();
              Raid raid = this.getCurrentRaid();
 +
              if (raid != null) {
@@ -188,7 +188,7 @@
  
      public abstract SoundEvent getCelebrateSound();
  
--    public class HoldGroundAttackGoal extends Goal {
+-    protected class HoldGroundAttackGoal extends Goal {
 -        private final Raider mob;
 -        private final float hostileRadiusSqr;
 -        public final TargetingConditions shoutTargeting = TargetingConditions.forNonCombat().range(8.0D).ignoreLineOfSight().ignoreInvisibilityTesting();
@@ -349,13 +349,12 @@
          private boolean hasSuitablePoi() {
 -            ServerLevel serverLevel = (ServerLevel)this.raider.level;
 -            BlockPos blockPos = this.raider.blockPosition();
--            Optional<BlockPos> optional = serverLevel.getPoiManager().getRandom((poiType) -> {
--                return poiType == PoiType.HOME;
--            }, this::hasNotVisited, PoiManager.Occupancy.ANY, blockPos, 48, this.raider.random);
+-            Optional<BlockPos> optional = serverLevel.getPoiManager().getRandom((holder) -> {
 +            ServerLevel worldserver = (ServerLevel) this.raider.level;
 +            BlockPos blockposition = this.raider.blockPosition();
-+            Optional<BlockPos> optional = worldserver.getPoiManager().getRandom((villageplacetype) -> {
-+                return villageplacetype == PoiType.HOME;
++            Optional<BlockPos> optional = worldserver.getPoiManager().getRandom((holder) -> {
+                 return holder.is(PoiTypes.HOME);
+-            }, this::hasNotVisited, PoiManager.Occupancy.ANY, blockPos, 48, this.raider.random);
 +            }, this::hasNotVisited, PoiManager.Occupancy.ANY, blockposition, 48, this.raider.random);
 +
              if (!optional.isPresent()) {
@@ -488,7 +487,7 @@
 +        }
 +    }
 +
-+    public class HoldGroundAttackGoal extends Goal {
++    protected class HoldGroundAttackGoal extends Goal {
 +
 +        private final Raider mob;
 +        private final float hostileRadiusSqr;
